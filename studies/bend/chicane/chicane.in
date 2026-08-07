@@ -1,0 +1,96 @@
+/*  chicane.in  --  four-dipole magnetic chicane
+    DRIFT -> B1(+th) -> DRIFT -> B2(-th) -> DRIFT -> B3(-th) -> DRIFT -> B4(+th) -> DRIFT
+    0.1 GeV electron beam, no space charge.  Four SBENDs, sign pattern (+,-,-,+).
+
+    A symmetric chicane: the beam bends out to a parallel, transversely displaced
+    leg (the plateau between B2 and B3), then mirrors back onto the original axis
+    and direction (net zero deflection, net zero offset).  This is the standard
+    bunch-compressor layout.
+
+    Geometry
+    --------
+    - SBEND: L is the design-orbit ARC length, rho = L / |ANGLE|.
+    - Sign pattern (+th, -th, -th, +th) with symmetric drifts closes the orbit:
+      tangent angle goes 0 -> +th -> 0 -> -th -> 0, and x returns to 0.
+    - ELEMEDGE places each element sequentially along the (folding) reference path.
+      Bends chain cleanly (no spurious inter-bend gap), so the line has its nominal
+      length and the chicane closes at ZSTOP = 6.5.
+    - HGAP = 0 hard edge; HAPERT = radial half-aperture.
+    - ZSTOP is reference PATH LENGTH.
+*/
+
+OPTION, PSDUMPFREQ   = 50;
+OPTION, STATDUMPFREQ = 1;
+OPTION, BOUNDPDESTROY = 10;
+Option, VERSION = 10900;
+
+Title, string="Four-dipole chicane test";
+
+// ============================================================================
+// Parameters
+// ============================================================================
+
+REAL n_particles       = 200;
+REAL beam_bunch_charge = 1.6e-15;
+
+REAL Edes  = 0.1;
+REAL gamma = (Edes + EMASS) / EMASS;
+REAL beta  = sqrt(1 - (1 / gamma^2));
+REAL P0    = gamma * beta * EMASS;
+
+REAL THETA = 0.3;                          // bend angle magnitude [rad] (~17.19 deg)
+REAL LB    = 0.5;                          // bend ARC length [m]
+REAL rho   = LB / THETA;                    // design radius [m]
+REAL Lin   = 0.5;                          // lead-in drift [m]
+REAL Ld    = 1.0;                          // drift between bends [m]
+REAL Lout  = 1.0;                          // lead-out drift [m]
+
+value, {P0, rho, THETA};
+
+// ============================================================================
+// Elements  (ELEMEDGE = cumulative entrance path length)
+// ============================================================================
+
+D_IN:  DRIFT, L = Lin,  ELEMEDGE = 0.0;
+B1:    SBEND, L = LB, ANGLE =  THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 0.5;
+D1:    DRIFT, L = Ld,   ELEMEDGE = 1.0;
+B2:    SBEND, L = LB, ANGLE = -THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 2.0;
+D2:    DRIFT, L = Ld,   ELEMEDGE = 2.5;
+B3:    SBEND, L = LB, ANGLE = -THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 3.5;
+D3:    DRIFT, L = Ld,   ELEMEDGE = 4.0;
+B4:    SBEND, L = LB, ANGLE =  THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 5.0;
+D_OUT: DRIFT, L = Lout, ELEMEDGE = 5.5;
+
+ChicaneLine: Line = (D_IN, B1, D1, B2, D2, B3, D3, B4, D_OUT);
+
+// ============================================================================
+// Beam
+// ============================================================================
+
+Dist: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX = 1e-5, SIGMAY = 1e-5, SIGMAZ = 1e-5,
+    NPARTDIST = n_particles;
+
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX = 16, NY = 16, NZ = 16,
+    PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+    BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+    BBOXINCR = 1, GREENSF = INTEGRATED;
+
+BEAM1: BEAM, PARTICLE = ELECTRON, PC = P0, NALLOC = n_particles,
+       BCHARGE = beam_bunch_charge, SOURCES = mySources, CHARGE = -1;
+
+// ============================================================================
+// Track
+// ============================================================================
+
+TRACK, LINE = ChicaneLine, BEAM = BEAM1,
+       MAXSTEPS = 200000, DT = 1e-12,
+       ZSTOP = 6.5;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

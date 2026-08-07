@@ -1,0 +1,331 @@
+/*  mue4_WSXOff.in
+    OPALX input file — muE4 beamline (WSX solenoid OFF configuration)
+
+    Translated from mue4_WSXOff.g4bl (G4beamline, L. Desorgher)
+    muE4 PSI beamline for the HIBM project: mu+ transport through
+    3 sector dipoles, 4 quadrupole triplets, and 2 collimator stations.
+
+    Sector dipoles are modeled as MULTIPOLE with K0 (dipole component).
+    This captures the deflection and momentum dispersion but NOT the
+    geometric focusing of a curved reference orbit (sector body focusing).
+    Replace with SBEND once implemented in OPALX for full accuracy.
+
+    PLACEHOLDER elements remain for:
+      - Collimator / absorber (material aperture restriction)
+      - Passive geometry (iron housing, beam stops)
+
+    All positions are path length along the reference trajectory.
+    G4BL mm -> OPALX m conversion applied.
+
+    NOTE: Field maps need format conversion from .g4blmap to .T7
+          before they can be used with OPALX SOLENOID elements.
+
+    UNFINISHED — THIS DECK DOES NOT RUN.
+      - The distribution file "primaries_new.dat" does not exist. It has to be
+        converted from the G4beamline phase-space dump first.
+      - The .g4blmap field maps named in the comments below are not converted
+        either, so every magnet is still analytic or a placeholder.
+    Kept here as the starting point for the muE4 decay-channel study. The
+    finished beamline models live under studies/mue4/.
+*/
+
+OPTION, PSDUMPFREQ   = 100;
+OPTION, STATDUMPFREQ = 1;
+OPTION, BOUNDPDESTROY = 10;
+OPTION, VERSION = 10900;
+
+Title, string="muE4 beamline — WSX Off";
+
+// ============================================================================
+// Global Parameters
+// ============================================================================
+
+REAL rf_freq           = 1.3e9;          // RF frequency [Hz] (placeholder)
+REAL n_particles       = 500;            // Number of macro-particles (G4BL: nMP=500)
+
+// Reference momentum: 28 MeV/c mu+
+REAL MUON_MASS         = 0.1056583755;   // Muon rest mass [GeV]
+REAL P_MeV             = 28.0;           // Reference momentum [MeV/c]
+REAL P0                = P_MeV * 1e-3;   // Reference momentum [GeV/c]
+REAL Edes              = sqrt(P0*P0 + MUON_MASS*MUON_MASS) - MUON_MASS; // KE [GeV]
+REAL gamma             = (Edes + MUON_MASS) / MUON_MASS;
+REAL beta              = sqrt(1 - (1/gamma^2));
+REAL Brho              = P0 / 0.299792458;  // Magnetic rigidity [T*m] = 0.0934
+
+REAL beam_bunch_charge = 1e-15;          // Placeholder bunch charge [C]
+
+value, {P0, Edes, Brho};
+
+// ============================================================================
+// Quadrupole Strength Calibration
+// ============================================================================
+//
+// G4BL uses field map qsm01a_210.g4blmap with a "current" scaling parameter.
+// The field map was computed at 210 A (TOSCA).
+//
+// To convert to OPALX K1 [m^-2]:
+//   K1 = G0 * current_scaling / Brho
+// where G0 is the integrated gradient of the field map at current=1.0 [T/m]
+// and Brho = 0.0934 T*m at P=28 MeV/c.
+//
+// TODO: Extract G0 from qsm01a_210.g4blmap, then set:
+//   QSM_K1_SCALE = G0 / Brho
+//
+// For now, using a placeholder scale factor.
+
+REAL QSM_K1_SCALE = 1.0;   // PLACEHOLDER — calibrate from field map
+
+// G4BL current scaling values for each quad placement:
+REAL I_Q1  = -0.21340;
+REAL I_Q2  =  0.65120;
+REAL I_Q3  = -0.34970;
+REAL I_Q4  = -0.19590;
+REAL I_Q5  =  0.62790;
+REAL I_Q6  = -0.37040;
+REAL I_Q7  = -0.32150;
+REAL I_Q8  =  0.63400;
+REAL I_Q9  = -0.31780;
+REAL I_Q10 =  0.45180;
+REAL I_Q11 = -0.90530;
+REAL I_Q12 =  0.88900;
+
+// Effective quadrupole length [m] — estimated from field map extent
+REAL L_QUAD = 0.500;
+
+// ============================================================================
+// Dipole Parameters
+// ============================================================================
+//
+// K0 = 1/rho [m^-1] derived from G4BL cornerarc radii.
+// Sign follows the bend direction (+/- angle).
+// NOTE: MULTIPOLE K0 gives correct integrated kick and dispersion,
+//       but misses sector-body horizontal focusing (~K0^2 term).
+//       For full accuracy, replace with SBEND when available.
+
+// Dipole 1 (ASR61): 2 x 20 deg, R = 1159.06 mm
+REAL L_BEND1 = 0.810;                     // arc length [m]
+REAL K0_BEND1 = 0.8628;                   // 1/rho = 1/1.15906 [m^-1]
+
+// Dipole 2 (ASR62): 2 x (-17 deg), R = 1219.81 mm
+REAL L_BEND2 = 0.724;                     // arc length [m]
+REAL K0_BEND2 = -0.8198;                  // -1/rho (negative bend)
+
+// Dipole 3 (ASR62_2): 2 x (+17 deg), R = 1219.81 mm
+REAL L_BEND3 = 0.724;                     // arc length [m]
+REAL K0_BEND3 = 0.8198;                   // +1/rho
+
+// ============================================================================
+// Element Definitions
+// ============================================================================
+
+// --- Initial drift: beam source to dipole 1 entry ---
+D_INIT:     DRIFT, L = 2.578, ELEMEDGE = 0.000;
+
+// ---------------------------------------------------------------------------
+// DIPOLE 1 — ASR61 sector dipole
+// G4BL: 2 x cornerarc(20 deg, R=1159.06 mm) + ASR61 field maps
+// Total bend: 40 deg,  arc length: 0.810 m
+// Field maps: asr61_300d_new.g4blmap (current=-0.99528)
+//             asr61_300sm_new.g4blmap (current=-0.99528)
+// Replace with SBEND once available for sector-body focusing
+// ---------------------------------------------------------------------------
+BEND1:      MULTIPOLE, L = L_BEND1, ELEMEDGE = 2.578, KN = {K0_BEND1};
+
+// --- Drift: dipole 1 exit to collimator FS61 ---
+D_B1_C1:    DRIFT, L = 0.542, ELEMEDGE = 3.388;
+
+// ---------------------------------------------------------------------------
+// COLLIMATOR 1 — FS61 (horizontal + vertical jaws)
+// G4BL: 4-jaw Fe collimator
+//   Horizontal gap: +/- 190 mm  (FS61H boxes at x = +/- 495 mm)
+//   Vertical gap:   +/- 105 mm  (FS61V boxes at y = +/- 451 mm)
+//
+// PLACEHOLDER: Approximated as drift with rectangular aperture
+// ---------------------------------------------------------------------------
+COLL1:      DRIFT, L = 0.100, ELEMEDGE = 3.930,
+            APERTURE = "rectangle(0.380, 0.210)";
+
+// --- Drift: collimator 1 to quad triplet 1 ---
+D_C1_Q1:    DRIFT, L = 0.455, ELEMEDGE = 4.030;
+
+// ---------------------------------------------------------------------------
+// Quadrupole Triplet 1 (after dipole 1)
+// G4BL centers: z = 4735.39, 5240.39, 5745.39 mm
+// ---------------------------------------------------------------------------
+QSM_1:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 4.485, KN = {0, QSM_K1_SCALE * I_Q1};
+D_Q1Q2: DRIFT,     L = 0.005,  ELEMEDGE = 4.985;
+QSM_2:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 4.990, KN = {0, QSM_K1_SCALE * I_Q2};
+D_Q2Q3: DRIFT,     L = 0.005,  ELEMEDGE = 5.490;
+QSM_3:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 5.495, KN = {0, QSM_K1_SCALE * I_Q3};
+
+// --- Drift: quad triplet 1 to dipole 2 ---
+D_Q3_B2:    DRIFT, L = 1.147, ELEMEDGE = 5.995;
+
+// ---------------------------------------------------------------------------
+// DIPOLE 2 — ASR62 sector dipole
+// G4BL: 2 x cornerarc(-17 deg, R=1219.81 mm) + ASR62 field maps
+// Total bend: -34 deg,  arc length: 0.724 m
+// Field maps: asr62shim_280_new.g4blmap  (current=-0.96380)
+//             asr62shim_280_sm_new.g4blmap (current=-0.96380)
+//             asr62shim_280_sm_2.g4blmap  (current=+0.96380)
+// Also contains collimator FS62 (horiz gap +/- 190 mm) inside dipole
+// Replace with SBEND once available for sector-body focusing
+// ---------------------------------------------------------------------------
+BEND2:      MULTIPOLE, L = L_BEND2, ELEMEDGE = 7.142, KN = {K0_BEND2};
+
+// --- Drift: dipole 2 exit to quad triplet 2 ---
+D_B2_Q4:    DRIFT, L = 1.147, ELEMEDGE = 7.866;
+
+// ---------------------------------------------------------------------------
+// Quadrupole Triplet 2 (after dipole 2)
+// G4BL centers: z = 9263.37, 9768.37, 10273.37 mm
+// ---------------------------------------------------------------------------
+QSM_4:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 9.013, KN = {0, QSM_K1_SCALE * I_Q4};
+D_Q4Q5: DRIFT,     L = 0.005,  ELEMEDGE = 9.513;
+QSM_5:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 9.518, KN = {0, QSM_K1_SCALE * I_Q5};
+D_Q5Q6: DRIFT,     L = 0.005,  ELEMEDGE = 10.018;
+QSM_6:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 10.023, KN = {0, QSM_K1_SCALE * I_Q6};
+
+// --- Drift: quad triplet 2 to collimator FS63 ---
+D_Q6_C2:    DRIFT, L = 0.454, ELEMEDGE = 10.523;
+
+// ---------------------------------------------------------------------------
+// COLLIMATOR 2 — FS63 (horizontal + vertical jaws)
+// G4BL: 4-jaw Fe collimator (same aperture as FS61)
+//   Horizontal gap: +/- 191 mm
+//   Vertical gap:   +/- 106 mm
+//
+// PLACEHOLDER: Approximated as drift with rectangular aperture
+// ---------------------------------------------------------------------------
+COLL2:      DRIFT, L = 0.100, ELEMEDGE = 10.977,
+            APERTURE = "rectangle(0.382, 0.212)";
+
+// --- Drift: collimator 2 to dipole 3 ---
+D_C2_B3:    DRIFT, L = 0.593, ELEMEDGE = 11.077;
+
+// ---------------------------------------------------------------------------
+// DIPOLE 3 — ASR62_2 sector dipole
+// G4BL: 2 x cornerarc(+17 deg, R=1219.81 mm) + ASR62_2 field maps
+// Total bend: +34 deg,  arc length: 0.724 m
+// Field maps: asr62shim_280_new.g4blmap  (current=+0.96187)
+//             asr62shim_280_sm_new.g4blmap (current=+0.96187)
+//             asr62shim_280_sm_4.g4blmap  (current=+0.96187)
+// Replace with SBEND once available for sector-body focusing
+// ---------------------------------------------------------------------------
+BEND3:      MULTIPOLE, L = L_BEND3, ELEMEDGE = 11.670, KN = {K0_BEND3};
+
+// --- Drift: dipole 3 exit to quad triplet 3 ---
+D_B3_Q7:    DRIFT, L = 0.787, ELEMEDGE = 12.394;
+
+// ---------------------------------------------------------------------------
+// Quadrupole Triplet 3 (after dipole 3)
+// G4BL centers: z = 13430.86, 13935.86, 14440.86 mm
+// ---------------------------------------------------------------------------
+QSM_7:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 13.181, KN = {0, QSM_K1_SCALE * I_Q7};
+D_Q7Q8: DRIFT,     L = 0.005,  ELEMEDGE = 13.681;
+QSM_8:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 13.686, KN = {0, QSM_K1_SCALE * I_Q8};
+D_Q8Q9: DRIFT,     L = 0.005,  ELEMEDGE = 14.186;
+QSM_9:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 14.191, KN = {0, QSM_K1_SCALE * I_Q9};
+
+// --- Long drift: quad triplet 3 to final quad triplet ---
+D_Q9_Q10:   DRIFT, L = 2.530, ELEMEDGE = 14.691;
+
+// ---------------------------------------------------------------------------
+// Quadrupole Triplet 4 (final focusing)
+// G4BL centers: z = 17470.86, 17975.86, 18480.86 mm
+// ---------------------------------------------------------------------------
+QSM_10:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 17.221, KN = {0, QSM_K1_SCALE * I_Q10};
+D_Q10Q11: DRIFT,     L = 0.005,  ELEMEDGE = 17.721;
+QSM_11:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 17.726, KN = {0, QSM_K1_SCALE * I_Q11};
+D_Q11Q12: DRIFT,     L = 0.005,  ELEMEDGE = 18.226;
+QSM_12:  MULTIPOLE, L = L_QUAD, ELEMEDGE = 18.231, KN = {0, QSM_K1_SCALE * I_Q12};
+
+// --- Final drift to end of beamline ---
+D_END:      DRIFT, L = 0.519, ELEMEDGE = 18.731;
+
+// ============================================================================
+// Beamline Definition
+// ============================================================================
+
+muE4line: Line = (
+    D_INIT,
+    BEND1,
+    D_B1_C1,  COLL1,  D_C1_Q1,
+    QSM_1,  D_Q1Q2,  QSM_2,  D_Q2Q3,  QSM_3,
+    D_Q3_B2,
+    BEND2,
+    D_B2_Q4,
+    QSM_4,  D_Q4Q5,  QSM_5,  D_Q5Q6,  QSM_6,
+    D_Q6_C2,  COLL2,  D_C2_B3,
+    BEND3,
+    D_B3_Q7,
+    QSM_7,  D_Q7Q8,  QSM_8,  D_Q8Q9,  QSM_9,
+    D_Q9_Q10,
+    QSM_10,  D_Q10Q11,  QSM_11,  D_Q11Q12,  QSM_12,
+    D_END
+);
+
+// ============================================================================
+// Beam Distribution
+// ============================================================================
+//
+// G4BL uses: beam ascii filename="primaries_new.dat"
+// OPALX FROMFILE not yet fully supported — using Gaussian approximation.
+// G4BL Gaussian defaults: sigmaXp=130 mrad, sigmaYp=130 mrad
+//
+// TODO: Convert primaries_new.dat to OPALX distribution format
+//       and use TYPE=FROMFILE, FNAME="primaries_new.dat"
+
+Dist1: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX  = 1e-3,              // [m] — adjust to match input beam
+    SIGMAY  = 1e-3,              // [m] — adjust to match input beam
+    SIGMAZ  = 1e-3,              // [m] — adjust to match input beam
+    SIGMAPX = 0.130,             // [rad] — G4BL sigmaXp=130 mrad
+    SIGMAPY = 0.130,             // [rad] — G4BL sigmaYp=130 mrad
+    SIGMAPZ = 1e-6,              // [rad] — G4BL sigmaP=0 (monochromatic)
+    NPARTDIST = n_particles;
+
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+// ============================================================================
+// Field Solver (space charge)
+// ============================================================================
+//
+// G4BL: collective mode with nGrid=65, deltaT=0.1 ns, totalCharge=1 (SC off)
+// Using NONE (no space charge) to match G4BL default totalCharge=1
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX = 16, NY = 16, NZ = 16,
+    PARFFTX = true,
+    PARFFTY = true,
+    PARFFTZ = true,
+    BCFFTX = open,
+    BCFFTY = open,
+    BCFFTZ = open,
+    BBOXINCR = 1,
+    GREENSF = INTEGRATED;
+
+// ============================================================================
+// Beam Definition
+// ============================================================================
+//
+// mu+ beam at P = 28 MeV/c, decay DISABLED (matching G4BL physics disable=Decay)
+
+BEAM1: BEAM, PARTICLE = MUON, pc = P0, NALLOC = n_particles,
+       BCHARGE = beam_bunch_charge,
+       SOURCES = mySources, CHARGE = +1;
+       // Note: No GLOBALPROCESSES={"DECAY"} — decay is disabled as in G4BL
+
+// ============================================================================
+// Tracking
+// ============================================================================
+
+TRACK, LINE = muE4line, BEAM = BEAM1,
+       MAXSTEPS = 500000,
+       DT = {1e-11},             // Time step [s] — G4BL used 0.1 ns = 1e-10 s
+       ZSTOP = 19.25;            // End of beamline [m]
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

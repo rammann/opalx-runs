@@ -1,0 +1,120 @@
+/*
+    Muon Decay with Daughter Electron Generation
+
+    Tracks a muon beam through a drift space. Decaying muons produce
+    daughter electrons, which are tracked in a separate container.
+    Demonstrates the GLOBALPROCESSES = {DECAY} + DAUGHTERBEAM feature.
+*/
+
+OPTION, PSDUMPFREQ   = 100;
+OPTION, STATDUMPFREQ = 1;
+OPTION, BOUNDPDESTROY = -1;
+OPTION, VERSION       = 10900;
+
+Title, string="Muon Decay with Daughter Electrons";
+
+Value, {OPALVERSION};
+
+// ----------------------------------------------------------------------------
+// Parameters
+
+REAL rf_freq           = 1e9;     // RF frequency [Hz]
+REAL n_muons           = 10000;   // Initial number of muon macroparticles
+REAL bunch_charge_muon = 1.602176634e-15; // Bunch charge [C]
+
+REAL gamma_muon = 6;            
+
+// ----------------------------------------------------------------------------
+// Beamline: 100 m drift
+
+D1: DRIFT, L = 1000000, ELEMEDGE = 0.0;
+myLine: Line = (D1);
+
+// ----------------------------------------------------------------------------
+// Distributions
+
+DistMuon: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX    = 1e-3,
+    SIGMAY    = 1e-3,
+    SIGMAZ    = 1e-3,
+    SIGMAPX   = 1e-4,
+    SIGMAPY   = 1e-4,
+    SIGMAPZ   = 1e-4,
+    NPARTDIST = n_muons;
+
+// Empty distribution for the electron container — electrons are generated
+// at runtime by the decay process, not from an initial distribution.
+DistElectron: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX    = 1e-3,
+    SIGMAY    = 1e-3,
+    SIGMAZ    = 1e-3,
+    SIGMAPX   = 1e-4,
+    SIGMAPY   = 1e-4,
+    SIGMAPZ   = 1e-4,
+    NPARTDIST = 0;
+
+// ----------------------------------------------------------------------------
+// Emission Sources
+
+ES_Muon: EMISSIONSOURCE, DISTRIBUTION = DistMuon;
+Sources_Muon: EMISSIONSOURCELIST = (ES_Muon);
+
+ES_Electron: EMISSIONSOURCE, DISTRIBUTION = DistElectron;
+Sources_Electron: EMISSIONSOURCELIST = (ES_Electron);
+
+// ----------------------------------------------------------------------------
+// Beam Definitions
+
+// Muon beam: DECAY active, daughter electrons go into EBEAM
+MBEAM: BEAM,
+    PARTICLE        = MUON,
+    GAMMA           = gamma_muon,
+    NALLOC          = n_muons,
+    BCHARGE         = bunch_charge_muon,
+    SOURCES         = Sources_Muon,
+    CHARGE          = -1,
+    GLOBALPROCESSES = {"DECAY"},
+    POLARIZATION    = {0.0, 0.0, 0.0},
+    DAUGHTERBEAM    = "EBEAM";
+
+// Electron beam: receives decay products; starts empty
+EBEAM: BEAM,
+    PARTICLE = ELECTRON,
+    GAMMA    = gamma_muon,     // initial reference momentum (updated at runtime)
+    NALLOC   = n_muons,                    // allocation cap for decay daughters
+    BCHARGE  = bunch_charge_muon,  // one physical electron per macroparticle
+    SOURCES  = Sources_Electron,
+    CHARGE   = -1;
+
+// ----------------------------------------------------------------------------
+// Field Solver (space charge off)
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX     = 2,
+    NY     = 2,
+    NZ     = 2,
+    PARFFTX = true,
+    PARFFTY = true,
+    PARFFTZ = true,
+    BCFFTX = OPEN,
+    BCFFTY = OPEN,
+    BCFFTZ = OPEN,
+    BBOXINCR = 5,
+    GREENSF  = STANDARD;
+
+// ----------------------------------------------------------------------------
+// Tracking
+//
+// DT = 1e-7 s (~0.05 muon lifetimes per step at gamma=16).
+// At gamma=16 the lab-frame lifetime is ~35 µs, so 500 steps = 50 µs ~1.4 lifetimes.
+// Expect ~75% of muons to have decayed by the end.
+
+TRACK, LINE      = myLine,
+       BEAMS     = {MBEAM, EBEAM},
+       MAXSTEPS  = 1500,
+       DT        = {1e-7},
+       ZSTOP     = 1000000;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+QUIT;

@@ -1,0 +1,117 @@
+/*
+    Polarized muons in zero field, no decay
+    --- baseline diagnostic for spin tracking ---
+
+    Single MUON beam, fully polarized along +z (|P| = 1, P_z = 1),
+    propagating in a field-free drift with no DECAY global process
+    attached. Two physical invariants over the run:
+
+      1. Polarization is constant.
+         With E = B = 0 the Thomas-BMT angular velocity vanishes
+         (Omega = -(q/m)[(G + 1/gamma)*B + ...] = 0), so the
+         Rodrigues rotation in the T-BMT pusher is a no-op and
+         the per-particle Pol vector stays exactly at its
+         initial value for every step.
+
+      2. Particle count is constant.
+         GLOBALPROCESSES is unset, so the muon decay sampler is
+         not registered and no muons are marked for deletion.
+
+    What to look for in the produced .stat / .h5:
+
+      *.stat (STATDUMPFREQ = 1):
+        mean_polx ~ 0
+        mean_poly ~ 0
+        mean_polz ~ 1                ( == 1 to within float rounding )
+        mean_pol_mag ~ 1
+        rms_polx, rms_poly, rms_polz ~ 0
+        numParticles = 10000 every row
+
+      *.h5 (PSDUMPFREQ = 50, 10 snapshots over the run):
+        Every step group should contain polx, poly, polz with
+        polx = poly = 0 and polz = 1 for all particles.
+*/
+
+OPTION, PSDUMPFREQ   = 50;
+OPTION, STATDUMPFREQ = 1;
+OPTION, BOUNDPDESTROY = 0;
+OPTION, VERSION       = 10900;
+
+Title, string="Polarized muons in zero field, no decay";
+
+Value, {OPALVERSION};
+
+// ----------------------------------------------------------------------------
+// Parameters
+
+REAL n_muons       = 10000;
+REAL bunch_charge  = 1.602176634e-15;
+REAL gamma_initial = 4;
+
+// ----------------------------------------------------------------------------
+// Beamline: long drift so particles never reach the end of the line
+
+D1: DRIFT, L = 1000000, ELEMEDGE = 0.0;
+myLine: Line = (D1);
+
+// ----------------------------------------------------------------------------
+// Distribution
+
+DistMuon: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX    = 1e-3,
+    SIGMAY    = 1e-3,
+    SIGMAZ    = 1e-3,
+    SIGMAPX   = 1e-4,
+    SIGMAPY   = 1e-4,
+    SIGMAPZ   = 1e-4,
+    NPARTDIST = n_muons;
+
+// ----------------------------------------------------------------------------
+// Emission Source
+
+ES_Muon:      EMISSIONSOURCE,    DISTRIBUTION = DistMuon;
+Sources_Muon: EMISSIONSOURCELIST = (ES_Muon);
+
+// ----------------------------------------------------------------------------
+// Muon beam: fully polarized along +z. POLARIZATION is what allocates the
+// per-container Pol attribute; no GLOBALPROCESSES means no decay.
+
+MBEAM: BEAM,
+    PARTICLE     = MUON,
+    GAMMA        = gamma_initial,
+    NALLOC       = n_muons,
+    BCHARGE      = bunch_charge,
+    SOURCES      = Sources_Muon,
+    CHARGE       = -1,
+    POLARIZATION = {0.0, 0.0, 1.0};
+
+// ----------------------------------------------------------------------------
+// Field Solver (space charge off -> E_sc = B_sc = 0)
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX     = 2,
+    NY     = 2,
+    NZ     = 2,
+    PARFFTX = true,
+    PARFFTY = true,
+    PARFFTZ = true,
+    BCFFTX = OPEN,
+    BCFFTY = OPEN,
+    BCFFTZ = OPEN,
+    BBOXINCR = 5,
+    GREENSF  = STANDARD;
+
+// ----------------------------------------------------------------------------
+// Tracking: 500 steps * 5 ns = 2.5 us.
+// Short enough to be a quick smoke test; the absence of DECAY means
+// MAXSTEPS could be raised arbitrarily without affecting the result.
+
+TRACK, LINE      = myLine,
+       BEAMS     = {MBEAM},
+       MAXSTEPS  = 500,
+       DT        = {5e-9},
+       ZSTOP     = 1000000;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+QUIT;

@@ -1,0 +1,74 @@
+/*
+    Muon Decay Test
+*/
+
+OPTION, PSDUMPFREQ      = 10000;
+OPTION, STATDUMPFREQ    = 1;
+OPTION, BOUNDPDESTROY   = 10;
+OPTION, VERSION         = 10900;
+
+Title, string="Muon Decay Test";
+
+Value,{OPALVERSION};
+
+// ----------------------------------------------------------------------------
+// Global Parameters
+
+REAL n_particles         = 1000000;         // Number of particles in simulation
+REAL beam_bunch_charge   = 1.602176634e-13;           // Bunch charge [C]
+
+// ----------------------------------------------------------------------------
+// Initial Momentum Calculation
+
+REAL gamma     = 16;
+
+VALUE, {gamma};
+
+// Drift Space
+D1: DRIFT, L = 100, ELEMEDGE = 0.0;
+myLine: Line = (D1);
+
+// Distribution
+Dist1: DISTRIBUTION, TYPE=GAUSS,
+    SIGMAX=1e-3,
+    SIGMAY=1e-3,
+    SIGMAZ=1e-3,
+    SIGMAPX=1e-9,
+    SIGMAPY=1e-9,
+    SIGMAPZ=1e-9,
+    NPARTDIST = n_particles;
+
+// Emissionsource
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+BEAM1: BEAM,
+        PARTICLE = MUON,
+        GAMMA = gamma,
+        NALLOC = n_particles,
+        BCHARGE = beam_bunch_charge,
+        SOURCES = mySources,
+        CHARGE = -1,
+        GLOBALPROCESSES = {"DECAY"},
+        POLARIZATION = {0.0, 0.0, 0.0};
+
+FS1: Fieldsolver, TYPE=NONE,
+    NX=2,
+    NY=2,
+    NZ=2,
+    PARFFTX = true,
+    PARFFTY = true,
+    PARFFTZ = true,
+    BCFFTX=OPEN,
+    BCFFTY=OPEN,
+    BCFFTZ=OPEN, BBOXINCR = 5, GREENSF = STANDARD;
+
+TRACK,  LINE = myLine, 
+        BEAM = BEAM1, 
+        MAXSTEPS = 500, 
+        DT = {1e-6}, 
+        ZSTOP=100;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+QUIT;

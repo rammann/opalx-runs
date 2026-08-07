@@ -1,0 +1,165 @@
+/*
+    Pion -> Muon -> Electron decay chain
+    --- diagnostic test for polarization output in .stat / .h5 / Monitor ---
+
+    Three particle containers:
+      c0: PION     -- decays to muon (pi -> mu + nu_mu)
+      c1: MUON     -- daughter of pion; in turn decays to electron (mu -> e + nu_e + nu_mu)
+      c2: ELECTRON -- daughter of muon; stable here
+
+    Lab-frame lifetimes at gamma = 4:
+      tau_pi_lab  ~ 4 * 26 ns   ~ 104 ns
+      tau_mu_lab  ~ 4 * 2197 ns ~ 8800 ns
+
+    Time budget: DT = 5 ns; MAXSTEPS = 2000 -> 10 us total
+      -> ~100 pion lab lifetimes (full pion population decays away within a few hundred ns)
+      -> ~1 muon lab lifetime (~60% of muons decay; spin-dependent angular spectrum
+         in mu -> e + nu nu is exercised on a representative sample of decays).
+
+    Because MBEAM declares POLARIZATION = {0,0,0}, the muon container allocates
+    the per-particle polarization attribute Pol. Pion daughters get full helicity
+    in PionDecay, so the muons that arrive in the muon container carry |Pol| = 1
+    along their rest-frame momentum direction (the {0,0,0} on MBEAM is ignored
+    for daughters from PionDecay -- they're overwritten by the decay sampler).
+
+    What to inspect in the produced files:
+      *.stat (file STATDUMPFREQ=1, one row per step):
+        New columns at the right end of each row when the container tracks spin:
+          mean_polx, mean_poly, mean_polz       -- <P> components
+          mean_pol_mag                          -- |<P>| (depolarization observable)
+          rms_polx, rms_poly, rms_polz          -- per-component RMS
+        Each beam writes its own .stat (pion-muon-electron-decay_c0/c1/c2.stat);
+        only c1 (MUON) will carry meaningful polarization values.
+
+      *.h5 (file PSDUMPFREQ=100, ~20 phase-space snapshots over the run):
+        New per-particle Float64 datasets when the container tracks spin:
+          polx, poly, polz
+        Verify with:   h5ls -r pion-muon-electron-decay_c1.h5
+        Inspect a step:  h5dump -d /Step#10/polx pion-muon-electron-decay_c1.h5
+*/
+
+OPTION, PSDUMPFREQ   = 100;
+OPTION, STATDUMPFREQ = 1;
+OPTION, BOUNDPDESTROY = 0;        // disabled: boundary cull silently kills sparse daughters
+OPTION, VERSION       = 10900;
+
+Title, string="Pion -> Muon -> Electron decay chain";
+
+Value, {OPALVERSION};
+
+// ----------------------------------------------------------------------------
+// Parameters
+
+REAL n_pions           = 10000;
+REAL bunch_charge      = 1.602176634e-15;
+
+REAL gamma_initial = 4;
+
+// ----------------------------------------------------------------------------
+// Beamline: long drift so particles never reach the end
+
+D1: DRIFT, L = 1000000, ELEMEDGE = 0.0;
+myLine: Line = (D1);
+
+// ----------------------------------------------------------------------------
+// Distributions
+
+DistPion: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX    = 1e-3,
+    SIGMAY    = 1e-3,
+    SIGMAZ    = 1e-3,
+    SIGMAPX   = 1e-4,
+    SIGMAPY   = 1e-4,
+    SIGMAPZ   = 1e-4,
+    NPARTDIST = n_pions;
+
+// Empty placeholders for the daughter containers; populated at runtime by decay.
+DistMuon: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX = 1e-3, SIGMAY = 1e-3, SIGMAZ = 1e-3,
+    SIGMAPX = 1e-4, SIGMAPY = 1e-4, SIGMAPZ = 1e-4,
+    NPARTDIST = 0;
+
+DistElectron: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX = 1e-3, SIGMAY = 1e-3, SIGMAZ = 1e-3,
+    SIGMAPX = 1e-4, SIGMAPY = 1e-4, SIGMAPZ = 1e-4,
+    NPARTDIST = 0;
+
+// ----------------------------------------------------------------------------
+// Emission Sources
+
+ES_Pion:     EMISSIONSOURCE, DISTRIBUTION = DistPion;
+ES_Muon:     EMISSIONSOURCE, DISTRIBUTION = DistMuon;
+ES_Electron: EMISSIONSOURCE, DISTRIBUTION = DistElectron;
+
+Sources_Pion:     EMISSIONSOURCELIST = (ES_Pion);
+Sources_Muon:     EMISSIONSOURCELIST = (ES_Muon);
+Sources_Electron: EMISSIONSOURCELIST = (ES_Electron);
+
+// ----------------------------------------------------------------------------
+// Beam Definitions
+
+// Pion beam: decays into muons (DAUGHTERBEAM = MBEAM).
+PBEAM: BEAM,
+    PARTICLE        = PION,
+    GAMMA           = gamma_initial,
+    NALLOC          = n_pions,
+    BCHARGE         = bunch_charge,
+    SOURCES         = Sources_Pion,
+    CHARGE          = -1,
+    GLOBALPROCESSES = {"DECAY"},
+    DAUGHTERBEAM    = "MBEAM";
+
+// Muon beam: receives pion daughters, then itself decays into electrons.
+MBEAM: BEAM,
+    PARTICLE        = MUON,
+    GAMMA           = gamma_initial,
+    NALLOC          = n_pions,
+    BCHARGE         = bunch_charge,
+    SOURCES         = Sources_Muon,
+    CHARGE          = -1,
+    GLOBALPROCESSES = {"DECAY"},
+    POLARIZATION    = {0.0, 0.0, 0.0},
+    DAUGHTERBEAM    = "EBEAM";
+
+// Electron beam: receives muon daughters; stable.
+EBEAM: BEAM,
+    PARTICLE = ELECTRON,
+    GAMMA    = gamma_initial,
+    NALLOC   = n_pions,
+    BCHARGE  = bunch_charge,
+    SOURCES  = Sources_Electron,
+    CHARGE   = -1;
+
+// ----------------------------------------------------------------------------
+// Field Solver (space charge off)
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX     = 2,
+    NY     = 2,
+    NZ     = 2,
+    PARFFTX = true,
+    PARFFTY = true,
+    PARFFTZ = true,
+    BCFFTX = OPEN,
+    BCFFTY = OPEN,
+    BCFFTZ = OPEN,
+    BBOXINCR = 5,
+    GREENSF  = STANDARD;
+
+// ----------------------------------------------------------------------------
+// Tracking
+//
+// DT = 5 ns; MAXSTEPS = 2000 -> 10 us total.
+//   tau_pi_lab  ~ 104 ns   -> ~20 steps per lifetime, full pion population gone in <500 ns
+//   tau_mu_lab  ~ 8800 ns  -> total run covers ~1 muon lifetime (~60% of muons decay)
+// Larger MAXSTEPS (e.g. 10000) covers ~5 muon lifetimes for a fuller cascade.
+
+TRACK, LINE      = myLine,
+       BEAMS     = {PBEAM, MBEAM, EBEAM},
+       MAXSTEPS  = 2000,
+       DT        = {5e-9},
+       ZSTOP     = 1000000;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+QUIT;

@@ -1,0 +1,101 @@
+/*  rbend.in  --  180 degree RBend test
+    Single-bend RBend:  DRIFT -> RBEND (180 deg) -> DRIFT
+    0.1 GeV electron beam, no space charge.
+
+    Track a (nearly) single trajectory through the native OPALX RBend and
+    compare the lab-frame X-Z path to the analytic circular arc (plot_trajectory.py).
+
+    Geometry / physics notes
+    ------------------------
+    - L on an RBEND is the straight BOX (chord) length, not the arc.
+    - Design radius   rho = L / (2 sin(ANGLE/2)),  so k0 = 1/rho = 2 sin(ANGLE/2)/L.
+    - The box field is a uniform vertical dipole gated on the box z:
+          B0 = (P0/c) * k0 / q          (rigidity  B*rho = P0/q)
+      P0 is the GLOBAL reference momentum (set by BEAM, pc=P0); q is the
+      PRIMARY beam's charge. DESIGNENERGY is NOT used for the field.
+    - The reference orbit bends by the design angle ANGLE with radius rho. The
+      arc turns through ANGLE and ends at path length s = Z_IN + rho*ANGLE.
+    - NB: OPALX (opal-t) stores per-particle x/y/z RELATIVE to the reference
+      particle (co-moving frame, local +z along the reference momentum), so the
+      lab orbit is the RefPartR step attribute, not the particle dataset mean.
+    - HGAP = 0 -> hard edge.
+*/
+
+OPTION, PSDUMPFREQ   = 50;     // phase-space -> rbend.h5 every 50 steps
+OPTION, STATDUMPFREQ = 1;
+OPTION, BOUNDPDESTROY = 10;
+Option, VERSION = 10900;
+
+Title, string="RBend 180 deg test";
+
+// ============================================================================
+// Parameters
+// ============================================================================
+
+REAL n_particles       = 200;              // >= 3 required for h5 phase-space output
+REAL beam_bunch_charge = 1.6e-15;          // total bunch charge [C]
+
+REAL Edes  = 0.1;                          // Kinetic energy [GeV]
+REAL gamma = (Edes + EMASS) / EMASS;
+REAL beta  = sqrt(1 - (1 / gamma^2));
+REAL P0    = gamma * beta * EMASS;         // Reference momentum [GeV/c]
+
+REAL bend_angle = 3.141592653589793;       // pi = 180 deg [rad]
+REAL L_BEND     = 1.0;                      // box / chord length [m]
+REAL rho        = L_BEND / (2 * sin(bend_angle / 2));   // design radius [m]
+
+REAL Z_IN   = 1.0;                          // bend entrance path length [m]
+REAL Z_OUT  = Z_IN + L_BEND;                // bend exit path length [m]
+
+value, {P0, rho, L_BEND};
+
+// ============================================================================
+// Elements   (sequential ELEMEDGE placement along the reference path)
+// ============================================================================
+
+D_IN:   DRIFT, L = Z_IN,   ELEMEDGE = 0.0;
+
+BEND:   RBEND, L = L_BEND, ELEMEDGE = Z_IN,
+        ANGLE = bend_angle,
+        HGAP = 0.0,                         // hard edge (half gap)
+        HAPERT = 0.60,                      // horizontal half-aperture [m] (box half-width)
+        DESIGNENERGY = 100.0;               // [MeV] (bookkeeping; inert for the field)
+
+D_OUT:  DRIFT, L = 1.5,    ELEMEDGE = Z_OUT;
+
+BendLine: Line = (D_IN, BEND, D_OUT);
+
+// ============================================================================
+// Beam  (nearly-monoenergetic pencil bunch ~ single trajectory)
+// ============================================================================
+
+Dist: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX  = 1e-5,
+    SIGMAY  = 1e-5,
+    SIGMAZ  = 1e-5,
+    NPARTDIST = n_particles;
+
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX = 16, NY = 16, NZ = 16,
+    PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+    BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+    BBOXINCR = 1, GREENSF = INTEGRATED;
+
+BEAM1: BEAM, PARTICLE = ELECTRON, PC = P0, NALLOC = n_particles,
+       BCHARGE = beam_bunch_charge,
+       SOURCES = mySources, CHARGE = -1;
+
+// ============================================================================
+// Track   (ZSTOP is reference PATH LENGTH, not lab z)
+// ============================================================================
+
+TRACK, LINE = BendLine, BEAM = BEAM1,
+       MAXSTEPS = 100000, DT = 1e-12,
+       ZSTOP = 3.0;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

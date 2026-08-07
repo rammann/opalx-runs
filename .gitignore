@@ -1,0 +1,44 @@
+# OPALX run output -- all regenerable from the deck + the binary
+*.h5
+*.stat
+*.lbal
+*.trackOrbit
+*.log
+timing.dat
+
+# ParaView / VTK export
+*.vtp
+*.vtu
+*.pvd
+paraview/
+
+# OPALX per-run geometry export. OPALX writes a directory literally named
+# `data` next to the deck; the repo's shared-asset dir is also `data`, so the
+# root one is re-added at the bottom of this file.
+data/
+*_DesignPath.dat
+*_ElementPositions.py
+*_ElementPositions.sdds
+*_ElementPositions.txt
+*_3D.opal
+
+# plots
+plots/
+monitor_plots/
+*.png
+*.csv
+
+# python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+.DS_Store
+
+# `*.dat` is deliberately not blanket-ignored: timing.dat and *_DesignPath.dat
+# are covered above by name, while data/beam_WsxOn*.dat is a committed input.
+# `parts.txt` is likewise kept -- the decks will not run without it.
+
+# Re-include the committed assets. MUST BE LAST -- last matching rule wins.
+!/data/
+!/data/**

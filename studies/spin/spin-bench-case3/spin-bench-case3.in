@@ -1,0 +1,188 @@
+/*
+    Spin benchmark Case 3 -- crossed E perp B at the drift velocity
+    -----------------------------------------------------------------
+
+    Goal: validate the OPALX Thomas-BMT integrator in a configuration
+    that exercises the E-field coupling of the BMT angular velocity.
+
+    Setup:
+      - Single mu- with no decay.
+      - Uniform B = +1 T * z_hat (SOLENOID + BF_Uniform_Large.T7, KS=1).
+      - Uniform E = +100 MV/m * y_hat (CONSTANTEFIELDCAVITY, EY=100).
+        Both elements span the same z range so they overlay.
+      - Launch the muon at the drift velocity
+            v_d = (E x B) / B^2 = (E/B) * x_hat
+        i.e. straight along +x at v_d. The net Lorentz force
+            F = q E + q (v x B) = q (E y_hat) + q (v_d x_hat x B z_hat)
+              = q (E y_hat - v_d B y_hat) = q (E - v_d B) y_hat = 0
+        vanishes exactly, so beta and gamma are rigorously constant
+        and the muon travels in a straight line.
+        Omega is therefore constant with contributions from BOTH the
+        (a + 1/gamma) * B term and the (a + 1/(gamma+1)) * (beta x E)/c
+        term -- the case that exercises the E coupling.
+      - Spin initialized along +z_hat (perpendicular to both fields and
+        to the velocity), so the rotation about Omega is maximally visible
+        on Sx and Sy.
+
+    Concrete numerics (stated up-front so the notebook can rebuild Omega):
+      species mass    : m_mu = 0.105658 GeV
+      gyromagnetic    : a_mu = 1.16592061e-3
+      B_z (design)    : 1.0 T  (KS = 1 with BF_Uniform_Large.T7)
+      E_y (design)    : 100 MV/m  -> 1.0e8 V/m
+      drift velocity  : v_d = E/B  = 1.0e8 m/s  -> beta_d = 0.3336
+      drift gamma     : gamma_d   ~ 1.0607
+      drift beta*gam  : bg_d      ~ 0.3540
+      drift distance  : v_d * T_run  =  1.0e8 * 50 ns  =  5.0 m
+                        (fits inside the fieldmap's r = [0, 20] m extent)
+
+    Omega contributions (the notebook will reproduce these from the
+    .h5 EBDUMP outputs):
+      Omega_B   = -(q/m) * (a + 1/gamma_d) * B_z * z_hat
+                  -> magnitude ~ (q/m) * 0.944 * 1 T  =  8.04e8 rad/s
+      Omega_E   = +(q/m) * (a + 1/(gamma_d+1)) * (beta_d * E_y / c) * z_hat
+                  -> magnitude ~ (q/m) * 0.486 * 0.111 T  =  4.74e7 rad/s
+      Omega_z   = -(q/m) * [(a+1/gamma_d) * B_z - (a+1/(gamma_d+1)) * beta_d*E_y/c]
+                  -> the two terms partly cancel; E contribution ~ 5% of B's.
+
+    Run length & resolution:
+      DT       = 0.2 ns  -> ~40 steps per spin precession period (T_s ~ 8 ns)
+      MAXSTEPS = 250     ->  50 ns total  ~  6 spin precession periods
+      STATDUMPFREQ = 1   -> per-step spin trace
+      PSDUMPFREQ = 10    -> 25 h5 snapshots with full field dumps
+      OPTION EBDUMP = TRUE  -> Ex/Ey/Ez/Bx/By/Bz per particle per step.
+*/
+
+OPTION, PSDUMPFREQ    = 10;
+OPTION, STATDUMPFREQ  = 1;
+OPTION, EBDUMP        = TRUE;
+OPTION, BOUNDPDESTROY = 0;
+OPTION, VERSION       = 10900;
+
+Title, string="Spin benchmark Case 3: crossed E perp B at v_drift";
+
+Value, {OPALVERSION};
+
+// ----------------------------------------------------------------------------
+// Parameters
+// ----------------------------------------------------------------------------
+
+REAL n_muons       = 1;
+REAL bunch_charge  = 1.602176634e-19;
+
+// E and B chosen so that v_d = E/B is mildly relativistic but the drift
+// distance over the whole run still fits inside the fieldmap.
+REAL B_design      = 1.0;             // T  (KS = 1 with BF_Uniform_Large.T7)
+REAL E_design      = 100.0;           // MV/m  (EY for CONSTANTEFIELDCAVITY)
+REAL c_mps         = 299792458.0;
+REAL E_Vpm         = E_design * 1.0e6;
+REAL beta_d        = E_Vpm / (c_mps * B_design);              // ~0.3336
+REAL gamma_d       = 1.0 / sqrt(1.0 - beta_d^2);              // ~1.0607
+REAL bg_d          = beta_d * gamma_d;                        // ~0.3540
+
+Value, {B_design, E_design, beta_d, gamma_d, bg_d};
+
+// ----------------------------------------------------------------------------
+// Beamline: SOLENOID and CONSTANTEFIELDCAVITY overlaid (same ELEMEDGE, same L)
+// so the muon sees B_z = 1 T and E_y = 100 MV/m simultaneously throughout.
+// ----------------------------------------------------------------------------
+
+// Both elements span the same short z range over which the test particle's
+// z stays put. The DRIFT D1 just gives the reference particle (moving in +z
+// at v_d) somewhere to be so that MAXSTEPS triggers the stop, not ZSTOP.
+// See Case 2 for the explanation of the relative-path fieldmap location.
+SOL: SOLENOID,
+    L        = 1.0,
+    ELEMEDGE = 0.0,
+    KS       = 1.0,
+    FMAPFN   = "../../../data/BF_Uniform_Large.T7";
+
+ECAV: CONSTANTEFIELDCAVITY,
+    L        = 1.0,
+    ELEMEDGE = 0.0,
+    EX       = 0.0,
+    EY       = 100.0,                                  // E_y = 100 MV/m
+    EZ       = 0.0;
+
+// D1 sized so the reference doesn't run out of beamline during the run
+// (50 ns at gamma_d=1.06, beta=0.334 -> reference covers ~5 m). 20 m is
+// a comfortable margin and keeps the OrbitThreader's pre-tracking walk
+// to a few hundred iterations.
+D1: DRIFT,
+    L        = 20.0,
+    ELEMEDGE = 1.0;
+
+myLine: Line = (SOL, ECAV, D1);
+
+// ----------------------------------------------------------------------------
+// Distribution: exactly one particle, all sigmas zero.
+// ----------------------------------------------------------------------------
+
+DistMuon: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX    = 0.0,
+    SIGMAY    = 0.0,
+    SIGMAZ    = 0.0,
+    SIGMAPX   = 0.0,
+    SIGMAPY   = 0.0,
+    SIGMAPZ   = 0.0,
+    NPARTDIST = n_muons;
+
+// ----------------------------------------------------------------------------
+// Emission source: place the particle at R0Z = 0.5 m and give it momentum
+// exactly at the drift velocity along +x.
+//
+// IMPORTANT: see Case 2 for the rationale behind P0Z = -bg_d (cancel the
+// reference +z that the Gaussian adds) and T0 = 1e-12 (defer emission so
+// the OrbitThreader has a +z reference to thread the beamline with).
+// ----------------------------------------------------------------------------
+
+ES_Muon: EMISSIONSOURCE,
+    DISTRIBUTION = DistMuon,
+    R0X = 0.0,
+    R0Y = 0.0,
+    R0Z = 0.5,
+    P0X = bg_d,                                        // +x component
+    P0Y = 0.0,
+    P0Z = -bg_d,                                       // cancel reference +z
+    T0  = 1e-12;                                       // defer emission
+
+Sources_Muon: EMISSIONSOURCELIST = (ES_Muon);
+
+// ----------------------------------------------------------------------------
+// Muon BEAM: POLARIZATION along +z, perpendicular to both fields and the
+// velocity, so the rotation about Omega (also along z) is maximally
+// visible on Sx and Sy. No GLOBALPROCESSES -> no decay.
+// ----------------------------------------------------------------------------
+
+MBEAM: BEAM,
+    PARTICLE     = MUON,
+    GAMMA        = gamma_d,
+    NALLOC       = n_muons,
+    BCHARGE      = bunch_charge,
+    SOURCES      = Sources_Muon,
+    CHARGE       = -1,
+    POLARIZATION = {0.0, 0.0, 1.0};
+
+// ----------------------------------------------------------------------------
+// No space charge.
+// ----------------------------------------------------------------------------
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX = 2, NY = 2, NZ = 2,
+    PARFFTX = true,  PARFFTY = true,  PARFFTZ = true,
+    BCFFTX  = OPEN,  BCFFTY  = OPEN,  BCFFTZ  = OPEN,
+    BBOXINCR = 5,
+    GREENSF  = STANDARD;
+
+// ----------------------------------------------------------------------------
+// Tracking
+// ----------------------------------------------------------------------------
+
+TRACK, LINE     = myLine,
+       BEAMS    = {MBEAM},
+       MAXSTEPS = 250,
+       DT       = {2e-10},
+       ZSTOP    = 20.0;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+QUIT;
