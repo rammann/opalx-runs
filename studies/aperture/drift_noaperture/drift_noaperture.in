@@ -1,0 +1,59 @@
+/*  drift_noaperture.in -- control case: the same lattice and beam with no aperture.
+
+    Element under test:
+      ELEM: DRIFT, L = 0.1 m, no APERTURE attribute
+    Omitting APERTURE leaves the default half-apertures of 1e6 m, i.e. effectively
+    infinite, so nothing is ever marked.
+
+    This case proves the losses seen in drift_ellipse and drift_rectangle come
+    from the aperture and not from BOUNDPDESTROY, the monitors, or ZSTOP.
+
+      transmission = 1.000000  ->  all 10000 particles survive, exactly.
+
+    A run of this case that loses even one particle invalidates the other cases.
+*/
+
+OPTION, PSDUMPFREQ    = 200;
+OPTION, STATDUMPFREQ  = 5;
+OPTION, BOUNDPDESTROY = 1000000;   // the N-sigma outlier cut must never fire
+Option, VERSION = 10900;
+
+Title, string="drift_noaperture";
+
+REAL Edes  = 0.1;                          // kinetic energy [GeV]
+REAL gamma = (Edes + EMASS) / EMASS;
+REAL beta  = sqrt(1 - (1 / gamma^2));
+REAL P0    = gamma * beta * EMASS;         // GeV/c; also sets the OpalData field reference
+
+D_IN:    DRIFT,   L = 0.5, ELEMEDGE = 0.0;
+MON_IN:  MONITOR, ELEMEDGE = 0.4, DELETEONTRANSVERSEEXIT = FALSE;
+ELEM:    DRIFT,   L = 0.1, ELEMEDGE = 0.5;
+MON_OUT: MONITOR, ELEMEDGE = 0.7, DELETEONTRANSVERSEEXIT = FALSE;
+D_OUT:   DRIFT,   L = 0.5, ELEMEDGE = 0.6;
+
+ApLine: Line = (D_IN, MON_IN, ELEM, MON_OUT, D_OUT);
+
+FS1: Fieldsolver, TYPE = NONE,
+     NX = 16, NY = 16, NZ = 16,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+
+REAL n_particles = 10000;
+REAL PC_beam     = P0;                     // bunch mean momentum, on design
+
+Dist: DISTRIBUTION, TYPE = GAUSS,
+      SIGMAX  = 0.005,  SIGMAPX = 0.0,
+      SIGMAY  = 0.0025, SIGMAPY = 0.0,
+      SIGMAZ  = 0.0005, SIGMAPZ = 0.0,
+      NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+BEAM1: BEAM, PARTICLE = ELECTRON, PC = PC_beam, NALLOC = n_particles,
+       BCHARGE = 1.6e-15, SOURCES = mySources, CHARGE = -1;
+
+TRACK, LINE = ApLine, BEAM = BEAM1,
+       MAXSTEPS = 2000000, DT = 1e-12, ZSTOP = 1;
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

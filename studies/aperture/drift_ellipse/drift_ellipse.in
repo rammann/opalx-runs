@@ -1,0 +1,73 @@
+/*  drift_ellipse.in -- DRIFT with an elliptical aperture, Gaussian beam.
+
+    Element under test:
+      ELEM: DRIFT, L = 0.1 m, APERTURE = "ELLIPSE(0.02, 0.01)"
+    The deck value is the FULL width, so the half-axes are 10 mm (x) and 5 mm (y).
+
+    Beam: sigma_x = 5 mm, sigma_y = 2.5 mm, positions truncated at the GAUSS
+    default 3 sigma (CUTOFFX / CUTOFFY / CUTOFFLONG), zero momentum spread, so
+    x and y are exactly invariant along this field-free line and the beam size
+    at the aperture equals the launched size.
+
+    Half-axes are 2 sigma in both planes, so with (u, v) = (x/sigma_x, y/sigma_y)
+    both truncated normals on [-3, 3], the ellipse u^2 + v^2 < 4 lies entirely
+    inside the sampling box and
+
+      transmission = (1 - exp(-2)) / erf(3/sqrt(2))^2 = 0.869351
+
+      -> 8694 +- 34 of 10000 particles survive.
+
+    Compare with drift_rectangle (same half-widths, 9160 expected): the 466
+    particle gap between the two shapes is ~14 sigma, so a shape mix-up cannot
+    hide in the sampling noise. If the full-width -> half-width halving were
+    dropped, both cases would transmit >= 0.9998.
+*/
+
+OPTION, PSDUMPFREQ    = 200;
+OPTION, STATDUMPFREQ  = 5;
+OPTION, BOUNDPDESTROY = 1000000;   // the N-sigma outlier cut must never fire:
+                                   // the aperture must be the only source of loss
+Option, VERSION = 10900;
+
+Title, string="drift_ellipse";
+
+REAL Edes  = 0.1;                          // kinetic energy [GeV]
+REAL gamma = (Edes + EMASS) / EMASS;
+REAL beta  = sqrt(1 - (1 / gamma^2));
+REAL P0    = gamma * beta * EMASS;         // GeV/c; also sets the OpalData field reference
+
+// The monitors sit 0.1 m clear of the element body so their +-5 mm selection
+// window never overlaps the aperture marking window [0.5, 0.6).
+D_IN:    DRIFT,   L = 0.5, ELEMEDGE = 0.0;
+MON_IN:  MONITOR, ELEMEDGE = 0.4, DELETEONTRANSVERSEEXIT = FALSE;
+ELEM:    DRIFT,   L = 0.1, ELEMEDGE = 0.5,
+         APERTURE = "ELLIPSE(0.02, 0.01)";
+MON_OUT: MONITOR, ELEMEDGE = 0.7, DELETEONTRANSVERSEEXIT = FALSE;
+D_OUT:   DRIFT,   L = 0.5, ELEMEDGE = 0.6;
+
+ApLine: Line = (D_IN, MON_IN, ELEM, MON_OUT, D_OUT);
+
+FS1: Fieldsolver, TYPE = NONE,
+     NX = 16, NY = 16, NZ = 16,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+
+REAL n_particles = 10000;
+REAL PC_beam     = P0;                     // bunch mean momentum, on design
+
+Dist: DISTRIBUTION, TYPE = GAUSS,
+      SIGMAX  = 0.005,  SIGMAPX = 0.0,
+      SIGMAY  = 0.0025, SIGMAPY = 0.0,
+      SIGMAZ  = 0.0005, SIGMAPZ = 0.0,
+      NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+BEAM1: BEAM, PARTICLE = ELECTRON, PC = PC_beam, NALLOC = n_particles,
+       BCHARGE = 1.6e-15, SOURCES = mySources, CHARGE = -1;
+
+TRACK, LINE = ApLine, BEAM = BEAM1,
+       MAXSTEPS = 2000000, DT = 1e-12, ZSTOP = 1;
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;
