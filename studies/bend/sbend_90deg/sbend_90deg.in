@@ -18,8 +18,8 @@
       charge. DESIGNENERGY is NOT used for the field.
     - NB: OPALX (opal-t) stores per-particle x/y/z RELATIVE to the reference
       particle (co-moving frame), so the lab orbit is the RefPartR step attribute.
-    - SBEND rejects APERTURE; use HGAP (half gap, fringe) and HAPERT (radial half-aperture).
-      HGAP = 0 -> hard edge.
+    - HGAP = 0 -> hard edge. HGAP also sets the vertical half-aperture and HAPERT the
+      horizontal one; HAPERT/APERTURE need HGAP > 0, so this deck installs no aperture.
 */
 
 OPTION, PSDUMPFREQ   = 50;     // phase-space -> sbend.h5 every 50 steps
@@ -59,7 +59,6 @@ D_IN:   DRIFT, L = Z_IN,   ELEMEDGE = 0.0;
 BEND:   SBEND, L = L_BEND, ELEMEDGE = Z_IN,
         ANGLE = bend_angle,
         HGAP = 0.0,                         // hard edge (half gap)
-        HAPERT = 0.10,                      // radial half-aperture [m]
         DESIGNENERGY = 100.0;               // [MeV] (bookkeeping; inert for the field)
 
 D_OUT:  DRIFT, L = 1.5,    ELEMEDGE = Z_OUT;

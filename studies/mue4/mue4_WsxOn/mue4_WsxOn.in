@@ -11,7 +11,8 @@
     not placeholders. Realistic beam-pipe apertures match g4bl's geometry:
     drifts circle(0.60) = +/-300 mm (g4bl SECTION tube), quads circle(0.40) =
     +/-200 mm (g4bl QSM_PIPE), solenoid circle(0.44) = +/-220 mm (WSX housing),
-    bends HAPERT = 0.20 m.
+    bends HAPERT = 0.20 m horizontally and HGAP = 0.02 m vertically (the pole gap
+    is the vertical wall, so the dipoles scrape hard in y).
       NOTE 1: any element WITHOUT an explicit APERTURE defaults to a +/-0.5 m
       circle and would scrape there too. So the diagnostic MONITORs are given
       DELETEONTRANSVERSEEXIT=FALSE to record the full beam without scraping.
@@ -41,14 +42,15 @@
       * dipoles    : g4bl `cornerarc`+ASR map -> analytic SBEND (bends frame AND
                      beam). Field from the P0 deck variable + ANGLE. HGAP=0.02 soft
                      Enge fringe (hard edge leaks ~11% of |p|; soft conserves 0.0%).
-                     SBEND rejects APERTURE -> its scraping aperture is the square
-                     HAPERT (set to the beam-pipe half-gap 0.20 m).
+                     HGAP also sets the VERTICAL half-aperture (+/-20 mm); HAPERT
+                     sets the horizontal one (+/-200 mm, the beam-pipe half-width).
       * quads      : g4bl QSM600 map x `current` -> analytic K1 (GL=0.302 T at
                      210 A from tools/g4blmap_quad_gradient.py; K1 = QSM_K1_SCALE*I).
       * collimators: DRIFT + APERTURE, now SCRAPING. rectangle(a,b) is the FULL gap
                      (a x b); stored as half. FS62 (g4bl slit inside dipole 2) is a
-                     horizontal-only momentum slit; SBEND takes no APERTURE, so it is
-                     modelled as a thin scraping drift at the BEND2 exit.
+                     horizontal-only momentum slit. A bend's aperture is constant over
+                     its whole body, so a slit at one s cannot be an SBEND attribute;
+                     it is modelled as a thin scraping drift at the BEND2 exit.
       * monitors   : g4bl `zntuple z=... coordinates=centerline` (phase space before
                      & after each element) -> 20 MONITOR planes at the same path
                      lengths. Each writes mon_NN_*.h5 (full 6D, co-moving frame).
@@ -56,8 +58,9 @@
 
     LIMITS: analytic SBEND/quad fields (no 3D maps); no Geant4 material physics
     (aperture scraping is a hard geometric cut, no scattering/energy loss); no spin
-    tracking; muon decay OFF (add GLOBALPROCESSES={"DECAY"} + a DAUGHTERBEAM). SBEND
-    aperture is square (HAPERT) so the dipole's asymmetric gap is not represented.
+    tracking; muon decay OFF (add GLOBALPROCESSES={"DECAY"} + a DAUGHTERBEAM). The
+    dipole aperture is now rectangular, HAPERT x HGAP, but still constant along the
+    magnet, so the real chamber's s-dependence is not represented.
     Verify SBEND ANGLE signs / quad focusing planes against a g4bl profile run.
 */
 

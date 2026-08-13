@@ -7,6 +7,12 @@
                           beta*gamma = sigma_angle * (P/mc).
       coil+solenoid    -> SOLENOID + on-axis Astra-1D map (peak 0.19 T; make_analytic_solenoid.py).
       idealsectorbend  -> SBEND (ANGLE = g4bl angle 20/-17/17 deg; L=R*|angle|; field from P0).
+                          NOTE: this is the deliberately OPEN variant -- every aperture is
+                          widened to 20 m so nothing scrapes. The bends are the exception:
+                          HAPERT = 5.0 opens them horizontally, but HGAP = 0.02 is the half
+                          pole gap and now also sets the vertical half-aperture, so they
+                          still cut at +/-20 mm in y. HGAP cannot be widened without
+                          changing the Enge fringe, i.e. the field the deck validates.
       genericquad      -> QUADRUPOLE, K1 = current*8.188865 (same calibration as the field-map deck).
       FS collimators   -> DRIFT + rectangle aperture (V/H split at their real z), SCRAPING.
       Stop_SECTION     -> DRIFT + circle(0.60) (+/-300 mm bore beam stops).

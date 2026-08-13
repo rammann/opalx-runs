@@ -1,0 +1,81 @@
+/*  sbend_gap.in -- SBEND scraping on HGAP (vertical) and HAPERT (horizontal).
+
+    Element under test:
+      ELEM: SBEND, L = 0.1 m, ANGLE = 0, HGAP = 0.005, HAPERT = 0.010
+    HGAP is the half pole gap and sets the VERTICAL half-aperture (5 mm). HAPERT is
+    the half-aperture in the bend plane and sets the HORIZONTAL one (10 mm). Both are
+    half-widths, unlike the APERTURE string, whose arguments are full widths.
+
+    ANGLE = 0 on purpose: the bend then carries no field, so this deck measures the
+    aperture and nothing else. x and y are exactly invariant along the line and the
+    beam size at the aperture equals the launched size. (HGAP > 0 still switches on the
+    Enge fringe profile, but it scales a zero field, and the edge-focusing kick needs a
+    non-zero curvature, so neither moves a particle here.)
+
+    Beam: sigma_x = 5 mm, sigma_y = 2.5 mm, positions truncated at the GAUSS default
+    3 sigma (CUTOFFX / CUTOFFY / CUTOFFLONG), zero momentum spread.
+
+    Both half-apertures are 2 sigma in their own plane, and a rectangle is separable:
+
+      transmission = ( erf(2/sqrt(2)) / erf(3/sqrt(2)) )^2 = 0.916009
+
+      -> 9160 +- 28 of 10000 particles survive.
+
+    The two failure modes this separates:
+      - 9571 means the vertical cut came from HAPERT (the old square aperture), i.e.
+        y was cut at 10 mm = 4 sigma, outside the 3 sigma truncation, so not at all.
+        The 411 particle gap is ~15 sigma of the sampling noise.
+      - 10000 means no aperture was installed on the bend at all.
+
+    Compare with drift_rectangle, which reaches the same 0.916009 through
+    APERTURE = "RECTANGLE(0.02, 0.01)" on a DRIFT.
+*/
+
+OPTION, PSDUMPFREQ    = 200;
+OPTION, STATDUMPFREQ  = 5;
+OPTION, BOUNDPDESTROY = 1000000;   // the N-sigma outlier cut must never fire:
+                                   // the aperture must be the only source of loss
+Option, VERSION = 10900;
+
+Title, string="sbend_gap";
+
+REAL Edes  = 0.1;                          // kinetic energy [GeV]
+REAL gamma = (Edes + EMASS) / EMASS;
+REAL beta  = sqrt(1 - (1 / gamma^2));
+REAL P0    = gamma * beta * EMASS;         // GeV/c; also sets the OpalData field reference
+
+// The monitors sit 0.1 m clear of the element body so their +-5 mm selection
+// window never overlaps the aperture marking window [0.5, 0.6).
+D_IN:    DRIFT,   L = 0.5, ELEMEDGE = 0.0;
+MON_IN:  MONITOR, ELEMEDGE = 0.4, DELETEONTRANSVERSEEXIT = FALSE;
+ELEM:    SBEND,   L = 0.1, ELEMEDGE = 0.5,
+         ANGLE = 0.0, HGAP = 0.005, HAPERT = 0.010;
+MON_OUT: MONITOR, ELEMEDGE = 0.7, DELETEONTRANSVERSEEXIT = FALSE;
+D_OUT:   DRIFT,   L = 0.5, ELEMEDGE = 0.6;
+
+ApLine: Line = (D_IN, MON_IN, ELEM, MON_OUT, D_OUT);
+
+FS1: Fieldsolver, TYPE = NONE,
+     NX = 16, NY = 16, NZ = 16,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+
+REAL n_particles = 10000;
+REAL PC_beam     = P0;                     // bunch mean momentum, on design
+
+Dist: DISTRIBUTION, TYPE = GAUSS,
+      SIGMAX  = 0.005,  SIGMAPX = 0.0,
+      SIGMAY  = 0.0025, SIGMAPY = 0.0,
+      SIGMAZ  = 0.0005, SIGMAPZ = 0.0,
+      NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+BEAM1: BEAM, PARTICLE = ELECTRON, PC = PC_beam, NALLOC = n_particles,
+       BCHARGE = 1.6e-15, SOURCES = mySources, CHARGE = -1;
+
+TRACK, LINE = ApLine, BEAM = BEAM1,
+       MAXSTEPS = 2000000, DT = 1e-12, ZSTOP = 1;
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

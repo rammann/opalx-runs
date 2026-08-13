@@ -15,7 +15,8 @@
     - ELEMEDGE places each element sequentially along the (folding) reference path.
       Bends chain cleanly (no spurious inter-bend gap), so the line has its nominal
       length and the chicane closes at ZSTOP = 6.5.
-    - HGAP = 0 hard edge; HAPERT = radial half-aperture.
+    - HGAP = 0 -> hard edge. HGAP also sets the vertical half-aperture and HAPERT the
+      horizontal one; HAPERT/APERTURE need HGAP > 0, so this deck installs no aperture.
     - ZSTOP is reference PATH LENGTH.
 */
 
@@ -52,13 +53,13 @@ value, {P0, rho, THETA};
 // ============================================================================
 
 D_IN:  DRIFT, L = Lin,  ELEMEDGE = 0.0;
-B1:    SBEND, L = LB, ANGLE =  THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 0.5;
+B1:    SBEND, L = LB, ANGLE =  THETA, HGAP = 0.0, ELEMEDGE = 0.5;
 D1:    DRIFT, L = Ld,   ELEMEDGE = 1.0;
-B2:    SBEND, L = LB, ANGLE = -THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 2.0;
+B2:    SBEND, L = LB, ANGLE = -THETA, HGAP = 0.0, ELEMEDGE = 2.0;
 D2:    DRIFT, L = Ld,   ELEMEDGE = 2.5;
-B3:    SBEND, L = LB, ANGLE = -THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 3.5;
+B3:    SBEND, L = LB, ANGLE = -THETA, HGAP = 0.0, ELEMEDGE = 3.5;
 D3:    DRIFT, L = Ld,   ELEMEDGE = 4.0;
-B4:    SBEND, L = LB, ANGLE =  THETA, HGAP = 0.0, HAPERT = 0.10, ELEMEDGE = 5.0;
+B4:    SBEND, L = LB, ANGLE =  THETA, HGAP = 0.0, ELEMEDGE = 5.0;
 D_OUT: DRIFT, L = Lout, ELEMEDGE = 5.5;
 
 ChicaneLine: Line = (D_IN, B1, D1, B2, D2, B3, D3, B4, D_OUT);
