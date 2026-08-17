@@ -1,0 +1,58 @@
+/*  repro_drift.in -- minimal reproducer: a restart resumes in the wrong step-size segment.
+
+    One 20 m drift, 1000 electrons, no field solver, no field maps, no input particle
+    file, no monitors. Runs in about two seconds.
+
+    The only thing that matters is the TRACK block: a TWO-SEGMENT schedule where segment 0
+    ends on its ZSTOP (5 m, ~834 steps) while its MAXSTEPS is a generous 100000. That is
+    how decks are normally written, and it is what the restart resume-point mapping gets
+    wrong -- StepSizeConfig::advanceToGlobalStep derives the segment by subtracting each
+    segment's MAXSTEPS, so the checkpoint at global step 3000 is placed back in segment 0.
+
+    Expected: the restart continues from s = 20 m... it is already there, so it should stop
+    immediately, leaving the .stat at its original 3339 rows.
+    Actual:   it resumes in segment 0, exits 0, and tracks to s ~ 600 m over 100000 steps.
+
+    Set DT = {2e-11, 4e-11} instead and the restart aborts with "restart input changes the
+    time-step schedule at the checkpointed global step" -- same wrong mapping, but the dT
+    guard catches it because the wrong segment carries a different dT.
+*/
+
+OPTION, PSDUMPFREQ     = 100;
+OPTION, STATDUMPFREQ   = 1;
+OPTION, CHECKPOINTFREQ = 500;
+OPTION, VERSION        = 10900;
+
+Title, string="minimal drift -- checkpoint restart resumes in the wrong segment";
+
+REAL P0 = 0.050;     // [GeV/c]  electrons, beta ~ 1
+REAL NP = 1000;
+
+D1: DRIFT, L = 20.0, ELEMEDGE = 0.0, APERTURE = "circle(2.0)";
+
+dline: Line = (D1);
+
+Dist1: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX = 0.002, SIGMAY = 0.002, SIGMAZ = 0.001,
+    SIGMAPX = 0.05, SIGMAPY = 0.05, SIGMAPZ = 0.01,
+    NPARTDIST = NP;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+FS1: FIELDSOLVER, TYPE = NONE,
+    NX = 16, NY = 16, NZ = 16,
+    PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+    BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+    BBOXINCR = 1, GREENSF = INTEGRATED;
+
+BEAM1: BEAM, PARTICLE = ELECTRON, pc = P0, NALLOC = NP,
+       BCHARGE = 1e-15, SOURCES = mySources, CHARGE = -1;
+
+// Segment 0 ends on ZSTOP = 5 m after ~834 steps, nowhere near its MAXSTEPS.
+TRACK, LINE = dline, BEAM = BEAM1,
+       MAXSTEPS = {100000, 100000},
+       DT       = {2e-11, 2e-11},
+       ZSTOP    = {5.0, 20.0};
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

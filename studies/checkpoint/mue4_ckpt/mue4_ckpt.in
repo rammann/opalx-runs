@@ -19,6 +19,11 @@
     The deck also satisfies the restart preconditions in TrackRun.cpp: non-emitting
     distribution, no T0, not EMITTEDFROMFILE, no GLOBALPROCESSES (DECAY is off).
 
+    The bends carry no DESIGNENERGY, unlike the mue4_WsxOn deck this came from: since
+    PR #520 OpalSBend::update throws on it. It was a no-op before that (setDesignEnergy
+    was commented out), so dropping it changes nothing -- the bend field still comes
+    from the P0 deck variable and ANGLE.
+
     Usage (see ../README.md and ../run_checkpoint_test.sh):
       mpirun -n 1 opalx mue4_ckpt.in --info 2
       mpirun -n 1 opalx mue4_ckpt.in --restart mue4_ckpt_checkpoint.h5 --info 2
@@ -70,9 +75,9 @@ SOL   : SOLENOID, L = 2.7850, ELEMEDGE = 0.00000,
         FMAPFN = "../../../data/wsx_solenoid_1D.map", KS = 1.0, APERTURE = "circle(0.44)";
 
 // Sector dipoles (ASR61 / ASR62). Field from P0 + ANGLE; HAPERT = pipe half-gap (scrapes).
-BEND1 : SBEND, L = 0.8091, ELEMEDGE =  2.57800, ANGLE = +0.69813, HGAP = 0.02, HAPERT = 0.20, DESIGNENERGY = Edes*1000; // +40 deg
-BEND2 : SBEND, L = 0.7238, ELEMEDGE =  7.14246, ANGLE = -0.59341, HGAP = 0.02, HAPERT = 0.20, DESIGNENERGY = Edes*1000; // -34 deg
-BEND3 : SBEND, L = 0.7238, ELEMEDGE = 11.67044, ANGLE = +0.59341, HGAP = 0.02, HAPERT = 0.20, DESIGNENERGY = Edes*1000; // +34 deg
+BEND1 : SBEND, L = 0.8091, ELEMEDGE =  2.57800, ANGLE = +0.69813, HGAP = 0.02, HAPERT = 0.20; // +40 deg
+BEND2 : SBEND, L = 0.7238, ELEMEDGE =  7.14246, ANGLE = -0.59341, HGAP = 0.02, HAPERT = 0.20; // -34 deg
+BEND3 : SBEND, L = 0.7238, ELEMEDGE = 11.67044, ANGLE = +0.59341, HGAP = 0.02, HAPERT = 0.20; // +34 deg
 
 // Quadrupoles (12 x QSM600). K1 from the calibration above; +/-200 mm pipe.
 Q1  : QUADRUPOLE, L = L_QUAD, ELEMEDGE =  4.53789, K1 = QSM_K1_SCALE * I_Q1,  APERTURE = "circle(0.40)";
