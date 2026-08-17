@@ -1,0 +1,26 @@
+# Run output -- all regenerable from the two input files + the binaries.
+*.h5
+*.stat
+*.lbal
+*.trackOrbit
+*.log
+*.root
+timing.dat
+data/
+*_DesignPath.dat
+*_ElementPositions.*
+*_3D.opal
+
+# G4BL ntuple output (Z<plane>.txt) and field dumps
+Z[0-9]*.txt
+g4bl_axis.txt
+g4bl_hist*
+
+# Particle files -- written by the first cell of compare.ipynb, not hand-edited
+parts.txt
+beam.txt
+
+*.png
+.ipynb_checkpoints/
+__pycache__/
+.DS_Store

@@ -1,0 +1,56 @@
+# wsx_solenoid.g4bl -- muE4 WSX solenoid, ISOLATED, for comparison against OPALX.
+#
+# The same 13 particles (beam.txt, written by compare.ipynb) go through the same
+# field map here and in wsx_solenoid.in, and the two outputs are compared
+# particle by particle.
+#
+# Nothing but the solenoid field can cause a difference: vacuum world, no iron
+# housing, no decay, no stochastic processes.
+#
+# FRAME: z here [mm] / 1000 == path length s in wsx_solenoid.in [m], exactly.
+#   The map's own z runs -1500..+1500 mm, so placing it at z=1800 puts the field
+#   at z = 300..3300 mm.  OPALX gets ELEMEDGE = 1.800 (which is where the map's
+#   z=0 lands, i.e. the map CENTRE, not the field start) and sees the same span.
+#
+# Run from this directory:
+#   source /Users/rammann/Code/G4BL/G4beamline-3.08.app/Contents/root/bin/thisroot.sh
+#   g4bl wsx_solenoid.g4bl
+
+physics QGSP_BERT disable=Decay doStochastics=0
+
+param worldMaterial=Vacuum
+
+# Tracking accuracy. NOTE the capital S in maxStep -- `maxstep` is a different,
+# unused parameter (mue4_WsxOn.g4bl writes the lowercase one, so it is running
+# on the 100 mm default).
+param maxStep=1.0 deltaChord=0.01
+
+# `start` must come before every `place` -- it aborts with "Invalid start" if a
+# centerline segment already exists.
+start x=0 y=0 z=0 initialZ=0 radiusCut=550
+reference particle=mu+ referenceMomentum=28
+trackcuts keep=mu+ killSecondaries=1
+
+# The shared particle set. renumber=0 (the default) means EventID is taken from
+# the file, so EventID == OPALX id + 1.  Do NOT set beamZ: it forces z=0 on
+# every particle and would wipe out the longitudinal offsets.
+beam ascii filename=beam.txt
+
+# `fieldmap` places no physical volume, so nothing would expand the world and
+# every track would leave immediately. This vacuum pipe is the world envelope.
+tubs WORLDPIPE innerRadius=0 outerRadius=600 length=4200 material=Vacuum
+place WORLDPIPE z=1800
+
+# The element under test.
+fieldmap MAG file=../../../../g4bl-files/muE4/maps/wsx_total.g4blmap current=1.
+place MAG z=1800 rotation=Y180
+
+# Recording planes, both in field-free drift 150 mm outside the map.
+# zntuple interpolates each track linearly onto the exact plane -- the same
+# construction an OPALX MONITOR uses.  format=ascii writes a #BLTrackFile, so
+# the comparison needs no ROOT.  Files are named after the plane: Z150.txt,
+# Z3450.txt.  There is no `corner` in this file, so centerline == global.
+zntuple z=150,3450 format=ascii coordinates=centerline
+
+# On-axis field, no tracking involved -- the field-import check.
+fieldntuple AXIS format=ascii filename=g4bl_axis.txt x=0 y=0 z=250,3350,1 t=0
