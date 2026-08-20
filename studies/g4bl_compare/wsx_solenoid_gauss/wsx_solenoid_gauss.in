@@ -26,7 +26,7 @@ OPTION, STATDUMPFREQ  = 1;        // Bz_ref every step -> the on-axis field chec
 OPTION, BOUNDPDESTROY = 1000000;  // never trip the statistical loss box
 OPTION, VERSION       = 10900;
 
-Title, string="g4bl_compare / wsx_solenoid";
+Title, string="g4bl_compare / wsx_solenoid_gauss";
 
 // ============================================================================
 // Reference particle
@@ -58,11 +58,18 @@ SOL     : SOLENOID, L = 1.500, ELEMEDGE = Z_CENTRE,
                                             //   with the wrong sign instead of at s = 1.450 m.
 D_OUT   : DRIFT, L = 0.300, ELEMEDGE = 3.300;
 
-MON_IN  : MONITOR, ELEMEDGE = 0.150, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_IN";
-MON_OUT : MONITOR, ELEMEDGE = 3.450, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_OUT";
+MON_01 : MONITOR, ELEMEDGE = 0.150, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_01_Z150";
+MON_02 : MONITOR, ELEMEDGE = 0.600, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_02_Z600";
+MON_03 : MONITOR, ELEMEDGE = 1.050, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_03_Z1050";
+MON_04 : MONITOR, ELEMEDGE = 1.500, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_04_Z1500";
+MON_05 : MONITOR, ELEMEDGE = 1.950, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_05_Z1950";
+MON_06 : MONITOR, ELEMEDGE = 2.400, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_06_Z2400";
+MON_07 : MONITOR, ELEMEDGE = 2.850, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_07_Z2850";
+MON_08 : MONITOR, ELEMEDGE = 3.450, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_08_Z3450";
 
 // LINE must be listed in increasing ELEMEDGE or later elements are silently dropped.
-SolLine : LINE = (D_IN, MON_IN, SOL, D_OUT, MON_OUT);
+SolLine : LINE = (D_IN, MON_01, MON_02, MON_03, MON_04, SOL,
+                  MON_05, MON_06, MON_07, D_OUT, MON_08);
 
 // ============================================================================
 // Field solver -- space charge OFF (g4bl has no collective effects here)
@@ -76,7 +83,7 @@ FS1: FIELDSOLVER, TYPE = NONE,
 // ============================================================================
 // Beam -- the shared 13-particle set
 // ============================================================================
-REAL n_particles = 13;
+REAL n_particles = 15000;
 
 Dist1: DISTRIBUTION, TYPE = FROMFILE, FNAME = "parts.txt", NPARTDIST = n_particles;
 ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;   // EMISSIONMODEL must stay NONE for FROMFILE
