@@ -1,0 +1,104 @@
+/*  square_ring.in  --  closed ring, multiple passes through the same elements
+    4 x 90 deg SBENDs (arc length 1 m) alternating with 4 x 1 m drifts.
+    Circumference 8 m. 0.1 GeV electron pencil bunch, no space charge.
+
+    Purpose: exercise multi-pass tracking. ZSTOP is far beyond the tracked path,
+    so MAXSTEPS alone sets the number of turns (~3 here).
+
+    Checks after the run:
+    - stdout: IndexMap printout repeats the element names at increasing path length,
+      and one "ring detected" line appears when the element position file is written.
+    - data/square_ring_DesignPath.dat: the lab-frame x-z path traces the square
+      ~3 times (plot_trajectory.py, which also prints the turn-to-turn closure offset).
+    - data/square_ring_ElementPositions.sdds contains the first turn only.
+    (data/square_ring_ElementPositions.py, the 3D element mesh, is currently not
+    valid Python for ANY input — pre-existing writer bug, see ../README.md.)
+
+    Known feature: with hard-edge bends the integrated orbit does not close exactly,
+    so it drifts off the geometric ring a little every turn. Closed-orbit finding is
+    future work.
+
+    The drifts carry an explicit APERTURE. Without one, the default transverse bound
+    is 1e6 m, and in a ring the drift on the OPPOSITE side then also claims the
+    particle position (its local z window matches, the transverse offset of ~2.3 m is
+    far below 1e6 m). That is harmless for tracking (drifts contribute no field) but
+    puts wrong elements into the element sets, so the ring detection fires half a
+    turn early and the element position file gets cut there.
+*/
+
+OPTION, PSDUMPFREQ   = 100;
+OPTION, STATDUMPFREQ = 100;
+OPTION, BOUNDPDESTROY = 10;
+Option, VERSION = 10900;
+
+Title, string="Square ring multi-pass test";
+
+// ============================================================================
+// Parameters
+// ============================================================================
+
+REAL n_particles       = 10000;              // >= 3 required for h5 phase-space output
+REAL beam_bunch_charge = 1.6e-15;          // total bunch charge [C]
+
+REAL Edes  = 0.1;                          // Kinetic energy [GeV]
+REAL gamma = (Edes + EMASS) / EMASS;
+REAL beta  = sqrt(1 - (1 / gamma^2));
+REAL P0    = gamma * beta * EMASS;         // Reference momentum [GeV/c]
+
+REAL bend_angle = PI / 2;                  // 90 deg [rad]
+REAL L_BEND     = 1.0;                     // ARC length [m] -> rho = L/ANGLE = 2/pi
+REAL L_DRIFT    = 1.0;                     // straight section [m]
+REAL C_RING     = 4 * (L_BEND + L_DRIFT);  // circumference [m]
+
+value, {P0, C_RING};
+
+// ============================================================================
+// Elements   (sequential ELEMEDGE placement; bend angles sum to 2 pi)
+// ============================================================================
+
+D1: DRIFT, L = L_DRIFT, ELEMEDGE = 0.0, APERTURE = "ELLIPSE(0.1, 0.1)";
+B1: SBEND, L = L_BEND,  ELEMEDGE = 1.0, ANGLE = bend_angle, HGAP = 0.0;
+D2: DRIFT, L = L_DRIFT, ELEMEDGE = 2.0, APERTURE = "ELLIPSE(0.1, 0.1)";
+B2: SBEND, L = L_BEND,  ELEMEDGE = 3.0, ANGLE = bend_angle, HGAP = 0.0;
+D3: DRIFT, L = L_DRIFT, ELEMEDGE = 4.0, APERTURE = "ELLIPSE(0.1, 0.1)";
+B3: SBEND, L = L_BEND,  ELEMEDGE = 5.0, ANGLE = bend_angle, HGAP = 0.0;
+D4: DRIFT, L = L_DRIFT, ELEMEDGE = 6.0, APERTURE = "ELLIPSE(0.1, 0.1)";
+B4: SBEND, L = L_BEND,  ELEMEDGE = 7.0, ANGLE = bend_angle, HGAP = 0.0;
+
+SquareRing: Line = (D1, B1, D2, B2, D3, B3, D4, B4);
+
+// ============================================================================
+// Beam  (nearly-monoenergetic pencil bunch ~ single trajectory)
+// ============================================================================
+
+Dist: DISTRIBUTION, TYPE = GAUSS,
+    SIGMAX  = 1e-3,
+    SIGMAY  = 1e-3,
+    SIGMAZ  = 1e-3,
+    NPARTDIST = n_particles;
+
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+FS1: Fieldsolver, TYPE = NONE,
+    NX = 16, NY = 16, NZ = 16,
+    PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+    BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+    BBOXINCR = 1, GREENSF = INTEGRATED;
+
+BEAM1: BEAM, PARTICLE = ELECTRON, PC = P0, NALLOC = n_particles,
+       BCHARGE = beam_bunch_charge,
+       SOURCES = mySources, CHARGE = -1;
+
+// ============================================================================
+// Track   (~3 turns: step length ~ c*DT ~ 0.3 mm, ~26.7k steps per turn;
+//          ZSTOP is far beyond 3 * C_RING, so MAXSTEPS sets the number of turns)
+// ============================================================================
+
+TRACK, LINE = SquareRing, BEAM = BEAM1,
+       MAXSTEPS = 80000, DT = 1e-12,
+       ZSTOP = 1000.0;
+
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;
