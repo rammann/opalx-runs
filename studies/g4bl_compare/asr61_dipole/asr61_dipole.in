@@ -1,0 +1,114 @@
+/*  asr61_dipole.in -- muE4 ASR61 dipole, ISOLATED, for comparison against G4BL.
+
+    Paired with asr61_dipole.g4bl. The same 13 muons (parts.txt / beam.txt, both
+    written by make_parts.py) go through the same G4beamline `grid` field map in
+    both codes. No space charge, no scraping, no decay -- only the dipole field
+    can cause a difference.
+
+    This is the first deck that feeds a G4beamline 3D `grid` map to a bend.
+    asr61_300d_track.g4blmap is x = -200..390 mm, y = -120..120 mm,
+    z = -1380..1380 mm on a 10 x 10 x 5 mm grid, absolute Tesla.
+
+    FRAME: s here [m] * 1000 == global z in asr61_dipole.g4bl [mm], exactly.
+      OPALX places a map as z_lab = ELEMEDGE + z_map, so ELEMEDGE is the lab
+      position of the map's own z = 0 -- for this map its CENTRE, not the field
+      start. ELEMEDGE = 1.500 therefore puts the field at s = 0.120..2.880 m,
+      matching g4bl's `place MAG z=1500`.
+
+    ANGLE = 0 on purpose. With FMAPFN the map makes the field and ANGLE only
+    places the elements downstream, so a straight geometry keeps the element's
+    local frame identical to the lab frame and the comparison against g4bl's
+    global frame is one to one. A deck that continues past the dipole would give
+    ANGLE its real value so the downstream elements land on the bent orbit.
+
+    The beam bends towards +x, which is why the map box reaches to +390 mm on
+    that side and only -200 mm on the other.
+
+    Run from this directory (FMAPFN and FNAME resolve against the working dir):
+      python3 make_parts.py
+      mpirun -n 1 <opalx> asr61_dipole.in --info 1 > run.log 2>&1
+    One rank only -- particle-to-row identity across ranks is not guaranteed.
+*/
+
+OPTION, PSDUMPFREQ    = 100000;   // the monitors carry the physics; skip phase-space dumps
+OPTION, STATDUMPFREQ  = 1;        // reference orbit every step -> the field check
+OPTION, BOUNDPDESTROY = 1000000;  // never trip the statistical loss box
+OPTION, VERSION       = 10900;
+
+Title, string="g4bl_compare / asr61_dipole";
+
+// ============================================================================
+// Reference particle
+// ============================================================================
+REAL MUON_MASS = 0.1056583755;              // GeV
+REAL P0        = 0.028;                     // GeV/c -- g4bl `referenceMomentum=28`.
+                                            //   FROMFILE forbids PC on BEAM; the field
+                                            //   reference comes from this variable.
+REAL BG0       = P0 / MUON_MASS;            // beta*gamma = 0.2650050
+REAL BRHO      = P0 / 0.299792458;          // 0.093398 T*m
+
+value, {P0, BG0, BRHO};
+
+// ============================================================================
+// Lattice
+// ============================================================================
+REAL Z_CENTRE = 1.500;                      // lab s of the map's z = 0 = g4bl place z
+REAL Z_STOP   = 4.000;   // path length, not z: the orbit turns, so s runs ahead of z
+
+D_IN    : DRIFT, L = 0.120, ELEMEDGE = 0.000;
+
+// L is nominal: the field extent comes entirely from the map, and with a map
+// loaded SBend::isInside and the aperture window both use the map's own box.
+// FMAPSCALE is a plain multiplier on the tabulated Tesla, i.e. exactly g4bl's
+// deck-side current=. The G4beamline readers do not normalize, so 1.0 would
+// reproduce a bare `fieldmap ...` placement.
+ASR61   : SBEND, L = 2.760, ANGLE = 0.0, ELEMEDGE = Z_CENTRE,
+          FMAPFN = "../../../../g4bl-files/muE4/maps/asr61_300d_track.g4blmap",
+          FMAPSCALE = -9.9528E-01;
+
+D_OUT   : DRIFT, L = 0.120, ELEMEDGE = 2.880;
+
+MON_IN  : MONITOR, ELEMEDGE = 0.050, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_IN";
+MON_OUT : MONITOR, ELEMEDGE = 2.950, DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_OUT";
+
+// LINE must be listed in increasing ELEMEDGE or later elements are silently dropped.
+BendLine : LINE = (D_IN, MON_IN, ASR61, D_OUT, MON_OUT);
+
+// ============================================================================
+// Field solver -- space charge OFF (g4bl has no collective effects here)
+// ============================================================================
+FS1: FIELDSOLVER, TYPE = NONE,
+     NX = 16, NY = 16, NZ = 16,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,   // required even for TYPE = NONE
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+
+// ============================================================================
+// Beam -- the shared 13-particle set
+// ============================================================================
+REAL n_particles = 13;
+
+Dist1: DISTRIBUTION, TYPE = FROMFILE, FNAME = "parts.txt", NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;   // EMISSIONMODEL must stay NONE for FROMFILE
+mySources: EMISSIONSOURCELIST = (ES1);
+
+// CHARGE = 1 is mandatory: ParticleProperties maps MUON -> -1, and Beam::execute
+// only fills CHARGE from that table when the attribute is absent. A charge sign
+// error is indistinguishable from a map orientation error downstream, so check
+// run.log for "CHARGE      +e * 1".
+BEAM1: BEAM, PARTICLE = MUON, NALLOC = n_particles,
+       BCHARGE = 1e-15, SOURCES = mySources, CHARGE = 1;
+
+// ============================================================================
+// Tracking
+// ============================================================================
+// beta = 0.2562, beta*c = 76.8 mm/ns, so DT = 1e-11 s is 0.77 mm/step:
+// ~6 steps per 5 mm map cell in z and ~340 steps per cyclotron period at the
+// 0.086 T peak. ~5200 steps over the 4.0 m of path length.
+TRACK, LINE = BendLine, BEAM = BEAM1,
+       MAXSTEPS = 200000,
+       DT = {1e-11},
+       ZSTOP = Z_STOP;
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

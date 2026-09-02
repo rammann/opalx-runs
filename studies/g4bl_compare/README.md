@@ -18,8 +18,18 @@ g4bl_compare/
     wsx_solenoid_gauss.g4bl
     wsx_solenoid_gauss.in
     compare_gauss.ipynb
+  asr61_dipole/              13 test particles -> per-particle diff, SBEND + 3D grid map
+    asr61_dipole.g4bl
+    asr61_dipole.in
+    make_parts.py
+    compare.py
   toy_transfer_matrix.py     how the finite-difference transfer matrix works
 ```
+
+`asr61_dipole/` is the bend case: an SBEND taking its field from a G4beamline 3D
+`grid` map instead of from ANGLE. It has its own README; the short version is that
+the on-axis field agrees to 5e-8 T, i.e. exactly, and the exit positions after a
+41 degree bend to 50 um out of 1.24 m.
 
 Two ways of looking at the same solenoid. `wsx_solenoid/` is the strict one: few
 particles, compared one by one, plus a 6x6 transfer matrix. `wsx_solenoid_gauss/` is
