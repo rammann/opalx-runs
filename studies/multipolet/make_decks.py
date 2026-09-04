@@ -1,0 +1,457 @@
+#!/usr/bin/env python
+"""make_decks.py -- generate the OPALX input decks for the MULTIPOLET bend study.
+
+Adapted from runs/bendtest/validation/make_decks.py. The element under test is
+MULTIPOLET with ANGLE != 0 (class MultipoleTCurvedConstRadius): a sector magnet
+whose mid-plane field is T(x)*S(s), T(x) = TP[0] + TP[1]*x + ..., S(s) the tanh
+fringe (LFRINGE / RFRINGE). SBEND decks with the Enge fringe are generated next
+to it as the reference bend.
+
+Writes one directory per case, <name>/<name>.in (+ parts.txt for the map cases,
++ README.md), and a cases.json manifest read by bendlib.py / run_tests.py.
+
+Two kinds of case:
+
+* map   -- FROMFILE distribution of 13 particles: one reference particle at the
+           design momentum plus symmetric +/- steps in each of the six phase-space
+           coordinates. Their tracking gives the 6x6 transfer map by centered
+           finite differences (tests 1-4, 6, 7, 11; supplies M for the bunch tests).
+* bunch -- GAUSS bunch with a prescribed covariance / mean (tests 5, 8, 9, 10).
+
+MULTIPOLET conventions on this build (the rewritten element):
+  * TP[0] is the mid-plane dipole field in tesla, sign included. The body is a
+    sector bend with the centre of curvature on the -x side, exactly like SBEND,
+    so a positive ANGLE turns the orbit towards -x. That needs TP[0] < 0 for a
+    negative charge and TP[0] > 0 for a positive one, which is the same physical
+    field SBEND builds internally from ANGLE, P0 and the charge.
+  * HAPERT and VAPERT are the full width and height of a rectangular aperture
+    and become the element's aperture, so particles outside it are scraped.
+    They are alternatives to the generic APERTURE string.
+  * LFRINGE = RFRINGE = 0 is a hard edge, like HGAP = 0 on an SBEND.
+
+Deck rules that also hold for the SBEND decks (do not "fix"):
+  * FROMFILE forbids PC/ENERGY/GAMMA on BEAM; the field reference momentum comes
+    from the REAL P0 deck variable.
+  * The field solver requires PARFFTX = PARFFTY = PARFFTZ = TRUE.
+  * SBEND HGAP > 0 = Enge fringe (and needed for HAPERT); 0 = hard edge.
+
+Run with the conda python (numpy): see run_all.sh.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+
+# ---- physics constants (match the OPALX parser) ---------------------------
+EMASS = 0.51099895e-3           # electron rest energy [GeV]
+EDES = 0.1                      # design kinetic energy [GeV]
+GAMMA = (EDES + EMASS) / EMASS
+BETA = math.sqrt(1.0 - 1.0 / GAMMA**2)
+P0_GEV = GAMMA * BETA * EMASS   # design momentum [GeV/c]
+BG0 = GAMMA * BETA              # design beta*gamma
+CHARGE = -1.0                   # electron
+BRHO = P0_GEV / 0.299792458     # magnetic rigidity [T m]
+
+# ---- geometry shared by every case ----------------------------------------
+Z_IN = 1.0                      # lead-in drift path length [m]
+D_OUT_LEN = 2.0                 # lead-out drift path length [m]
+L_ARC = 1.0                     # arc length of every bend [m]
+HGAP_ENGE = 0.01                # SBEND half gap [m]; fringe half width 5*2*HGAP = 0.1 m
+LAMBDA_FRINGE = 0.02            # MULTIPOLET tanh fringe length, primary [m]
+LAMBDA_SHARP = 0.005            # MULTIPOLET tanh fringe length, sharp variant [m]
+MT_HAPERT = 0.4                 # MULTIPOLET full aperture width [m]
+MT_VAPERT = 0.2                 # MULTIPOLET full aperture height [m]
+CF_GRADIENT = 0.5               # TP[1] for the combined-function cases [T/m]
+
+# ---- finite-difference step sizes ------------------------------------------
+EPS = {"x": 1.0e-4, "xp": 1.0e-4, "y": 1.0e-4, "yp": 1.0e-4, "z": 1.0e-4, "delta": 1.0e-3}
+
+# ---- bunch spreads (geometric) --------------------------------------------
+BUNCH = {
+    "npart": 8000,
+    "sigx": 1.0e-3, "sigxp": 2.0e-4,
+    "sigy": 1.0e-3, "sigyp": 2.0e-4,
+    "sigz": 5.0e-4,
+    "sigdelta": 1.0e-3,
+    "meandelta": 2.0e-3,
+}
+
+
+def geom(angle: float) -> dict:
+    """Sector geometry shared by SBEND (L = arc) and curved MULTIPOLET (L = arc)."""
+    rho = L_ARC / angle
+    return {"rho": rho, "arc": L_ARC, "face_in_s": Z_IN, "face_out_s": Z_IN + L_ARC,
+            "L_body": L_ARC, "B0": BRHO / rho}
+
+
+# ---------------------------------------------------------------------------
+# Particle file for the map cases
+# ---------------------------------------------------------------------------
+
+def map_particles() -> list[tuple[str, list[float]]]:
+    """13 rows: reference + symmetric +/- step in each coordinate.
+    Each row is (label, [x, px, y, py, z, pz]) with momenta in beta*gamma."""
+    rows: list[tuple[str, list[float]]] = [("ref", [0, 0, 0, 0, 0, BG0])]
+
+    def add(label, x=0.0, xp=0.0, y=0.0, yp=0.0, z=0.0, delta=0.0):
+        pz = BG0 * (1.0 + delta)
+        px = pz * math.tan(xp)
+        py = pz * math.tan(yp)
+        norm = math.sqrt(px * px + py * py + pz * pz)
+        scale = BG0 * (1.0 + delta) / norm
+        rows.append((label, [x, px * scale, y, py * scale, z, pz * scale]))
+
+    add("x+", x=+EPS["x"]);       add("x-", x=-EPS["x"])
+    add("xp+", xp=+EPS["xp"]);    add("xp-", xp=-EPS["xp"])
+    add("y+", y=+EPS["y"]);       add("y-", y=-EPS["y"])
+    add("yp+", yp=+EPS["yp"]);    add("yp-", yp=-EPS["yp"])
+    add("z+", z=+EPS["z"]);       add("z-", z=-EPS["z"])
+    add("delta+", delta=+EPS["delta"]); add("delta-", delta=-EPS["delta"])
+    return rows
+
+
+def write_parts(path: Path, rows) -> None:
+    lines = [str(len(rows)), "x px y py z pz"]
+    for _label, v in rows:
+        lines.append(" ".join(f"{c:.12e}" for c in v))
+    path.write_text("\n".join(lines) + "\n")
+
+
+# ---------------------------------------------------------------------------
+# Deck templates
+# ---------------------------------------------------------------------------
+
+_HEADER = """\
+/*  {name}.in -- generated by make_decks.py (MULTIPOLET bend study).
+    {desc}
+    element={element} angle={angle_deg:g} deg  mode={mode}
+    No space charge (FIELDSOLVER TYPE=NONE).
+*/
+
+OPTION, PSDUMPFREQ   = {psdump};
+OPTION, STATDUMPFREQ = {statdump};
+OPTION, BOUNDPDESTROY = 1000000;
+Option, VERSION = 10900;
+
+Title, string="{name}";
+
+REAL Edes  = {edes:.10g};
+REAL gamma = (Edes + EMASS) / EMASS;
+REAL beta  = sqrt(1 - (1 / gamma^2));
+REAL P0    = gamma * beta * EMASS;          // GeV/c; also sets OpalData P0 (field ref)
+REAL Brho  = P0 * 1e9 / CLIGHT;             // T m
+
+REAL bend_angle = {angle:.16g};
+REAL L_BEND     = {Lbody:.16g};             // arc length
+REAL rho        = L_BEND / bend_angle;
+REAL Z_IN       = {zin:.16g};
+REAL Z_OUT      = {zout:.16g};              // exit face = Z_IN + arc length
+value, {{P0, Brho, rho}};
+
+D_IN:  DRIFT, L = Z_IN, ELEMEDGE = 0.0;
+{bend}
+D_OUT: DRIFT, L = {dout:.16g}, ELEMEDGE = Z_OUT;
+
+BendLine: Line = (D_IN, BEND, D_OUT);
+
+FS1: Fieldsolver, TYPE = NONE,
+     NX = 16, NY = 16, NZ = 16,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+"""
+
+_BEND_MT = """\
+// Curved MULTIPOLET: sector magnet of arc length L_BEND turning through ANGLE.
+// |TP[0]| = Brho / rho puts the design orbit on the arc. Sign: a positive ANGLE
+// turns towards -x (centre of curvature on the -x side, as for SBEND), so a
+// negative charge needs TP[0] < 0.
+REAL B0 = {b0sign:+g} * Brho / rho;         // [T]
+REAL B1 = {b1:.16g};                         // [T/m] gradient (0 = pure dipole)
+BEND:  MULTIPOLET, L = L_BEND, ELEMEDGE = Z_IN,
+       ANGLE = bend_angle,
+       TP = {{B0, B1}},
+       LFRINGE = {lam:.16g}, RFRINGE = {lam:.16g},
+       HAPERT = {hapert:.16g}, VAPERT = {vapert:.16g},
+       MAXFORDER = 3;"""
+
+_BEND_SBEND = """\
+BEND:  SBEND, L = L_BEND, ELEMEDGE = Z_IN,
+       ANGLE = bend_angle,
+       HGAP = {hgap:.16g},
+       HAPERT = 0.15;"""
+
+_MAP_BEAM = """\
+REAL n_particles = {npart};
+Dist: DISTRIBUTION, TYPE = FROMFILE, FNAME = "parts.txt", NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+BEAM1: BEAM, PARTICLE = ELECTRON, NALLOC = n_particles,
+       BCHARGE = 1.6e-15, SOURCES = mySources, CHARGE = -1;
+"""
+
+_BUNCH_BEAM = """\
+REAL n_particles = {npart};
+REAL PC_beam = P0 * {pc_scale:.16g};        // bunch mean momentum ({pc_note})
+Dist: DISTRIBUTION, TYPE = GAUSS,
+      SIGMAX = {sigx:.10g}, SIGMAPX = {sigpx:.10g},
+      SIGMAY = {sigy:.10g}, SIGMAPY = {sigpy:.10g},
+      SIGMAZ = {sigz:.10g}, SIGMAPZ = {sigpz:.10g},
+      NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+BEAM1: BEAM, PARTICLE = ELECTRON, PC = PC_beam, NALLOC = n_particles,
+       BCHARGE = 1.6e-15, SOURCES = mySources, CHARGE = -1;
+"""
+
+_TRACK = """\
+TRACK, LINE = BendLine, BEAM = BEAM1,
+       MAXSTEPS = 2000000, DT = 1e-12, ZSTOP = {zstop:.16g};
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;
+"""
+
+
+# ---------------------------------------------------------------------------
+# Per-case README
+# ---------------------------------------------------------------------------
+
+_TEST_TITLE = {
+    "emit": "8 -- emittance invariance",
+    "disp": "9 -- RMS x growth from energy spread",
+    "pure": "5 -- RMS z growth from R56",
+    "mean": "10 -- centroid shift from mean energy",
+}
+
+
+def case_readme(e: dict) -> str:
+    el, deg, rho, arc = e["element"], e["angle_deg"], e["rho"], e["arc"]
+    th = e["angle"]
+    c, s = math.cos(th), math.sin(th)
+    if el == "MULTIPOLET":
+        fringe = f"tanh fringe (LFRINGE = RFRINGE = {e['lambda']:g} m)"
+        field = (f"`TP[0] = Brho/rho = {e['B0']:+.4f} T`"
+                 + (f", `TP[1] = {e['B1']:+g} T/m`" if e["B1"] else ""))
+    else:
+        fringe = f"Enge fringe (HGAP = {e['hgap']:g} m)"
+        field = f"B0 = Brho/rho = {e['B0']:.4f} T from ANGLE"
+    head = (f"# {e['name']}\n\n**{el}** sector bend, **{deg:g} deg**, {fringe}. "
+            f"0.1 GeV electron, no space charge.\n\n")
+    orbit = (
+        "## Physics\n\n"
+        f"The design particle rides an arc of radius rho = L/theta = {rho:.4f} m turning "
+        f"through theta = {deg:g} deg. Rigidity Brho = {BRHO:.4f} T m, so the dipole field "
+        f"is {field}. A magnetic field does no work, so |p| is conserved (test 1).\n\n")
+    if el == "MULTIPOLET":
+        orbit += (
+            "The body is a sector bend with the centre of curvature on the -x side, the same "
+            "convention as SBEND, so the analytic map is the plain sector matrix.\n\n")
+    if e["mode"] == "map":
+        ex, exp_, ed = e["eps"]["x"], e["eps"]["xp"], e["eps"]["delta"]
+        if e["B1"]:
+            k1 = CHARGE * e["B1"] / BRHO
+            optics = (
+                f"Combined function: gradient TP[1] = {e['B1']:g} T/m, so "
+                f"k1 = q/|q| B1/Brho = {k1:+.4f} 1/m^2 (a positive gradient defocuses a "
+                "negative charge in x, the same rule as MULTIPOLE K1). Expected: "
+                f"kx = 1/rho^2 + k1 = {1/rho**2 + k1:+.4f}, ky = -k1 = {-k1:+.4f}; the map is "
+                "the combined-function sector matrix (cos/sin for k > 0, cosh/sinh for k < 0) "
+                "with dispersion (1 - cos(sqrt(kx) L))/(rho kx) (test 11).\n\n")
+        else:
+            optics = (
+                "First-order motion is the 6x6 map in (x, x', y, y', z, delta). The bending "
+                "plane of a sector bend is\n\n```\n"
+                f"[ cos      rho sin ]   [ {c:+.4f}  {rho*s:+.4f} ]\n"
+                f"[ -sin/rho cos     ] = [ {-s/rho:+.4f}  {c:+.4f} ]\n```\n\n"
+                f"the vertical plane is a drift of the arc length L = {arc:.4f} m, and the "
+                f"dispersion is |x| = rho(1 - cos) delta = {rho*(1-c):.4f} delta, "
+                f"|x'| = sin delta = {s:.4f} delta (tests 3, 4). No vertical focusing to "
+                "first order (test 6). A symplectic map satisfies M^T J M = J (test 7).\n\n")
+        setup = (
+            f"## Setup (`{e['name']}.in`)\n\n"
+            "- `FIELDSOLVER, TYPE = NONE`.\n"
+            "- `DISTRIBUTION, TYPE = FROMFILE` reading `parts.txt`: 13 particles, a reference "
+            f"plus a +/- step in each phase-space coordinate (eps x,y,z = {ex:g} m, "
+            f"eps x',y' = {exp_:g} rad, eps delta = {ed:g}). The field reference momentum is "
+            "the `REAL P0` deck variable.\n"
+            f"- Lattice: `DRIFT(L={Z_IN:g}) -> {el}(L={arc:g}, ANGLE={deg:g} deg) -> DRIFT`. "
+            f"Design faces at s = {e['face_in_s']:.3f} .. {e['face_out_s']:.3f} m.\n\n")
+        proc = (
+            "## How the output is processed (`bendlib.py` -> `run_tests.py`)\n\n"
+            f"- `Case.read_plane` reads the co-moving phase space from `{e['h5']}` "
+            "(positions [m] relative to the reference particle, momenta in beta*gamma "
+            "rotated into the reference direction): x' = px/pz, y' = py/pz, "
+            "delta = |p|/p0 - 1.\n"
+            "- `Case.transfer_map` takes a field-free plane on each side of the bend "
+            f"(field extent from `By_ref` in `{e['stat']}`), projects every particle onto "
+            "the reference transverse plane, strips the drift to the design face, and "
+            "finite-differences the +/- pairs.\n"
+            "- The reference orbit (`ref_x/ref_z/ref_px/ref_pz`) gives the bend angle (test 2).\n")
+        return head + orbit + optics + setup + proc
+
+    # bunch
+    variant = e["name"].split("_")[2]
+    adeg = e["name"].split("_")[3]
+    mapcase = f"mt_fringe_{adeg}"
+    b = e["bunch"]
+    physics_map = {
+        "emit": ("With zero energy spread the projected RMS emittances eps_x and eps_y and the "
+                 "6D emittance sqrt(det Sigma) are invariant under the symplectic map (test 8)."),
+        "disp": ("With an energy spread sigma_delta, dispersion adds to the horizontal size: "
+                 "sigma_x_out^2 = betatron part + (D sigma_delta)^2 (test 9), the (1,1) element "
+                 "of Sigma_out = M Sigma_in M^T."),
+        "pure": ("Energy spread only (negligible transverse size): sigma_x -> |D| sigma_delta and "
+                 "sigma_z -> |R56| sigma_delta (test 5)."),
+        "mean": ("The bunch mean momentum is P0 (1 + <delta>) while the field reference stays P0, "
+                 "so the bunch is uniformly off-energy and its centroid disperses: "
+                 "<x>_out = D <delta> (test 10). OPALX's reference particle rides with its own "
+                 "bunch, so the shift is read from the reference orbit against the on-energy "
+                 f"`mt_bunch_emit_{adeg}` orbit."),
+    }
+    spreads = (f"sigma x,y = {b['sigx']:g} m, sigma x',y' = {b['sigxp']:g} rad, sigma z = "
+               f"{b['sigz']:g} m" if variant != "pure" else "sigma x,y,z ~ 1e-6 m")
+    energy = (f", energy spread {b['sigdelta']:g}" if b["energy_spread"] else ", no energy spread")
+    mean = (f"\n- Mean energy offset <delta> = {b['mean_delta']:g} via `PC = P0 (1 + <delta>)`."
+            if b["mean_delta"] else "")
+    head = (f"# {e['name']}\n\n**MULTIPOLET** sector bend, **{deg:g} deg**, tanh fringe "
+            f"{e['lambda']:g} m. Gaussian-bunch case for test {_TEST_TITLE[variant]}. "
+            "No space charge; linear.\n\n")
+    physics = (orbit + f"The covariance transforms as Sigma_out = M Sigma_in M^T with the map M "
+               f"measured in `{mapcase}`. " + physics_map[variant] + "\n\n")
+    setup = (f"## Setup (`{e['name']}.in`)\n\n- `FIELDSOLVER, TYPE = NONE`.\n"
+             f"- `DISTRIBUTION, TYPE = GAUSS`, N = {b['npart']}. {spreads}{energy}.{mean}\n"
+             f"- Same lattice as `{mapcase}`.\n")
+    return head + physics + setup
+
+
+# ---------------------------------------------------------------------------
+# Case construction
+# ---------------------------------------------------------------------------
+
+def build_case(cfg: dict) -> dict:
+    element, angle, mode, name = cfg["element"], cfg["angle"], cfg["mode"], cfg["name"]
+    g = geom(angle)
+    zout = g["face_out_s"]
+    zstop = zout + D_OUT_LEN
+    case_dir = HERE / name
+    case_dir.mkdir(parents=True, exist_ok=True)
+
+    lam = cfg.get("lambda", 0.0)
+    b1 = cfg.get("B1", 0.0)
+    hgap = cfg.get("hgap", 0.0)
+    if element == "MULTIPOLET":
+        # A positive ANGLE turns towards -x, so a negative charge needs a negative By.
+        b0sign = -1.0 if CHARGE < 0 else 1.0
+        bend = _BEND_MT.format(b0sign=b0sign, b1=b1, lam=lam,
+                               hapert=MT_HAPERT, vapert=MT_VAPERT)
+        B0 = b0sign * g["B0"]
+    else:
+        bend = _BEND_SBEND.format(hgap=hgap)  # DESIGNENERGY is rejected on this build
+        B0 = g["B0"]
+
+    header = _HEADER.format(
+        name=name, desc=cfg["desc"], element=element, angle_deg=math.degrees(angle),
+        mode=mode, psdump=cfg["psdump"], statdump=cfg.get("statdump", 5), edes=EDES,
+        angle=angle, Lbody=g["L_body"], zin=Z_IN, zout=zout, dout=D_OUT_LEN, bend=bend)
+
+    if mode == "map":
+        rows = map_particles()
+        write_parts(case_dir / "parts.txt", rows)
+        beam = _MAP_BEAM.format(npart=len(rows))
+        part_labels = [r[0] for r in rows]
+    else:
+        b = BUNCH
+        sigdelta = b["sigdelta"] if cfg.get("energy_spread") else 0.0
+        mean_delta = cfg.get("mean_delta", 0.0)
+        tiny = cfg.get("tiny_transverse", False)
+        sx = sy = sz = 1e-6 if tiny else None
+        beam = _BUNCH_BEAM.format(
+            npart=b["npart"], pc_scale=1.0 + mean_delta,
+            pc_note=("on design" if mean_delta == 0.0 else f"mean delta={mean_delta:g}"),
+            sigx=sx or b["sigx"], sigpx=(1e-9 if tiny else b["sigxp"]) * BG0,
+            sigy=sy or b["sigy"], sigpy=(1e-9 if tiny else b["sigyp"]) * BG0,
+            sigz=sz or b["sigz"], sigpz=sigdelta * BG0)
+        part_labels = []
+
+    (case_dir / f"{name}.in").write_text(header + "\n" + beam + "\n" + _TRACK.format(zstop=zstop))
+
+    entry = {
+        "name": name, "element": element, "mode": mode,
+        "angle": angle, "angle_deg": math.degrees(angle),
+        "L_body": g["L_body"], "rho": g["rho"], "arc": g["arc"], "B0": B0, "B1": b1,
+        "lambda": lam, "hgap": hgap,
+        # +1: the co-moving x points away from the centre of curvature. Both elements
+        # now put the centre on the -x side, so both are +1.
+        "x_sign": 1,
+        "Z_IN": Z_IN, "face_in_s": g["face_in_s"], "face_out_s": g["face_out_s"],
+        "zstop": zstop, "bg0": BG0, "P0_GeV": P0_GEV, "gamma": GAMMA, "charge": CHARGE,
+        "emass_GeV": EMASS, "eps": EPS, "part_labels": part_labels,
+        "bunch": {**BUNCH, "energy_spread": bool(cfg.get("energy_spread")),
+                  "mean_delta": cfg.get("mean_delta", 0.0)},
+        "h5": f"{name}.h5", "stat": f"{name}.stat",
+    }
+    (case_dir / "README.md").write_text(case_readme(entry))
+    return entry
+
+
+FULL_ANGLES = (30, 60)          # map + bunch battery, plot sets
+# The map tests also run at 90 deg as a cross check. This used to hang the orbit
+# threader, because the element's longitudinal window was measured along the entrance
+# tangent instead of the arc; the rewritten element measures it along the arc.
+XCHECK_ANGLES = (90,)
+_BUNCH_VARIANTS = (
+    dict(v="emit", energy_spread=False, extra={}, d="zero energy spread (emittance invariance)"),
+    dict(v="disp", energy_spread=True, extra={}, d="transverse + energy spread (RMS x growth)"),
+    dict(v="pure", energy_spread=True, extra=dict(tiny_transverse=True),
+         d="energy spread only (dispersion / R56)"),
+    dict(v="mean", energy_spread=False, extra=dict(mean_delta=BUNCH["meandelta"]),
+         d="mean energy offset (centroid shift)"),
+)
+
+
+def case_list() -> list[dict]:
+    cases: list[dict] = []
+    for adeg in FULL_ANGLES + XCHECK_ANGLES:
+        ang = math.radians(adeg)
+        cases.append(dict(name=f"mt_fringe_{adeg}", element="MULTIPOLET", angle=ang,
+                          mode="map", psdump=20, **{"lambda": LAMBDA_FRINGE},
+                          desc=f"MULTIPOLET {adeg} deg, tanh fringe {LAMBDA_FRINGE} m, "
+                               "13-particle map."))
+        cases.append(dict(name=f"mt_sharp_{adeg}", element="MULTIPOLET", angle=ang,
+                          mode="map", psdump=20, **{"lambda": LAMBDA_SHARP},
+                          desc=f"MULTIPOLET {adeg} deg, sharp tanh fringe {LAMBDA_SHARP} m, "
+                               "13-particle map."))
+        cases.append(dict(name=f"sbend_enge_{adeg}", element="SBEND", angle=ang,
+                          mode="map", psdump=20, hgap=HGAP_ENGE,
+                          desc=f"Reference SBEND {adeg} deg, Enge fringe, 13-particle map."))
+    for adeg in FULL_ANGLES:
+        ang = math.radians(adeg)
+        cases.append(dict(name=f"mt_cf_{adeg}", element="MULTIPOLET", angle=ang,
+                          mode="map", psdump=20, B1=CF_GRADIENT, **{"lambda": LAMBDA_FRINGE},
+                          desc=f"MULTIPOLET {adeg} deg combined function, TP[1] = "
+                               f"{CF_GRADIENT} T/m, 13-particle map."))
+        for bv in _BUNCH_VARIANTS:
+            cases.append(dict(name=f"mt_bunch_{bv['v']}_{adeg}", element="MULTIPOLET",
+                              angle=ang, mode="bunch", psdump=400, **{"lambda": LAMBDA_FRINGE},
+                              energy_spread=bv["energy_spread"],
+                              desc=f"MULTIPOLET {adeg} deg bunch, {bv['d']}.", **bv["extra"]))
+    return cases
+
+
+def main() -> None:
+    manifest = [build_case(c) for c in case_list()]
+    (HERE / "cases.json").write_text(json.dumps(manifest, indent=2))
+    print(f"Generated {len(manifest)} cases under {HERE}")
+    for m in manifest:
+        print(f"  {m['name']:20s} {m['element']:10s} {m['angle_deg']:5.1f} deg "
+              f"rho={m['rho']:.4f} B0={m['B0']:+.4f} T B1={m['B1']:g} lam={m['lambda']:g} "
+              f"mode={m['mode']}")
+
+
+if __name__ == "__main__":
+    main()

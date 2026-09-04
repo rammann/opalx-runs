@@ -41,6 +41,8 @@ Same rules as ``OpalElement::getApert()`` / ``OpalSBend::update()``:
     APERTURE = "ellipse(a,b)"  / "circle(a)"   -> ellipse,   half-widths (a/2, b/2)
     SBEND/RBEND: APERTURE if given; else HGAP > 0 -> rectangle, half-widths
         (HAPERT if given else unbounded, HGAP); else no aperture (hard edge)
+    MULTIPOLET:  APERTURE if given; else HAPERT/VAPERT (FULL width and height,
+        so halved here) -> rectangle; else no aperture
     other elements without APERTURE            -> no aperture
 
 HAPERT/HGAP are already half-values; deck APERTURE arguments are full sizes and
@@ -70,7 +72,7 @@ from opalx_run import Run, load_designpath, parse_element_positions  # noqa: E40
 
 # element type -> integer code (colour on `element_type` in ParaView)
 TYPE_CODE = {"DRIFT": 0, "SOLENOID": 1, "SBEND": 2, "RBEND": 2,
-             "QUADRUPOLE": 3, "MONITOR": 4}
+             "QUADRUPOLE": 3, "MONITOR": 4, "MULTIPOLET": 5}
 TYPE_LEGEND = {0: "DRIFT", 1: "SOLENOID", 2: "DIPOLE", 3: "QUADRUPOLE",
                4: "MONITOR", 5: "OTHER"}
 
@@ -152,9 +154,45 @@ def parse_deck(deck_path):
             hx = num(hap.group(1), syms) if hap else None
             if hy is not None and hy > 0.0:
                 aper = ("rect", hx if hx is not None else UNBOUNDED, hy)
+        if typ == "MULTIPOLET":
+            if aper is None:
+                # OpalMultipoleT::update(): HAPERT and VAPERT are the FULL width and
+                # height of a rectangular chamber and go together.
+                hap = re.search(r"\bHAPERT\s*=\s*([^\s,]+)", rest)
+                vap = re.search(r"\bVAPERT\s*=\s*([^\s,]+)", rest)
+                if hap and vap:
+                    hx = num(hap.group(1), syms)
+                    hy = num(vap.group(1), syms)
+                    if hx is not None and hy is not None and hx > 0.0 and hy > 0.0:
+                        aper = ("rect", 0.5 * hx, 0.5 * hy)
+            # Colour it by what its field actually is: a bend angle or a non-zero
+            # first TP coefficient makes it a dipole, a bare gradient a quadrupole.
+            code = multipoleT_code(rest, syms)
         # OPALX uppercases object names; _ElementPositions.txt records them uppercase.
         elements[name.upper()] = {"type": typ, "aper": aper}
+        if typ == "MULTIPOLET":
+            elements[name.upper()]["code"] = code
     return elements
+
+
+def multipoleT_code(rest, syms):
+    """Colour code of a MULTIPOLET from its field: dipole if it bends or if TP[0]
+    is non-zero, quadrupole if only the gradient is set, otherwise OTHER."""
+    angle = re.search(r"\bANGLE\s*=\s*([^\s,]+)", rest)
+    if angle is not None:
+        value = num(angle.group(1), syms)
+        if value is not None and value != 0.0:
+            return TYPE_CODE["SBEND"]
+    tp = re.search(r"\bTP\s*=\s*\{([^}]*)\}", rest)
+    if tp is None:
+        return 5
+    terms = [num(t.strip(), syms) for t in tp.group(1).split(",") if t.strip()]
+    terms = [t if t is not None else 0.0 for t in terms]
+    if terms and terms[0] != 0.0:
+        return TYPE_CODE["SBEND"]
+    if len(terms) > 1 and terms[1] != 0.0:
+        return TYPE_CODE["QUADRUPOLE"]
+    return 5
 
 
 # --------------------------------------------------------------------------- #
@@ -338,7 +376,7 @@ def main(argv=None):
     names = []
     for name, P in polylines:
         info = elements.get(name.upper(), {"type": "OTHER", "aper": None})
-        code = TYPE_CODE.get(info["type"], 5)
+        code = info.get("code", TYPE_CODE.get(info["type"], 5))
         if len(P) < 2:
             continue
         eid = len(names)
