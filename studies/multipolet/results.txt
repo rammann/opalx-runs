@@ -4,17 +4,17 @@ MULTIPOLET (curved) bend study -- measured vs analytic
 ====================================================================================================
 test quantity                            measured      analytic     |diff|       tol  result
 --------------------------------------------------------------------------------------------
-   1 |p| conserv [mt_fringe_30]       1.14139e-12             0   1.14e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [mt_sharp_30]        2.41211e-12             0   2.41e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [sbend_enge_30]      3.01596e-12             0   3.02e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [mt_fringe_60]       3.00961e-12             0   3.01e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [mt_sharp_60]        4.14074e-12             0   4.14e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_fringe_30]       1.11697e-12             0   1.12e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_sharp_30]        2.38754e-12             0   2.39e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [sbend_enge_30]      3.00571e-12             0   3.01e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_fringe_60]       2.98634e-12             0   2.99e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_sharp_60]        4.04277e-12             0   4.04e-12   1.0e-06  PASS  magnetic field does no work
    1 |p| conserv [sbend_enge_60]      8.01531e-13             0   8.02e-13   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [mt_fringe_90]       1.44007e-12             0   1.44e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [mt_sharp_90]        4.89184e-12             0   4.89e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [sbend_enge_90]      3.18835e-12             0   3.19e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [mt_cf_30]            1.9081e-12             0   1.91e-12   1.0e-06  PASS  magnetic field does no work
-   1 |p| conserv [mt_cf_60]           6.79141e-13             0   6.79e-13   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_fringe_90]       1.44455e-12             0   1.44e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_sharp_90]        4.88722e-12             0   4.89e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [sbend_enge_90]      3.18777e-12             0   3.19e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_cf_30]           1.90521e-12             0   1.91e-12   1.0e-06  PASS  magnetic field does no work
+   1 |p| conserv [mt_cf_60]           7.55147e-13             0   7.55e-13   1.0e-06  PASS  magnetic field does no work
    2 theta from int B ds [mt_fringe_30]      0.523459      0.523577   0.000117   2.0e-03  PASS  vs orbit exit angle
    2 exit angle vs ANGLE [mt_fringe_30]      0.523577      0.523599   2.21e-05   1.0e-03  PASS  orbit turns towards -x
    2 theta from int B ds [mt_sharp_30]      0.523555      0.523597   4.22e-05   2.0e-03  PASS  vs orbit exit angle
@@ -40,19 +40,19 @@ test quantity                            measured      analytic     |diff|      
    3 R16 [mt_fringe_30]                  0.255873      0.255873   1.29e-07   2.0e-02  PASS
    3 R26 [mt_fringe_30]                  0.500421           0.5   0.000421   2.0e-02  PASS
    3 R33 [mt_fringe_30]                   1.00084             1   0.000841   3.0e-02  PASS
-   3 R34 [mt_fringe_30]                         1             1   1.31e-07   3.0e-02  PASS
+   3 R34 [mt_fringe_30]                         1             1   1.32e-07   3.0e-02  PASS
    3 R44 [mt_fringe_30]                   1.00085             1   0.000853   3.0e-02  PASS
    3 R43 [mt_fringe_30]                 0.0016947             0    0.00169   7.0e-03  PASS  fringe residual, bound relative to tan(theta/2)/rho
    3 R11 [mt_sharp_30]                   0.866479      0.866025   0.000454   2.6e-02  PASS
    3 R12 [mt_sharp_30]                   0.954935       0.95493   5.34e-06   2.9e-02  PASS
-   3 R21 [mt_sharp_30]                  -0.260978     -0.261799   0.000821   2.0e-02  PASS
-   3 R22 [mt_sharp_30]                    0.86648      0.866025   0.000455   2.6e-02  PASS
-   3 R16 [mt_sharp_30]                   0.255873      0.255873   2.45e-07   2.0e-02  PASS
+   3 R21 [mt_sharp_30]                  -0.260973     -0.261799   0.000826   2.0e-02  PASS
+   3 R22 [mt_sharp_30]                    0.86648      0.866025   0.000454   2.6e-02  PASS
+   3 R16 [mt_sharp_30]                   0.255873      0.255873   2.31e-07   2.0e-02  PASS
    3 R26 [mt_sharp_30]                   0.500118           0.5   0.000118   2.0e-02  PASS
    3 R33 [mt_sharp_30]                    1.00021             1    0.00021   3.0e-02  PASS
-   3 R34 [mt_sharp_30]                          1             1   6.86e-09   3.0e-02  PASS
+   3 R34 [mt_sharp_30]                          1             1   7.12e-09   3.0e-02  PASS
    3 R44 [mt_sharp_30]                    1.00021             1   0.000211   3.0e-02  PASS
-   3 R43 [mt_sharp_30]                0.000421601             0   0.000422   7.0e-03  PASS  fringe residual, bound relative to tan(theta/2)/rho
+   3 R43 [mt_sharp_30]                0.000421602             0   0.000422   7.0e-03  PASS  fringe residual, bound relative to tan(theta/2)/rho
    3 R11 [sbend_enge_30]                 0.867461      0.866025    0.00144   2.6e-02  PASS
    3 R12 [sbend_enge_30]                 0.954962       0.95493   3.24e-05   2.9e-02  PASS
    3 R21 [sbend_enge_30]                -0.259184     -0.261799    0.00262   2.0e-02  PASS
@@ -67,20 +67,20 @@ test quantity                            measured      analytic     |diff|      
    3 R12 [mt_fringe_60]                  0.827287      0.826993   0.000293   2.5e-02  PASS
    3 R21 [mt_fringe_60]                 -0.898881       -0.9069    0.00802   2.7e-02  PASS
    3 R22 [mt_fringe_60]                  0.506313           0.5    0.00631   2.0e-02  PASS
-   3 R16 [mt_fringe_60]                  0.477466      0.477465   9.74e-07   2.0e-02  PASS
+   3 R16 [mt_fringe_60]                  0.477466      0.477465   9.73e-07   2.0e-02  PASS
    3 R26 [mt_fringe_60]                  0.869202      0.866025    0.00318   2.6e-02  PASS
    3 R33 [mt_fringe_60]                   1.00336             1    0.00336   3.0e-02  PASS
-   3 R34 [mt_fringe_60]                         1             1   2.09e-07   3.0e-02  PASS
+   3 R34 [mt_fringe_60]                         1             1    2.1e-07   3.0e-02  PASS
    3 R44 [mt_fringe_60]                   1.00352             1    0.00352   3.0e-02  PASS
    3 R43 [mt_fringe_60]                0.00690161             0     0.0069   3.0e-02  PASS  fringe residual, bound relative to tan(theta/2)/rho
-   3 R11 [mt_sharp_60]                   0.501572           0.5    0.00157   2.0e-02  PASS
+   3 R11 [mt_sharp_60]                   0.501571           0.5    0.00157   2.0e-02  PASS
    3 R12 [mt_sharp_60]                   0.827012      0.826993   1.85e-05   2.5e-02  PASS
-   3 R21 [mt_sharp_60]                   -0.90498       -0.9069    0.00192   2.7e-02  PASS
+   3 R21 [mt_sharp_60]                  -0.904971       -0.9069    0.00193   2.7e-02  PASS
    3 R22 [mt_sharp_60]                   0.501575           0.5    0.00157   2.0e-02  PASS
-   3 R16 [mt_sharp_60]                   0.477465      0.477465   3.72e-07   2.0e-02  PASS
-   3 R26 [mt_sharp_60]                   0.866905      0.866025    0.00088   2.6e-02  PASS
+   3 R16 [mt_sharp_60]                   0.477465      0.477465   3.45e-07   2.0e-02  PASS
+   3 R26 [mt_sharp_60]                   0.866906      0.866025    0.00088   2.6e-02  PASS
    3 R33 [mt_sharp_60]                    1.00084             1   0.000842   3.0e-02  PASS
-   3 R34 [mt_sharp_60]                          1             1   2.27e-08   3.0e-02  PASS
+   3 R34 [mt_sharp_60]                          1             1   2.37e-08   3.0e-02  PASS
    3 R44 [mt_sharp_60]                    1.00085             1    0.00085   3.0e-02  PASS
    3 R43 [mt_sharp_60]                  0.0016941             0    0.00169   3.0e-02  PASS  fringe residual, bound relative to tan(theta/2)/rho
    3 R11 [sbend_enge_60]                 0.504974           0.5    0.00497   2.0e-02  PASS
@@ -100,17 +100,17 @@ test quantity                            measured      analytic     |diff|      
    3 R16 [mt_fringe_90]                  0.636623       0.63662   3.32e-06   2.0e-02  PASS
    3 R26 [mt_fringe_90]                    1.0097             1     0.0097   3.0e-02  PASS
    3 R33 [mt_fringe_90]                   1.00757             1    0.00757   3.0e-02  PASS
-   3 R34 [mt_fringe_90]                         1             1    3.6e-07   3.0e-02  PASS
+   3 R34 [mt_fringe_90]                         1             1   3.58e-07   3.0e-02  PASS
    3 R44 [mt_fringe_90]                    1.0082             1     0.0082   3.0e-02  PASS
    3 R43 [mt_fringe_90]                 0.0158354             0     0.0158   7.9e-02  PASS  fringe residual, bound relative to tan(theta/2)/rho
-   3 R11 [mt_sharp_90]                 0.00272202   6.12323e-17    0.00272   2.0e-02  PASS
+   3 R11 [mt_sharp_90]                 0.00272164   6.12323e-17    0.00272   2.0e-02  PASS
    3 R12 [mt_sharp_90]                   0.636652       0.63662   3.22e-05   2.0e-02  PASS
-   3 R21 [mt_sharp_90]                   -1.57071       -1.5708   8.67e-05   4.7e-02  PASS
-   3 R22 [mt_sharp_90]                  0.0027285   6.12323e-17    0.00273   2.0e-02  PASS
-   3 R16 [mt_sharp_90]                    0.63662       0.63662   4.31e-07   2.0e-02  PASS
+   3 R21 [mt_sharp_90]                    -1.5707       -1.5708   9.94e-05   4.7e-02  PASS
+   3 R22 [mt_sharp_90]                 0.00272752   6.12323e-17    0.00273   2.0e-02  PASS
+   3 R16 [mt_sharp_90]                    0.63662       0.63662   3.17e-07   2.0e-02  PASS
    3 R26 [mt_sharp_90]                    1.00265             1    0.00265   3.0e-02  PASS
    3 R33 [mt_sharp_90]                    1.00189             1    0.00189   3.0e-02  PASS
-   3 R34 [mt_sharp_90]                          1             1   4.05e-08   3.0e-02  PASS
+   3 R34 [mt_sharp_90]                          1             1   4.24e-08   3.0e-02  PASS
    3 R44 [mt_sharp_90]                    1.00193             1    0.00193   3.0e-02  PASS
    3 R43 [mt_sharp_90]                 0.00383045             0    0.00383   7.9e-02  PASS  fringe residual, bound relative to tan(theta/2)/rho
    3 R11 [sbend_enge_90]               0.00861386   6.12323e-17    0.00861   2.0e-02  PASS
@@ -125,61 +125,61 @@ test quantity                            measured      analytic     |diff|      
    3 R43 [sbend_enge_90]                 0.034729             0     0.0347   7.9e-02  PASS  fringe residual, bound relative to tan(theta/2)/rho
    4 x  = D delta  [mt_fringe_30]        0.255873      0.255873   1.29e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [mt_fringe_30]        0.500421           0.5   0.000421  2.0e-02r  PASS
-   4 x  = D delta  [mt_sharp_30]         0.255873      0.255873   2.45e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
+   4 x  = D delta  [mt_sharp_30]         0.255873      0.255873   2.31e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [mt_sharp_30]         0.500118           0.5   0.000118  2.0e-02r  PASS
    4 x  = D delta  [sbend_enge_30]       0.255871      0.255873   1.69e-06  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [sbend_enge_30]       0.500352           0.5   0.000352  2.0e-02r  PASS
-   4 x  = D delta  [mt_fringe_60]        0.477466      0.477465   9.74e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
+   4 x  = D delta  [mt_fringe_60]        0.477466      0.477465   9.73e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [mt_fringe_60]        0.869202      0.866025    0.00318  2.0e-02r  PASS
-   4 x  = D delta  [mt_sharp_60]         0.477465      0.477465   3.72e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
-   4 x' = D' delta [mt_sharp_60]         0.866905      0.866025    0.00088  2.0e-02r  PASS
+   4 x  = D delta  [mt_sharp_60]         0.477465      0.477465   3.45e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
+   4 x' = D' delta [mt_sharp_60]         0.866906      0.866025    0.00088  2.0e-02r  PASS
    4 x  = D delta  [sbend_enge_60]        0.47745      0.477465   1.44e-05  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [sbend_enge_60]       0.868665      0.866025    0.00264  2.0e-02r  PASS
    4 x  = D delta  [mt_fringe_90]        0.636623       0.63662   3.32e-06  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [mt_fringe_90]          1.0097             1     0.0097  2.0e-02r  PASS
-   4 x  = D delta  [mt_sharp_90]          0.63662       0.63662   4.31e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
+   4 x  = D delta  [mt_sharp_90]          0.63662       0.63662   3.17e-07  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [mt_sharp_90]          1.00265             1    0.00265  2.0e-02r  PASS
    4 x  = D delta  [sbend_enge_90]       0.636576       0.63662    4.4e-05  2.0e-02r  PASS  D = +1 rho(1-cos)
    4 x' = D' delta [sbend_enge_90]          1.008             1      0.008  2.0e-02r  PASS
    5 sigma_z = |R56| sd [mt_bunch_pure_30]   4.49479e-05   4.49728e-05   2.49e-08  2.0e-02r  PASS  R56=-0.0451
-   5 sigma_x = |D| sd (pure)          0.000254953   0.000254956   3.04e-09  2.0e-02r  PASS
+   5 sigma_x = |D| sd (pure)          0.000254953   0.000254956   3.09e-09  2.0e-02r  PASS
    5 sigma_z = |R56| sd [mt_bunch_pure_60]   0.000172561   0.000172586   2.53e-08  2.0e-02r  PASS  R56=-0.1732
-   5 sigma_x = |D| sd (pure)          0.000475756   0.000475755   3.86e-10  2.0e-02r  PASS
+   5 sigma_x = |D| sd (pure)          0.000475756   0.000475755   2.66e-10  2.0e-02r  PASS
    6 R43 [mt_fringe_30]                 0.0016947             0    0.00169   7.0e-03  PASS  sector: no vertical focusing beyond the fringe residual
    6 R43 [sbend_enge_30]               0.00379597             0     0.0038   7.0e-03  PASS
-   6 R34 = L [mt_fringe_30]                     1             1   1.31e-07  3.0e-02r  PASS
+   6 R34 = L [mt_fringe_30]                     1             1   1.32e-07  3.0e-02r  PASS
    6 R34 = L [sbend_enge_30]             0.999999             1   1.16e-06  3.0e-02r  PASS
    6 MULTIPOLET vs SBEND R43        +0.0017 vs +0.0038  (tan(theta/2)/rho = 0.1403)
    6 R43 [mt_fringe_60]                0.00690161             0     0.0069   3.0e-02  PASS  sector: no vertical focusing beyond the fringe residual
    6 R43 [sbend_enge_60]                0.0152926             0     0.0153   3.0e-02  PASS
-   6 R34 = L [mt_fringe_60]                     1             1   2.09e-07  3.0e-02r  PASS
+   6 R34 = L [mt_fringe_60]                     1             1    2.1e-07  3.0e-02r  PASS
    6 R34 = L [sbend_enge_60]             0.999996             1   4.19e-06  3.0e-02r  PASS
    6 MULTIPOLET vs SBEND R43        +0.0069 vs +0.0153  (tan(theta/2)/rho = 0.6046)
    6 R43 [mt_fringe_90]                 0.0158354             0     0.0158   7.9e-02  PASS  sector: no vertical focusing beyond the fringe residual
    6 R43 [sbend_enge_90]                 0.034729             0     0.0347   7.9e-02  PASS
-   6 R34 = L [mt_fringe_90]                     1             1    3.6e-07  3.0e-02r  PASS
+   6 R34 = L [mt_fringe_90]                     1             1   3.58e-07  3.0e-02r  PASS
    6 R34 = L [sbend_enge_90]             0.999992             1   8.41e-06  3.0e-02r  PASS
    6 MULTIPOLET vs SBEND R43        +0.0158 vs +0.0347  (tan(theta/2)/rho = 1.5708)
-   7 symplectic res [mt_fringe_30]    3.08098e-05             0   3.08e-05   1.0e-04  PASS
+   7 symplectic res [mt_fringe_30]    3.08096e-05             0   3.08e-05   1.0e-04  PASS
    7 det x-block [mt_fringe_30]          0.999992             1    8.4e-06   1.0e-04  PASS
    7 det y-block [mt_fringe_30]                 1             1   1.09e-07   1.0e-04  PASS
    7 det z-block [mt_fringe_30]          0.999993             1   6.83e-06   1.0e-04  PASS
-   7 symplectic res [mt_sharp_30]     3.91621e-06             0   3.92e-06   1.0e-04  PASS
-   7 det x-block [mt_sharp_30]                  1             1   3.92e-06   1.0e-04  PASS
+   7 symplectic res [mt_sharp_30]     3.03817e-06             0   3.04e-06   1.0e-04  PASS
+   7 det x-block [mt_sharp_30]           0.999999             1   7.23e-07   1.0e-04  PASS
    7 det y-block [mt_sharp_30]                  1             1   4.51e-07   1.0e-04  PASS
-   7 det z-block [mt_sharp_30]                  1             1   4.28e-07   1.0e-04  PASS
+   7 det z-block [mt_sharp_30]           0.999999             1    8.1e-07   1.0e-04  PASS
    7 symplectic res [sbend_enge_30]   5.39947e-07             0    5.4e-07   1.0e-04  PASS
-   7 det x-block [sbend_enge_30]                1             1   7.53e-09   1.0e-04  PASS
+   7 det x-block [sbend_enge_30]                1             1   7.59e-09   1.0e-04  PASS
    7 det y-block [sbend_enge_30]                1             1   2.24e-07   1.0e-04  PASS
-   7 det z-block [sbend_enge_30]                1             1   1.45e-09   1.0e-04  PASS
-   7 symplectic res [mt_fringe_60]    5.21313e-05             0   5.21e-05   1.0e-04  PASS
+   7 det z-block [sbend_enge_30]                1             1   1.48e-09   1.0e-04  PASS
+   7 symplectic res [mt_fringe_60]    5.21314e-05             0   5.21e-05   1.0e-04  PASS
    7 det x-block [mt_fringe_60]          0.999969             1   3.06e-05   1.0e-04  PASS
    7 det y-block [mt_fringe_60]                 1             1   4.36e-07   1.0e-04  PASS
    7 det z-block [mt_fringe_60]          0.999975             1   2.52e-05   1.0e-04  PASS
-   7 symplectic res [mt_sharp_60]     4.96062e-06             0   4.96e-06   1.0e-04  PASS
-   7 det x-block [mt_sharp_60]                  1             1   4.96e-06   1.0e-04  PASS
+   7 symplectic res [mt_sharp_60]     5.22599e-06             0   5.23e-06   1.0e-04  PASS
+   7 det x-block [mt_sharp_60]           0.999997             1   2.88e-06   1.0e-04  PASS
    7 det y-block [mt_sharp_60]           0.999998             1   1.81e-06   1.0e-04  PASS
-   7 det z-block [mt_sharp_60]                  1             1   1.59e-06   1.0e-04  PASS
+   7 det z-block [mt_sharp_60]           0.999997             1   3.02e-06   1.0e-04  PASS
    7 symplectic res [sbend_enge_60]   9.05701e-07             0   9.06e-07   1.0e-04  PASS
    7 det x-block [sbend_enge_60]                1             1   7.05e-08   1.0e-04  PASS
    7 det y-block [sbend_enge_60]         0.999999             1   9.06e-07   1.0e-04  PASS
@@ -188,24 +188,24 @@ test quantity                            measured      analytic     |diff|      
    7 det x-block [mt_fringe_90]          0.999941             1   5.93e-05   1.0e-04  PASS
    7 det y-block [mt_fringe_90]          0.999999             1   9.85e-07   1.0e-04  PASS
    7 det z-block [mt_fringe_90]           0.99995             1   4.95e-05   1.0e-04  PASS
-   7 symplectic res [mt_sharp_90]     4.90237e-06             0    4.9e-06   1.0e-04  PASS
-   7 det x-block [mt_sharp_90]                  1             1   2.77e-06   1.0e-04  PASS
+   7 symplectic res [mt_sharp_90]     9.37895e-06             0   9.38e-06   1.0e-04  PASS
+   7 det x-block [mt_sharp_90]           0.999995             1   5.27e-06   1.0e-04  PASS
    7 det y-block [mt_sharp_90]           0.999996             1   4.07e-06   1.0e-04  PASS
-   7 det z-block [mt_sharp_90]                  1             1   3.13e-06   1.0e-04  PASS
+   7 det z-block [mt_sharp_90]           0.999994             1   6.01e-06   1.0e-04  PASS
    7 symplectic res [sbend_enge_90]   2.07496e-06             0   2.07e-06   1.0e-04  PASS
-   7 det x-block [sbend_enge_90]                1             1   6.18e-08   1.0e-04  PASS
+   7 det x-block [sbend_enge_90]                1             1   6.17e-08   1.0e-04  PASS
    7 det y-block [sbend_enge_90]         0.999998             1   2.07e-06   1.0e-04  PASS
    7 det z-block [sbend_enge_90]                1             1   9.59e-08   1.0e-04  PASS
-   8 emit_x [mt_bunch_emit_30]        1.98053e-07   1.98055e-07   2.56e-12  5.0e-03r  PASS
+   8 emit_x [mt_bunch_emit_30]        1.98052e-07   1.98055e-07   2.66e-12  5.0e-03r  PASS
    8 emit_y [mt_bunch_emit_30]         1.9823e-07    1.9823e-07   7.05e-13  5.0e-03r  PASS
    8 emit_6D [mt_bunch_emit_30]       7.80715e-25   7.80727e-25   1.18e-29  1.0e-02r  PASS  invariant of any symplectic map
-   9 sigma_x (M Sig M^T) [mt_bunch_disp_30]   0.000967754   0.000967757    3.7e-09  2.0e-02r  PASS
-   9 sigma_x = sqrt(bet+(D sd)^2)     0.000967754   0.000968955    1.2e-06  2.0e-02r  PASS  D=0.2559 sigma_delta=9.96e-04
+   9 sigma_x (M Sig M^T) [mt_bunch_disp_30]   0.000967753   0.000967757   3.81e-09  2.0e-02r  PASS
+   9 sigma_x = sqrt(bet+(D sd)^2)     0.000967753   0.000968955    1.2e-06  2.0e-02r  PASS  D=0.2559 sigma_delta=9.96e-04
   10 <x> = D <delta> [mt_bunch_mean_30]   0.000510373   0.000511746   1.37e-06  1.0e-02r  PASS  <delta>=2.0e-03 D=0.2559
-   8 emit_x [mt_bunch_emit_60]        1.98046e-07   1.98055e-07   8.72e-12  5.0e-03r  PASS
+   8 emit_x [mt_bunch_emit_60]        1.98046e-07   1.98055e-07   9.06e-12  5.0e-03r  PASS
    8 emit_y [mt_bunch_emit_60]        1.98227e-07    1.9823e-07   3.45e-12  5.0e-03r  PASS
    8 emit_6D [mt_bunch_emit_60]       7.80684e-25   7.80727e-25   4.29e-29  1.0e-02r  PASS  invariant of any symplectic map
-   9 sigma_x (M Sig M^T) [mt_bunch_disp_60]   0.000739535   0.000739549   1.34e-08  2.0e-02r  PASS
+   9 sigma_x (M Sig M^T) [mt_bunch_disp_60]   0.000739535   0.000739549   1.37e-08  2.0e-02r  PASS
    9 sigma_x = sqrt(bet+(D sd)^2)     0.000739535   0.000741133    1.6e-06  2.0e-02r  PASS  D=0.4775 sigma_delta=9.96e-04
   10 <x> = D <delta> [mt_bunch_mean_60]    0.00095231   0.000954932   2.62e-06  1.0e-02r  PASS  <delta>=2.0e-03 D=0.4775
   11 [mt_cf_30]                     k1 = -1.4914 1/m^2, kx = 1/rho^2 + k1 = -1.2172, ky = +1.4914
@@ -220,7 +220,7 @@ test quantity                            measured      analytic     |diff|      
   11 R16 [mt_cf_30]                      0.289526      0.289456   7.03e-05   2.0e-02  PASS
   11 R26 [mt_cf_30]                      0.637413      0.636475   0.000938   2.0e-02  PASS
   11 R56 [mt_cf_30]                    -0.0486569    -0.0485296   0.000127   2.0e-02  PASS
-  11 symplectic res [mt_cf_30]        4.01235e-05             0   4.01e-05   1.0e-04  PASS
+  11 symplectic res [mt_cf_30]        4.01237e-05             0   4.01e-05   1.0e-04  PASS
   11 R33 [mt_cf_30]                 +0.3432; ky = -k1 gives +0.3425, ky = +k1 would give +1.8431
   11 [mt_cf_60]                     k1 = -1.4914 1/m^2, kx = 1/rho^2 + k1 = -0.3947, ky = +1.4914
   11 R11 [mt_cf_60]                       1.21176       1.20395    0.00781   3.6e-02  PASS
@@ -234,7 +234,7 @@ test quantity                            measured      analytic     |diff|      
   11 R16 [mt_cf_60]                      0.541157      0.541051   0.000106   2.0e-02  PASS
   11 R26 [mt_cf_60]                       1.12172       1.11746    0.00425   3.4e-02  PASS
   11 R56 [mt_cf_60]                     -0.186749     -0.186386   0.000363   2.0e-02  PASS
-  11 symplectic res [mt_cf_60]        6.85288e-05             0   6.85e-05   1.0e-04  PASS
+  11 symplectic res [mt_cf_60]         6.8528e-05             0   6.85e-05   1.0e-04  PASS
   11 R33 [mt_cf_60]                 +0.3451; ky = -k1 gives +0.3425, ky = +k1 would give +1.8431
 
 ====================================================================================================
