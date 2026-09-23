@@ -106,3 +106,32 @@ OPALX drifts above 1 by about 2e-5 over the line. Its spin is stored as three
 floats rather than doubles (ParticleContainer.hpp:124), each step rounds the
 result back to float, and roughly 250000 steps of that accumulates to about this
 size. The rotation itself conserves the length exactly; the storage does not.
+
+The same as percentages. The spin is a unit vector, so a difference of 0.001 is
+a tenth of a percent directly -- no reference value is needed.
+
+ z [mm]  as written % |  after turning into the plane frame, %
+               median |       median     99th pct        worst
+------------------------------------------------------------
+    300        0.0000 |      0.00002      0.00010       0.0002
+    540        0.0004 |      0.00042      0.00206       0.0022
+    800        0.0018 |      0.00181      0.00821       0.0086
+   1285        0.0023 |      0.00231      0.00695       0.0081
+   1700        0.0160 |      0.01603      0.01825       0.0192
+   2300        0.1001 |      0.10013      0.10089       0.1015
+   3500       68.3701 |      0.25822      1.00352       1.4886
+   4300       68.3711 |      0.31648      1.23691       1.8178
+   5100       68.3710 |      0.35207      1.48091       2.1515
+   5900       68.3709 |      0.11951      0.36012       0.5019
+   6700       68.3713 |      0.12139      0.37134       0.5440
+   8000       10.4359 |      0.14770      0.53490       0.8164
+   8900       10.4353 |      0.13558      0.47030       0.7307
+   9800       10.4345 |      0.12599      0.39556       0.8153
+  10700       10.4351 |      0.12810      0.45285       0.7527
+  11500       10.4344 |      0.13047      0.47384       0.8050
+  12500       68.3658 |      0.46648      2.09872       2.8942
+  13800       68.3665 |      1.03427      4.76589      10.2131
+  15100       68.3651 |      0.19248      0.43314      10.2217
+  16400       68.3649 |      0.19249      0.43277      10.2217
+  17700       68.3666 |      0.49662      3.28139      27.9966
+  19250       68.3656 |      1.20648      6.96145      10.7894

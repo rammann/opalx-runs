@@ -120,13 +120,17 @@ def field_block(c):
              "frame": "a plane through the magnet, in lab coordinates"}
     rows = []
     for k, f in c["field"].items():
+        pk = f["g4bl_peak_T"] or 1.0
+        wd = f["worst_diff_T"]
         rows.append(row(names.get(k, k), f'{f["points"]:,}',
                         fmt(f["g4bl_peak_T"], "T"), fmt(f["opalx_peak_T"], "T"),
-                        fmt(f["worst_diff_T"], "T"), fmt(f["median_diff_T"], "T"),
+                        fmt(wd, "T"),
+                        f'{wd/pk*100:.2e} %' if wd is not None else "—",
+                        fmt(f["median_diff_T"], "T"),
                         fmt(f["tol_T"], "T") if k != "edge" else "—"))
     return table(["where the field was sampled", "points", "largest |B|, G4beamline",
-                  "largest |B|, OPALX", "worst difference", "typical difference",
-                  "allowed"], rows)
+                  "largest |B|, OPALX", "worst difference", "worst, % of the peak field",
+                  "typical difference", "allowed"], rows)
 
 
 def pair_block(c):
@@ -139,7 +143,10 @@ def pair_block(c):
         row("difference at the entrance plane", "—", "—", fmt(p["entrance_worst_pos"], "m")),
         row("largest |x| reached at the exit", fmt(p["orbit_max_x_g4bl"], "m"),
             fmt(p["orbit_max_x_g4bl"], "m"), "—"),
-        row("worst exit position difference", "—", "—", fmt(p["exit_worst_pos"], "m")),
+        row("worst exit position difference", "—", "—",
+            fmt(p["exit_worst_pos"], "m")
+            + f' &nbsp;({p["exit_worst_pos"]/max(p["orbit_max_x_g4bl"],1e-12)*100:.2e} %'
+              ' of how far the orbit went)'),
         row("worst exit angle difference", "—", "—", fmt(p["exit_worst_ang"], "rad")),
         row("change in |p| through the magnet", fmt(p["p_change_g4bl"]),
             fmt(p["p_change_opalx"]), "a magnet cannot change |p|"),
@@ -208,7 +215,8 @@ def conv_block(c):
 
 def section(name):
     c = D[name]
-    figs = [(f"figs/{name}_field.png", "The field both codes report, and where they differ"),
+    figs = [(f"figs/{name}_layout.png", "The case seen from above"),
+            (f"figs/{name}_field.png", "The field both codes report, and where they differ"),
             (f"figs/{name}_pair.png", "Nineteen particles, one by one, and the transfer matrix"),
             (f"figs/{name}_gauss.png", "Twenty thousand particles: beam size, beam centre, "
                                        "and how the difference depends on amplitude")]
@@ -229,20 +237,26 @@ def section(name):
   <h3>Setup</h3>
   {setup_block(c)}
   <p class="note">{frame} {esc(run)}</p>
+  {f'<figure><img src="{figs[0][0]}" loading="lazy" alt="{esc(name)} seen from above">'
+   f'<figcaption>Seen from above. The shaded box is the field map at the position and '
+   f'angle it is placed, the black line is the path the beam actually takes (the '
+   f'reference orbit from the run, not a sketch), the upright lines are the recording '
+   f'planes, and the dots are where the particles crossed them in each code.'
+   f'</figcaption></figure>' if figs and "layout" in figs[0][0] else ''}
   <h3>The field, with no tracking</h3>
   <p>Both codes are asked for the field at the same points. No particles are involved, so a
   difference here is a difference in how the file is read or where the magnet is placed.</p>
   {field_block(c)}
-  {f'<figure><img src="{figs[0][0]}" alt="{esc(figs[0][1])}"><figcaption>{esc(figs[0][1])}</figcaption></figure>' if figs else ''}
+  {f'<figure><img src="{figs[1][0]}" loading="lazy" alt="{esc(figs[1][1])}"><figcaption>{esc(figs[1][1])}</figcaption></figure>' if len(figs) > 1 else ''}
   <h3>Nineteen particles</h3>
   {pair_block(c)}
   {matrices(c)}
   {conv_block(c)}
-  {f'<figure><img src="{figs[1][0]}" alt="{esc(figs[1][1])}"><figcaption>{esc(figs[1][1])}</figcaption></figure>' if len(figs) > 1 else ''}
+  {f'<figure><img src="{figs[2][0]}" loading="lazy" alt="{esc(figs[2][1])}"><figcaption>{esc(figs[2][1])}</figcaption></figure>' if len(figs) > 2 else ''}
   <details><summary>Every particle, one row each</summary>{per_particle(c)}</details>
   <h3>Twenty thousand particles</h3>
   {gauss_block(c)}
-  {f'<figure><img src="{figs[2][0]}" alt="{esc(figs[2][1])}"><figcaption>{esc(figs[2][1])}</figcaption></figure>' if len(figs) > 2 else ''}
+  {f'<figure><img src="{figs[3][0]}" loading="lazy" alt="{esc(figs[3][1])}"><figcaption>{esc(figs[3][1])}</figcaption></figure>' if len(figs) > 3 else ''}
 </section>"""
 
 
@@ -275,10 +289,22 @@ def full_line():
                    "rms x G4BL [mm]", "rms x OPALX [mm]",
                    "rms y G4BL [mm]", "rms y OPALX [mm]", "worst Δ"], b)
     planes = "".join(
+        f'<h4>Centreline z = {r["z"]} mm &mdash; {r["n"]:,} particles</h4>'
+        f'<figure><img src="figs/full/phase_heat_{r["z"]:05d}.png" loading="lazy" '
+        f'alt="Phase space density at centreline z = {r["z"]} mm">'
+        f'<figcaption>The phase space as density. G4beamline on top, OPALX below on the '
+        f'same colour scale, and underneath the one subtracted from the other. Both codes '
+        f'are binned on identical edges, or the subtraction would measure the binning. The '
+        f'colour scale is logarithmic because one bin in the core holds a thousand '
+        f'particles.</figcaption></figure>'
+        f'<figure><img src="figs/full/phase_proj_{r["z"]:05d}.png" loading="lazy" '
+        f'alt="Phase space projections at centreline z = {r["z"]} mm">'
+        f'<figcaption>The same thing projected onto each coordinate, both codes drawn over '
+        f'each other, with the difference underneath.</figcaption></figure>'
         f'<figure><img src="figs/full/plane_{r["z"]:05d}.png" loading="lazy" '
-        f'alt="Phase space at centreline z = {r["z"]} mm, OPALX above G4beamline">'
-        f'<figcaption>Centreline z = {r["z"]} mm. OPALX above, G4beamline below, same axes '
-        f'down each column. {r["n"]:,} particles matched one to one.</figcaption></figure>'
+        f'alt="Phase space scatter at centreline z = {r["z"]} mm, OPALX above G4beamline">'
+        f'<figcaption>And particle by particle. OPALX above, G4beamline below, same axes '
+        f'down each column.</figcaption></figure>'
         for r in FULL)
     dy_raw = (rl["rms_y"][1] - rl["rms_y"][0]) * 1e6
     dy_cut = (rl["cut_rms_y"][1] - rl["cut_rms_y"][0]) * 1e6
@@ -305,6 +331,13 @@ def full_line():
      row("run time", "G4beamline 2970 s, OPALX 534 s, one core each"),
   ])}
 
+  <figure><img src="figs/full/layout.png" alt="The muE4 line seen from above, with the
+  field maps and the recording planes marked"><figcaption>Seen from above. The path is the
+  reference orbit OPALX actually tracked, so this is the real bent geometry rather than a
+  sketch. One solenoid, three bending magnets (nine map placements between them) and twelve
+  quadrupoles; the 22 recording planes are the thin bars, labelled with their distance along
+  the line.</figcaption></figure>
+
   <h3>What came out</h3>
   <p>Every particle reached every plane in both codes, except the last plane where OPALX
   recorded {rl['no']:,} of {rl['ng']:,} — the monitor drop already known from the earlier
@@ -312,6 +345,17 @@ def full_line():
   more than 100&nbsp;µm</strong>, and the median difference stays between 1 and 5&nbsp;µm
   the whole way.</p>
   {t_all}
+  <p>The same differences as a percentage of the beam itself, because a micrometre means
+  nothing without knowing whether the beam is 3 mm or 60 mm across at that point.</p>
+  {table(["plane z [mm]", "beam size [mm]", "median, % of the beam",
+          "99th percentile, %", "worst, %", "beam size itself, % in x", "% in y"],
+         [row(f'{r["z"]}', f'{r["beam_size"]*1e3:.3f}', f'{r["med_pct"]:.5f} %',
+              f'{r["p99_pct"]:.4f} %', f'{r["max_pct"]:.3f} %',
+              f'{r["rms_x_pct"]:.4f} %', f'{r["rms_y_pct"]:.4f} %') for r in FULL])}
+  <figure><img src="figs/full/hist_position.png" alt="Histograms of the per-particle
+  difference at eight places along the line"><figcaption>How the difference is spread across
+  the 10 000 particles. The bulk moves right along the line while a few particles separate
+  off to the right — those are the halo, explained below.</figcaption></figure>
   <figure><img src="figs/full/growth.png" alt="How the difference between the codes grows
   along the line"><figcaption>The median stays near a few µm for the whole line. The worst
   single particle climbs steeply after 13 m — that is the halo, explained below, not the
@@ -339,10 +383,13 @@ def full_line():
   {t_cut}
 
   <h3>Phase space at every plane</h3>
-  <p>OPALX above, G4beamline below, with the same axes down each column so the two rows can
-  be read against each other. Axis limits come from percentiles rather than the extremes —
-  scaling to the few halo particles would squash the beam itself into a dot — and each
-  figure says how many points fall outside the view.</p>
+  <p>Three views of each plane: the beam as a density, the same projected onto each
+  coordinate, and particle by particle. In every one, G4beamline and OPALX are drawn on the
+  same scale so they can be read against each other, and the difference between them is
+  shown directly rather than left to the eye.</p>
+  <p>Axis limits come from percentiles rather than the extremes throughout. Nothing scrapes
+  in this run, so a handful of particles out of 10 000 reach a metre off axis, and scaling
+  to them would put the whole beam into one bin.</p>
   {planes}
 
   <h3>What is still open</h3>
@@ -378,7 +425,7 @@ def spin_section():
     if SPIN:
         rl = SPIN[-1]
         fr = [row(f'{r["z"]}', f'{np.degrees(r["theta"]):.2f}&deg;', f'{r["n"]:,}',
-                  f'{r["med_raw"]:.6f}', f'{r["med_rot"]:.6f}', f'{r["p99_rot"]:.6f}',
+                  f'{r["raw_pct"]:.4f} %', f'{r["med_pct"]:.5f} %', f'{r["p99_pct"]:.4f} %',
                   f'{r["dg"]*1e3:.5f}', f'{r["do"]*1e3:.5f}') for r in SPIN]
         turns = sorted({round(np.degrees(r["theta"]), 1) for r in SPIN if r["theta"]})
         fcheck = "".join(
@@ -403,10 +450,15 @@ def spin_section():
   <p>The difference is not merely large, it is exactly what a frame rotation gives.
   Turning a unit vector by an angle <em>t</em> moves it by 2&nbsp;sin(<em>t</em>/2):</p>
   {table(["", "median difference measured", "2 sin(t/2)"], [fcheck])}
+  <p>The spin is a unit vector, so a difference of 0.001 is a tenth of a percent directly.</p>
   {table(["plane z [mm]", "how far the frame has turned", "particles",
-          "median difference as written", "median after turning OPALX into the plane's frame",
+          "median as written", "median after turning OPALX into the plane's frame",
           "99th percentile after turning", "spin ahead of momentum, G4BL [mrad]",
           "OPALX [mrad]"], fr)}
+  <figure><img src="figs/spin/hist_spin.png" alt="Histograms of the per-particle spin
+  difference"><figcaption>The spin difference across the 10 000 particles, after turning
+  OPALX into each plane's own frame. Without that correction every one of these would sit
+  at 68 %.</figcaption></figure>
   <p>Turning OPALX's spin into each plane's own frame removes almost all of it — the median
   falls from 0.68 to between 0.001 and 0.012. What is left is a real difference, and it is
   the size the field edges predict: the uniform Bz case showed OPALX carrying up to half a

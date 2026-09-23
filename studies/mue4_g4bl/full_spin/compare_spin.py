@@ -81,7 +81,7 @@ def ang(a, b):
 
 def main():
     poses = monitor_poses()
-    rows = []
+    rows, hist = [], {}
     for z in sorted(poses):
         g4f, opf = HERE / f"Z{z}.txt", None
         for c in HERE.glob(f"E*_PL{z:05d}.h5"):
@@ -104,8 +104,15 @@ def main():
         # codes. The median is what the beam does.
         dv_raw = np.linalg.norm(So - Sg, axis=1)
         dv_rot = np.linalg.norm(So_rot - Sg, axis=1)
+        hist[z] = dv_rot.copy()
+        # The spin is a unit vector, so a difference of 0.001 IS a tenth of a
+        # percent -- no reference value is needed to turn it into one.
         rows.append(dict(
             z=z, theta=th, n=len(common),
+            med_pct=float(np.median(dv_rot) * 100.0),
+            p99_pct=float(np.percentile(dv_rot, 99) * 100.0),
+            max_pct=float(dv_rot.max() * 100.0),
+            raw_pct=float(np.median(dv_raw) * 100.0),
             med_raw=float(np.median(dv_raw)), med_rot=float(np.median(dv_rot)),
             p99_rot=float(np.percentile(dv_rot, 99)),
             sg=Sg.mean(axis=0).tolist(), so=So.mean(axis=0).tolist(),
@@ -194,6 +201,17 @@ def main():
           "floats rather than doubles (ParticleContainer.hpp:124), each step rounds the",
           "result back to float, and roughly 250000 steps of that accumulates to about this",
           "size. The rotation itself conserves the length exactly; the storage does not."]
+    L += ["",
+          "The same as percentages. The spin is a unit vector, so a difference of 0.001 is",
+          "a tenth of a percent directly -- no reference value is needed.",
+          "",
+          f"{'z [mm]':>7} {'as written %':>13} | {'after turning into the plane frame, %':>38}",
+          f"{'':>7} {'median':>13} | {'median':>12} {'99th pct':>12} {'worst':>12}",
+          "-" * 60]
+    for r in rows:
+        L.append(f"{r['z']:7d} {r['raw_pct']:13.4f} | {r['med_pct']:12.5f} "
+                 f"{r['p99_pct']:12.5f} {r['max_pct']:12.4f}")
+
     txt = "\n".join(L)
     (HERE / "spin_results.txt").write_text(txt + "\n")
     (HERE / "spin_data.json").write_text(json.dumps(rows, indent=1))
@@ -225,7 +243,27 @@ def main():
     ax[2].legend(fontsize=7)
     fig.tight_layout()
     fig.savefig(HERE / "plots" / "spin_full_line.png", dpi=140)
-    print("\nwrote spin_results.txt, spin_data.json, plots/spin_full_line.png")
+    pick = [z for z in (300, 2300, 5900, 8900, 12500, 15100, 17700, 19250) if z in hist]
+    fig, axes = plt.subplots(2, 4, figsize=(12.4, 5.4))
+    bins = np.logspace(-8, 0, 45)
+    for ax, zz in zip(axes.ravel(), pick):
+        v = np.clip(hist[zz], bins[0], bins[-1])
+        ax.hist(v, bins=bins, color=OPALX_C, alpha=0.85, edgecolor="none")
+        med = np.median(hist[zz])
+        ax.axvline(med, color=G4_C, lw=1.4)
+        ax.text(med, ax.get_ylim()[1] * 0.92, f"  median {med*100:.4f} %",
+                fontsize=6.5, color=G4_C, va="top")
+        ax.set(xscale="log", yscale="log", title=f"z = {zz} mm",
+               xlabel="|OPALX - G4BL| spin, per particle", ylabel="particles")
+    for ax in axes.ravel()[len(pick):]:
+        ax.axis("off")
+    fig.suptitle("Spin difference across the 10 000 particles, after turning OPALX into "
+                 "each plane's own frame", fontsize=10)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(HERE / "plots" / "hist_spin.png", dpi=130)
+    plt.close(fig)
+    print("\nwrote spin_results.txt, spin_data.json, plots/spin_full_line.png, "
+          "plots/hist_spin.png")
 
 
 if __name__ == "__main__":

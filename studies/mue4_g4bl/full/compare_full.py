@@ -102,7 +102,7 @@ def main():
     if not P:
         print("no planes found -- has the run finished?")
         return 1
-    rows, z_list = [], []
+    rows, z_list, hist = [], [], {}
     for z, (gt, oh) in P.items():
         dg = cmplib.read_bltrack(gt)
         do = cmplib.read_monitor(oh)
@@ -118,9 +118,23 @@ def main():
         # collimator muE4 has (190 mm across, 105 mm high).
         keep = ((np.abs(Xg[0]) < 0.190) & (np.abs(Xg[2]) < 0.105)
                 & (np.abs(Xo[0]) < 0.190) & (np.abs(Xo[2]) < 0.105))
+        # The difference expressed as a fraction of the beam itself. An absolute
+        # micrometre means nothing without knowing whether the beam is 3 mm or
+        # 60 mm across at that point.
+        size = float(np.hypot(Xg[0].std(), Xg[2].std()))
+        hist[z] = vp.copy()
         rows.append(dict(
             z=z, ng=len(dg["id"]), no=len(do["id"]), n=len(ids), missing=len(miss),
-            kept=int(keep.sum()),
+            kept=int(keep.sum()), beam_size=size,
+            med_pct=float(np.median(vp) / size * 100.0),
+            p99_pct=float(np.percentile(vp, 99) / size * 100.0),
+            max_pct=float(vp.max() / size * 100.0),
+            rms_x_pct=float(abs(Xo[0].std() - Xg[0].std()) / Xg[0].std() * 100.0),
+            rms_y_pct=float(abs(Xo[2].std() - Xg[2].std()) / Xg[2].std() * 100.0),
+            cut_rms_x_pct=float(abs(Xo[0][keep].std() - Xg[0][keep].std())
+                                / Xg[0][keep].std() * 100.0),
+            cut_rms_y_pct=float(abs(Xo[2][keep].std() - Xg[2][keep].std())
+                                / Xg[2][keep].std() * 100.0),
             cut_rms_x=(float(Xg[0][keep].std()), float(Xo[0][keep].std())),
             cut_rms_y=(float(Xg[2][keep].std()), float(Xo[2][keep].std())),
             cut_mean_x=(float(Xg[0][keep].mean()), float(Xo[0][keep].mean())),
@@ -207,6 +221,27 @@ def main():
              f"{last['cut_rms_y'][1]*1e3:.4f} mm, "
              f"{abs(last['cut_rms_y'][1]-last['cut_rms_y'][0])/last['cut_rms_y'][0]*100:.3f} % apart")
     L.append(f"  worst particle {last['cut_max_pos']*1e6:.1f} um")
+    L += ["",
+          "The same differences as a percentage of the beam itself, because a micrometre",
+          "means nothing without knowing whether the beam is 3 mm or 60 mm across there.",
+          "",
+          f"{'z':>6} {'beam size':>10} | {'per particle, % of the beam':>32} | "
+          f"{'beam size itself':>26}",
+          f"{'[mm]':>6} {'[mm]':>10} | {'median':>10} {'99th pct':>10} {'worst':>10} | "
+          f"{'% in x':>12} {'% in y':>12}",
+          "-" * 82]
+    for r in rows:
+        L.append(f"{r['z']:6d} {r['beam_size']*1e3:10.3f} | {r['med_pct']:10.5f} "
+                 f"{r['p99_pct']:10.5f} {r['max_pct']:10.4f} | "
+                 f"{r['rms_x_pct']:12.5f} {r['rms_y_pct']:12.5f}")
+    L += ["",
+          "and the same again counting only what fits through the real aperture:",
+          "",
+          f"{'z [mm]':>7} {'% in x':>12} {'% in y':>12}",
+          "-" * 33]
+    for r in rows:
+        L.append(f"{r['z']:7d} {r['cut_rms_x_pct']:12.5f} {r['cut_rms_y_pct']:12.5f}")
+
     txt = "\n".join(L)
     (HERE / "full_results.txt").write_text(txt + "\n")
     (HERE / "full_data.json").write_text(json.dumps(rows, indent=1))
@@ -262,6 +297,28 @@ def main():
     fig.tight_layout()
     fig.savefig(PLOTS / "growth.png", dpi=130)
     plt.close(fig)
+    # ---- histograms of the per-particle difference -------------------------
+    pick = [z for z in (300, 2300, 5900, 8900, 12500, 15100, 17700, 19250) if z in hist]
+    fig, axes = plt.subplots(2, 4, figsize=(12.4, 5.4))
+    bins = np.logspace(-10, -2, 45)
+    for ax, z in zip(axes.ravel(), pick):
+        v = np.clip(hist[z], bins[0], bins[-1])
+        ax.hist(v, bins=bins, color=OPALX, alpha=0.85, edgecolor="none")
+        med = np.median(hist[z])
+        ax.axvline(med, color=G4BL, lw=1.4)
+        ax.text(med, ax.get_ylim()[1] * 0.92, f"  median {med*1e6:.2f} um",
+                fontsize=6.5, color=G4BL, va="top")
+        ax.set(xscale="log", yscale="log", title=f"z = {z} mm",
+               xlabel="|OPALX - G4BL| per particle [m]", ylabel="particles")
+    for ax in axes.ravel()[len(pick):]:
+        ax.axis("off")
+    fig.suptitle("How the difference is spread across the 10 000 particles, "
+                 "at eight places along the line", fontsize=10)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(PLOTS / "hist_position.png", dpi=130)
+    plt.close(fig)
+    print("  plots/hist_position.png")
+
     print(f"\nplots in {PLOTS}")
     return 0
 
