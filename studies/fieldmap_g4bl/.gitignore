@@ -1,0 +1,3 @@
+# The field maps are written by make_inputs.py, not by hand. They are a couple
+# of megabytes and regenerate in under a second, so they are not tracked.
+maps/

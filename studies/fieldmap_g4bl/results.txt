@@ -1,0 +1,78 @@
+
+========================================================================================================
+G4beamline field maps, 2D cylinder and 3D grid -- measured vs expected
+========================================================================================================
+test quantity                                measured      expected     |diff|       tol  result
+------------------------------------------------------------------------------------------------
+   1 |p| conserved [grid_dipole]           1.9565e-13             0   1.96e-13   1.0e-12  PASS
+   1 |p| conserved [grid_dipole_shift]    2.21805e-13             0   2.22e-13   1.0e-12  PASS
+   1 |p| conserved [grid_quad]            1.73398e-15             0   1.73e-15   1.0e-12  PASS
+   1 |p| conserved [grid_quad_2x]         6.79141e-15             0   6.79e-15   1.0e-12  PASS
+   1 |p| conserved [grid_quad_scale2]     6.79141e-15             0   6.79e-15   1.0e-12  PASS
+   1 |p| conserved [grid_quad_param]      6.79141e-15             0   6.79e-15   1.0e-12  PASS
+   1 |p| conserved [grid_quad_messy]      1.73398e-15             0   1.73e-15   1.0e-12  PASS
+   1 |p| conserved [grid_sol]                       0             0          0   1.0e-12  PASS
+   1 |p| conserved [grid_sol_dt2]                   0             0          0   1.0e-12  PASS
+   1 |p| conserved [cyl_sol]                        0             0          0   1.0e-12  PASS
+   1 |p| conserved [cyl_sol_solenoid]               0             0          0   1.0e-12  PASS
+   1 |p| conserved [grid_eb_bonly]         1.9565e-13             0   1.96e-13   1.0e-12  PASS
+   1 |p| conserved [cyl_ramp]             6.64691e-15             0   6.65e-15   1.0e-12  PASS
+   1 |p| conserved [cyl_ramp_zrev]        1.22823e-14             0   1.23e-14   1.0e-12  PASS
+   1 |p| conserved [cyl_ramp_mirror]      1.22823e-14             0   1.23e-14   1.0e-12  PASS
+   2 field starts [grid_dipole]              0.500647           0.5   0.000647   5.0e-03  PASS
+   2 field ends [grid_dipole]                 1.50494           1.5    0.00494   5.0e-03  PASS
+   2 field starts [grid_dipole_shift]         0.75097          0.75    0.00097   5.0e-03  PASS
+   2 field ends [grid_dipole_shift]           1.75376          1.75    0.00376   5.0e-03  PASS
+   2 field starts [grid_sol]                 0.500647           0.5   0.000647   5.0e-03  PASS
+   2 field ends [grid_sol]                    1.49894           1.5    0.00106   5.0e-03  PASS
+   2 field starts [grid_sol_dt2]             0.500647           0.5   0.000647   5.0e-03  PASS
+   2 field ends [grid_sol_dt2]                1.49894           1.5    0.00106   5.0e-03  PASS
+   2 field starts [cyl_sol]                  0.500647           0.5   0.000647   5.0e-03  PASS
+   2 field ends [cyl_sol]                     1.49894           1.5    0.00106   5.0e-03  PASS
+   2 field starts [cyl_sol_solenoid]         0.500647           0.5   0.000647   5.0e-03  PASS
+   2 field ends [cyl_sol_solenoid]            1.49894           1.5    0.00106   5.0e-03  PASS
+   2 field starts [grid_eb]                  0.500647           0.5   0.000647   5.0e-03  PASS
+   2 field ends [grid_eb]                     1.50494           1.5    0.00494   5.0e-03  PASS
+   2 field starts [grid_eb_bonly]            0.500647           0.5   0.000647   5.0e-03  PASS
+   2 field ends [grid_eb_bonly]               1.50494           1.5    0.00494   5.0e-03  PASS
+   3 bend angle [grid_dipole]                0.174534      0.174533   1.06e-06   1.0e-04  PASS  10 deg arc of radius 5.7588 m
+   3 offset at field exit                   0.0874909     0.0874887   2.22e-06   2.0e-04  PASS
+   4 field start moves by Z_SHIFT            0.250323          0.25   0.000323   5.0e-03  PASS
+   4 field end moves by Z_SHIFT              0.248825          0.25    0.00118   5.0e-03  PASS
+   4 bend angle unchanged by the shift       0.174529      0.174534   5.21e-06   1.0e-04  PASS
+   5 4x4 vs analytic [grid_quad]          5.17027e-06             0   5.17e-06   5.0e-05  PASS  k1 = -0.2500 m^-2
+   5 4x4 zero elements [grid_quad]                  0             0          0   1.0e-05  PASS
+   5 4x4 vs analytic [grid_quad_2x]       7.61368e-06             0   7.61e-06   5.0e-05  PASS  k1 = -0.5000 m^-2
+   5 4x4 zero elements [grid_quad_2x]               0             0          0   1.0e-05  PASS
+   6 symplecticity [grid_quad]            1.57381e-09             0   1.57e-09   1.0e-07  PASS
+   6 symplecticity [grid_quad_2x]         3.83732e-09             0   3.84e-09   1.0e-07  PASS
+   7 4x4 vs analytic [grid_sol]           2.50235e-05             0    2.5e-05   5.0e-05  PASS  k L = -0.298272 rad
+   7 4x4 zero elements [grid_sol]                   0             0          0   1.0e-05  PASS
+   7 4x4 vs analytic [cyl_sol]            2.50235e-05             0    2.5e-05   5.0e-05  PASS  k L = -0.298272 rad
+   7 4x4 zero elements [cyl_sol]                    0             0          0   1.0e-05  PASS
+   7 4x4 vs analytic [cyl_sol_solenoid]   2.50235e-05             0    2.5e-05   5.0e-05  PASS  k L = -0.298272 rad
+   7 4x4 zero elements [cyl_sol_solenoid]             0             0          0   1.0e-05  PASS
+   8 grid vs cylinder, 4x4                          0             0          0   1.0e-08  PASS  same field, the two formats
+   8 grid vs cylinder, final state                  0             0          0   1.0e-08  PASS
+   9 FIELDMAP vs SOLENOID, 4x4            2.72837e-14             0   2.73e-14   1.0e-11  PASS
+   9 FIELDMAP vs SOLENOID, final state    9.27687e-14             0   9.28e-14   1.0e-11  PASS
+  10 grid_quad_scale2 vs grid_quad_2x, 4x4   6.99723e-11             0      7e-11   1.0e-08  PASS  SCALE = 2 on the element
+  10 grid_quad_scale2 vs grid_quad_2x, state   6.99735e-15             0      7e-15   1.0e-08  PASS
+  10 grid_quad_param vs grid_quad_2x, 4x4   6.99723e-11             0      7e-11   1.0e-08  PASS  normB = 4, current = 2 in the file
+  10 grid_quad_param vs grid_quad_2x, state   6.99735e-15             0      7e-15   1.0e-08  PASS
+  11 tidy vs awkward file, 4x4                      0             0          0   1.0e-11  PASS  comments, shuffled rows, nine columns
+  11 tidy vs awkward file, state                    0             0          0   1.0e-11  PASS
+  12 residual grows with the step         3.37201e-05   2.50235e-05    8.7e-06         -  diag  1e-13 s -> 2.5e-05,  2e-13 s -> 3.37e-05
+  12 coarse residual is the larger        3.37201e-05   2.50235e-05    8.7e-06         -  PASS  the residual follows the step, so it is not the reading
+  12 ratio of the two residuals               1.34754             0       1.35         -  diag  not a clean factor of 2: see the comment in test12
+  13 ZREVERSE vs pre-reversed file, 4x4             0             0          0   1.0e-08  PASS  mirror in z, negate Bz, leave Br
+  13 ZREVERSE vs pre-reversed file, state             0             0          0   1.0e-08  PASS
+  13 reversing changes the tracking         0.0949929          0.01      0.085         -  PASS  otherwise the profile was symmetric and this proves nothing
+  14 energy change [grid_efield]               -0.001        -0.001   4.65e-09  2.0e-04r  PASS  q E dz = -1.0000 MeV
+  14 energy change [grid_eb]              -0.00100002        -0.001   1.74e-08  2.0e-04r  PASS  q E dz = -1.0000 MeV
+  14 ESCALE = 2 doubles the energy change   -0.00200001   -0.00200001   2.65e-10  2.0e-04r  PASS
+  14 ESCALE = 0 reproduces grid_dipole              0             0          0   1.0e-08  PASS  same map, electric half switched off
+  14 ESCALE = 0, final state                        0             0          0   1.0e-08  PASS
+  14 ESCALE = 0 does no work               1.9565e-13             0   1.96e-13   1.0e-12  PASS
+
+SUMMARY: 68/68 checks passed, 0 failed.

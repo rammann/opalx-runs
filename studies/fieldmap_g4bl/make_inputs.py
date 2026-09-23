@@ -1,0 +1,435 @@
+#!/usr/bin/env python
+"""make_inputs.py -- write every field map, input file and particle file for
+the G4beamline field map study, plus the cases.json manifest.
+
+This is the only place the geometry and the field strengths are chosen. The
+tests read cases.json and never re-derive any of it.
+
+What gets written:
+  maps/<name>.g4blmap   the field maps, in both G4beamline formats
+  <case>/<case>.in      the OPALX input
+  <case>/parts.txt      13 particles: a reference plus a +/- step in each coordinate
+  <case>/README.md      what the case is for and how it is checked
+  cases.json            one entry per case
+
+Rules that hold for every input here, and should not be "fixed":
+  * FROMFILE forbids PC/ENERGY/GAMMA on BEAM. The reference momentum comes from
+    the P0 the particle file itself carries.
+  * The field solver needs PARFFTX = PARFFTY = PARFFTZ = TRUE even with
+    TYPE = NONE.
+  * CHARGE = -1 is given explicitly. Beam::execute only consults the particle
+    table when the attribute is absent, and the sign decides which way
+    everything bends.
+  * A FIELDMAP element takes no L and no ELEMEDGE: it is placed by an absolute
+    lab pose, and its length comes from the map header. OPALX allows only one
+    placement convention per beamline, so those inputs pose every element.
+    The SOLENOID case is the other convention and uses ELEMEDGE throughout.
+  * FMAPFN is resolved relative to the working directory, so the maps are
+    referenced as ../maps/... and OPALX has to be run from inside the case
+    directory.
+
+Run with the conda python. See run_all.sh.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+from pathlib import Path
+
+import fmlib as F
+
+HERE = Path(__file__).resolve().parent
+MAPS = HERE / "maps"
+
+# Grid extents, in millimetres, as the map files carry them.
+Z_AXIS = F._grid_axis(-500.0, 25.0, 41)          # -500 .. 500 mm, every case
+DIPOLE_X = F._grid_axis(-150.0, 10.0, 31)        # wide enough for the bent orbit
+DIPOLE_Y = F._grid_axis(-20.0, 10.0, 5)
+NARROW = F._grid_axis(-20.0, 5.0, 9)             # quadrupole and solenoid
+R_AXIS = F._grid_axis(0.0, 2.5, 13)              # 0 .. 30 mm
+
+
+def write_maps() -> None:
+    MAPS.mkdir(exist_ok=True)
+    F.write_grid_map(MAPS / "dipole.g4blmap", F.field_dipole,
+                     DIPOLE_X, DIPOLE_Y, Z_AXIS)
+    F.write_grid_map(MAPS / "quad.g4blmap", F.field_quad, NARROW, NARROW, Z_AXIS)
+    F.write_grid_map(MAPS / "quad_2x.g4blmap", F.field_quad, NARROW, NARROW, Z_AXIS,
+                     scale=2.0)
+    # normB/current = 4/2 = 2, applied to the plain gradient: the same field as
+    # quad_2x. If either key were ignored the factor would be 4 or 1/2, not 2.
+    F.write_grid_map(MAPS / "quad_param.g4blmap", F.field_quad, NARROW, NARROW, Z_AXIS,
+                     norm_b=4.0, current=2.0)
+    # The same field as quad.g4blmap, written the awkward ways real files are:
+    # a comment block in front, rows out of order, and nine columns with a zero
+    # electric field.
+    F.write_grid_map(MAPS / "quad_messy.g4blmap", F.field_quad, NARROW, NARROW, Z_AXIS,
+                     comments=True, shuffle=True, columns=9)
+    F.write_grid_map(MAPS / "sol.g4blmap", F.field_solenoid, NARROW, NARROW, Z_AXIS)
+    # Electric only: the magnetic columns are all zero.
+    F.write_grid_map(MAPS / "efield.g4blmap", F.field_solenoid, NARROW, NARROW, Z_AXIS,
+                     scale=0.0, efield=F.field_efield_long)
+    # Electric and magnetic together, each with its own scale on the element.
+    F.write_grid_map(MAPS / "eb.g4blmap", F.field_dipole, DIPOLE_X, DIPOLE_Y, Z_AXIS,
+                     efield=F.field_efield_long)
+    # The cylinder twin of sol.g4blmap: the same uniform Bz, the other format.
+    F.write_cylinder_map(MAPS / "sol_cyl.g4blmap",
+                         lambda r, z: (F.B_SOL, 0.0), R_AXIS, Z_AXIS)
+    F.write_cylinder_map(MAPS / "ramp_cyl.g4blmap", F.ramp_cylinder, R_AXIS, Z_AXIS)
+    F.write_cylinder_map(MAPS / "ramp_cyl_mirror.g4blmap", F.ramp_cylinder, R_AXIS,
+                         Z_AXIS, mirror=True)
+
+
+# ---------------------------------------------------------------------------
+# Particle file
+# ---------------------------------------------------------------------------
+
+def map_particles() -> list[tuple[str, list[float]]]:
+    """13 rows: a reference particle plus a symmetric +/- step in each of the
+    six coordinates. Each row is (label, [x, px, y, py, z, pz]) with the
+    momenta in beta*gamma. The steps in a pair cancel in the centred
+    difference, so the transfer matrix is taken about the axis."""
+    rows: list[tuple[str, list[float]]] = [("ref", [0, 0, 0, 0, 0, F.BG0])]
+
+    def add(label, x=0.0, xp=0.0, y=0.0, yp=0.0, z=0.0, delta=0.0):
+        pz = F.BG0 * (1.0 + delta)
+        px, py = pz * math.tan(xp), pz * math.tan(yp)
+        norm = math.sqrt(px * px + py * py + pz * pz)
+        scale = F.BG0 * (1.0 + delta) / norm
+        rows.append((label, [x, px * scale, y, py * scale, z, pz * scale]))
+
+    add("x+", x=+F.EPS["x"]);                 add("x-", x=-F.EPS["x"])
+    add("xp+", xp=+F.EPS["xp"]);              add("xp-", xp=-F.EPS["xp"])
+    add("y+", y=+F.EPS["y"]);                 add("y-", y=-F.EPS["y"])
+    add("yp+", yp=+F.EPS["yp"]);              add("yp-", yp=-F.EPS["yp"])
+    add("z+", z=+F.EPS["z"]);                 add("z-", z=-F.EPS["z"])
+    add("delta+", delta=+F.EPS["delta"]);     add("delta-", delta=-F.EPS["delta"])
+    return rows
+
+
+def write_parts(path: Path, rows) -> None:
+    lines = [str(len(rows)), "x px y py z pz"]
+    for _label, v in rows:
+        lines.append(" ".join(f"{c:.12e}" for c in v))
+    path.write_text("\n".join(lines) + "\n")
+
+
+# ---------------------------------------------------------------------------
+# Input templates
+# ---------------------------------------------------------------------------
+
+_HEAD = """\
+/*  {name}.in -- generated by make_inputs.py (G4beamline field map study).
+    {desc}
+    map = {mapfile} ({fmt} format), element = {element}
+    No space charge (FIELDSOLVER TYPE = NONE).
+*/
+
+OPTION, PSDUMPFREQ   = {psdump};
+OPTION, STATDUMPFREQ = {statdump};
+OPTION, BOUNDPDESTROY = 1000000;
+Option, VERSION = 10900;
+
+Title, string="{name}";
+"""
+
+_TAIL = """
+FS1: FIELDSOLVER, TYPE = NONE,
+     NX = 8, NY = 8, NZ = 8,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+
+REAL n_particles = 13;
+Dist: DISTRIBUTION, TYPE = FROMFILE, FNAME = "parts.txt", NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist;
+mySources: EMISSIONSOURCELIST = (ES1);
+BEAM1: BEAM, PARTICLE = ELECTRON, NALLOC = n_particles,
+       BCHARGE = 1.6e-15, SOURCES = mySources, CHARGE = -1;
+
+TRACK, LINE = MapLine, BEAM = BEAM1,
+       MAXSTEPS = 2000000, DT = {dt:g}, ZSTOP = {zstop:g};
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;
+"""
+
+# An absolute lab pose. Z is the lab position of the map's own z = 0, which is
+# the same point G4beamline's `place z=` refers to.
+_POSED = """
+E01_MAP: FIELDMAP, X = 0.0, Y = 0.0, Z = {zmap:.9f},
+         THETA = 0.0, PHI = 0.0, PSI = 0.0,
+         FMAPFN = "../maps/{mapfile}", SCALE = {scale:.9g}{escale}{zrev};
+
+MapLine: LINE = (E01_MAP);
+"""
+
+# The other placement convention. ELEMEDGE is also the lab position of the
+# map's own z = 0: OPALX adds the map's first z to it.
+_EDGED = """
+D_IN:    DRIFT, L = {zstart:.9f}, ELEMEDGE = 0.0;
+E01_MAP: SOLENOID, L = {length:.9f}, ELEMEDGE = {zmap:.9f},
+         FMAPFN = "../maps/{mapfile}", KS = {scale:.9g}{zrev};
+D_OUT:   DRIFT, L = {dout:.9f}, ELEMEDGE = {zend:.9f};
+
+MapLine: LINE = (D_IN, E01_MAP, D_OUT);
+"""
+
+
+def case_readme(m: dict) -> str:
+    return f"""# {m['name']}
+
+{m['desc']}
+
+## Field
+
+{m['physics']}
+
+## Setup (`{m['name']}.in`)
+
+- Map `../maps/{m['mapfile']}`, {m['fmt']} format, carried by a `{m['element']}`.
+- The map's own z = 0 sits at lab z = {m['z_map']} m, so the field runs from
+  {m['field_s0']} m to {m['field_s1']} m along the line.
+- Multiplier on the tabulated field: {m['scale']}{'  (ZREVERSE = TRUE)' if m['zreverse'] else ''}.
+- 0.1 GeV electron, no space charge, time step {m['dt']} s, tracking stops at
+  {m['zstop']} m.
+- 13 particles: a reference plus a +/- step in each coordinate, so the transfer
+  matrix comes from centred differences.
+
+## How the output is checked (`fmlib.py` -> `run_tests.py`)
+
+{m['checked']}
+"""
+
+
+def build_case(cfg: dict) -> dict:
+    """Write one case directory and return its manifest entry."""
+    name = cfg["name"]
+    z_map = cfg.get("z_map", F.Z_MAP)
+    dt = cfg.get("dt", F.DT_FINE)
+    zstop = cfg.get("zstop", F.ZSTOP)
+    scale = cfg.get("scale", 1.0)
+    escale = cfg.get("escale", 1.0)
+    has_efield = cfg.get("has_efield", False)
+    zreverse = cfg.get("zreverse", False)
+    element = cfg.get("element", "FIELDMAP")
+
+    field_s0 = z_map - F.HALF_L
+    field_s1 = z_map + F.HALF_L
+
+    # Whether the field is non-zero right up to both ends of the map, which is
+    # what makes "where the reference particle first and last sees field" the
+    # same thing as the map's own edge. A quadrupole's field on the axis is
+    # zero, and the asymmetric solenoid profile has tapered to about 2e-4 of
+    # its peak by the map ends, so neither can have its placement checked that
+    # way.
+    sharp_edges = cfg.get(
+            "sharp_edges", "quad" not in name and "ramp" not in name and "efield" not in name)
+
+    d = HERE / name
+    d.mkdir(exist_ok=True)
+
+    zrev = ", ZREVERSE = TRUE" if zreverse else ""
+    # Only written where the map has an electric field, so the other inputs stay as they
+    # were. Left off, the element's default of 1 applies and it does nothing either way.
+    escale_text = f", ESCALE = {escale:.9g}" if cfg.get("has_efield") else ""
+    head = _HEAD.format(name=name, desc=cfg["desc"], mapfile=cfg["mapfile"],
+                        fmt=cfg["fmt"], element=element,
+                        psdump=cfg.get("psdump", 550), statdump=50)
+    if element == "FIELDMAP":
+        body = _POSED.format(zmap=z_map, mapfile=cfg["mapfile"], scale=scale,
+                             escale=escale_text, zrev=zrev)
+    else:
+        body = _EDGED.format(zstart=field_s0, length=F.L_FIELD, zmap=z_map,
+                             mapfile=cfg["mapfile"], scale=scale, zrev=zrev,
+                             dout=zstop - field_s1, zend=field_s1)
+    (d / f"{name}.in").write_text(head + body + _TAIL.format(dt=dt, zstop=zstop))
+    write_parts(d / "parts.txt", map_particles())
+
+    m = {
+        "name": name, "desc": cfg["desc"], "physics": cfg["physics"],
+        "checked": cfg["checked"], "group": cfg["group"],
+        "fmt": cfg["fmt"], "element": element, "mapfile": cfg["mapfile"],
+        "scale": scale, "escale": escale, "has_efield": has_efield,
+        # A magnetic field does no work. An electric one does, unless it is scaled away.
+        "magnetic_only": (not has_efield) or escale == 0.0,
+        "zreverse": zreverse,
+        "z_map": z_map, "field_s0": field_s0, "field_s1": field_s1,
+        "sharp_edges": sharp_edges,
+        "dt": dt, "zstop": zstop,
+        "same_as": cfg.get("same_as"),
+        "B_dip": F.B_DIP, "rho": F.RHO_DIP, "bend_angle": F.BEND_ANGLE,
+        "gradient": F.G_QUAD, "k1": F.k1_quad(), "B_sol": F.B_SOL,
+        "k_sol": F.k_solenoid(), "L_field": F.L_FIELD,
+        "P0_GeV": F.P0_GEV, "BRHO": F.BRHO, "bg0": F.BG0, "gamma": F.GAMMA,
+        "charge": F.CHARGE, "part_labels": F.PART_LABELS, "eps": F.EPS,
+        "h5": f"{name}.h5", "stat": f"{name}.stat",
+    }
+    (d / "README.md").write_text(case_readme(m))
+    return m
+
+
+def case_list() -> list[dict]:
+    dip = (f"Uniform By = {F.B_DIP:.6f} T over 1 m. A particle entering on the axis "
+           f"follows a circular arc of radius {F.RHO_DIP:.4f} m and leaves at "
+           f"{F.BEND_DEG:g} degrees, offset {F.RHO_DIP * (1 - math.cos(F.BEND_ANGLE)):.6f} m. "
+           "A constant field is reproduced by trilinear interpolation exactly.")
+    quad = (f"Quadrupole, By = g x and Bx = g y with g = {F.G_QUAD:.6f} T/m, so "
+            f"k1 = {F.k1_quad():.4f} m^-2 (negative: the electron's charge makes a "
+            "positive gradient defocus in x). Linear in one coordinate each, so "
+            "trilinear interpolation is exact. This field is both divergence free "
+            "and curl free, so its transfer matrix is symplectic.")
+    sol = (f"Uniform Bz = {F.B_SOL:g} T over 1 m, which turns the transverse momentum "
+           f"through k L = {F.k_solenoid() * F.L_FIELD:.6f} rad. There is no radial "
+           "field at the ends, so this is not a focusing solenoid and not a "
+           "divergence-free field; it is used because both formats carry it exactly "
+           "and the motion has a closed form.")
+    ramp = ("A solenoid profile that is deliberately not symmetric in z, with the "
+            "radial field from the usual first-order expansion. Turning it round is "
+            "a different field, which is what makes it a fair test of ZREVERSE.")
+
+    efield = (f"Uniform Ez = {F.E_LONG:g} MV/m over 1 m, written in the last three columns of "
+              "the nine-column form. A particle crossing it gains q E dz, which for a field "
+              f"with no z dependence is {F.energy_gain(F.E_LONG, F.L_FIELD) * 1e3:.4f} MeV "
+              "for this electron, whatever path it takes. Constant, so trilinear "
+              "interpolation is exact.")
+
+    same_quad_2x = "Must reproduce grid_quad_2x to round-off."
+    return [
+        dict(name="grid_dipole", group="3D grid", fmt="grid", mapfile="dipole.g4blmap",
+             desc="Uniform dipole in the 3D cartesian grid format, on a posed FIELDMAP.",
+             physics=dip,
+             checked="Bend angle and transverse offset of the reference orbit against "
+                     "the arc, the field window against the placement, and |p| against "
+                     "round-off."),
+        dict(name="grid_dipole_shift", group="3D grid", fmt="grid",
+             mapfile="dipole.g4blmap", z_map=F.Z_MAP + F.Z_SHIFT,
+             zstop=F.ZSTOP + F.Z_SHIFT,
+             desc=f"The same dipole map posed {F.Z_SHIFT} m further downstream.",
+             physics=dip,
+             checked=f"The field window must move by exactly {F.Z_SHIFT} m and the bend "
+                     "angle must not change, which is what says the pose positions the "
+                     "map's own origin."),
+        dict(name="grid_quad", group="3D grid", fmt="grid", mapfile="quad.g4blmap",
+             desc="Quadrupole in the 3D cartesian grid format, on a posed FIELDMAP.",
+             physics=quad,
+             checked="The 4x4 transverse matrix against the closed form, and its "
+                     "symplecticity."),
+        dict(name="grid_quad_2x", group="scaling", fmt="grid", mapfile="quad_2x.g4blmap",
+             desc="The quadrupole map written with twice the field. The reference the "
+                  "two scaling cases have to match.",
+             physics=quad + " Here every tabulated value is doubled.",
+             checked="The 4x4 matrix against the closed form at twice the gradient."),
+        dict(name="grid_quad_scale2", group="scaling", fmt="grid", mapfile="quad.g4blmap",
+             scale=2.0, same_as="grid_quad_2x",
+             desc="The plain quadrupole map with SCALE = 2 on the element.",
+             physics=quad + " SCALE = 2 is applied on top.",
+             checked=same_quad_2x + " That is what says SCALE is a plain multiplier on "
+                     "absolute Tesla rather than a normalised strength."),
+        dict(name="grid_quad_param", group="scaling", fmt="grid",
+             mapfile="quad_param.g4blmap", same_as="grid_quad_2x",
+             desc="The plain quadrupole field with normB = 4 and current = 2 on the "
+                  "param line.",
+             physics=quad + " The param line asks for a factor normB/current = 2.",
+             checked=same_quad_2x + " If either key were ignored the factor would come "
+                     "out 4 or 1/2 instead of 2."),
+        dict(name="grid_quad_messy", group="3D grid", fmt="grid",
+             mapfile="quad_messy.g4blmap", same_as="grid_quad",
+             desc="The same quadrupole field written the awkward ways real files are: "
+                  "a comment block in front, rows out of order, nine columns.",
+             physics=quad,
+             checked="Must reproduce grid_quad to round-off, which is what says the "
+                     "comment block, the row order and the zero electric field columns "
+                     "make no difference."),
+        dict(name="grid_sol", group="both formats", fmt="grid", mapfile="sol.g4blmap",
+             desc="Uniform Bz in the 3D cartesian grid format, on a posed FIELDMAP.",
+             physics=sol,
+             checked="The 4x4 transverse matrix against the closed form, and against "
+                     "the cylinder map holding the same field."),
+        dict(name="grid_sol_dt2", group="both formats", fmt="grid", mapfile="sol.g4blmap",
+             dt=F.DT_COARSE,
+             desc="grid_sol again with twice the time step, to show where the residual "
+                  "against the closed form comes from.",
+             physics=sol,
+             checked="The residual against the closed form should be about twice "
+                     "grid_sol's, which is what says it is the step resolving the two "
+                     "hard map ends rather than a reading error."),
+        dict(name="cyl_sol", group="both formats", fmt="cylinder",
+             mapfile="sol_cyl.g4blmap", same_as="grid_sol",
+             desc="The same uniform Bz in the 2D axisymmetric cylinder format, on a "
+                  "posed FIELDMAP.",
+             physics=sol,
+             checked="The 4x4 matrix against the closed form, and against grid_sol: the "
+                     "same field in the other format has to track the same."),
+        dict(name="cyl_sol_solenoid", group="both formats", fmt="cylinder",
+             element="SOLENOID", mapfile="sol_cyl.g4blmap", same_as="cyl_sol",
+             desc="The same cylinder map on a SOLENOID placed by ELEMEDGE, the other "
+                  "placement convention.",
+             physics=sol,
+             checked="Must reproduce cyl_sol to round-off, which is what says ELEMEDGE "
+                     "and the pose put the map's own z = 0 at the same place, and that "
+                     "KS = 1 reproduces the map as written."),
+        dict(name="grid_efield", group="electric", fmt="grid", mapfile="efield.g4blmap",
+             has_efield=True,
+             desc="A purely electric map in the 3D cartesian grid format, on a posed "
+                  "FIELDMAP.",
+             physics=efield,
+             checked="The energy the reference particle gains against q E dz, which is what "
+                     "says the electric columns are read, converted from MV/m to V/m, and "
+                     "actually applied."),
+        dict(name="grid_efield_escale2", group="electric", fmt="grid",
+             mapfile="efield.g4blmap", has_efield=True, escale=2.0,
+             desc="The same electric map with ESCALE = 2 on the element.",
+             physics=efield + " ESCALE = 2 is applied on top.",
+             checked="The energy change must be exactly twice grid_efield's, which is what "
+                     "says ESCALE is a plain multiplier on the tabulated field."),
+        dict(name="grid_eb", group="electric", fmt="grid", mapfile="eb.g4blmap",
+             has_efield=True,
+             desc="Electric and magnetic field in one map, both switched on.",
+             physics=efield + " The same map also carries the uniform dipole By, so the "
+                     "particle is bent and changes energy at the same time.",
+             checked="The energy change still matches q E dz even though the orbit is bent, "
+                     "because the work only depends on the z crossed."),
+        dict(name="grid_eb_bonly", group="electric", fmt="grid", mapfile="eb.g4blmap",
+             has_efield=True, escale=0.0, same_as="grid_dipole",
+             desc="The same combined map with ESCALE = 0, so only the magnetic half acts.",
+             physics=efield + " Here ESCALE = 0 switches the electric field off entirely.",
+             checked="Must reproduce grid_dipole to round-off. That is the sharp test that "
+                     "the two scales are independent: the same file, one field switched "
+                     "off, has to track like the magnet-only map."),
+        dict(name="cyl_ramp", group="ZREVERSE", fmt="cylinder",
+             mapfile="ramp_cyl.g4blmap",
+             desc="The asymmetric solenoid profile, read the way it is written.",
+             physics=ramp,
+             checked="Provides the field profile the reversed cases are compared with; "
+                     "its own field window and |p| are checked."),
+        dict(name="cyl_ramp_zrev", group="ZREVERSE", fmt="cylinder",
+             mapfile="ramp_cyl.g4blmap", zreverse=True, same_as="cyl_ramp_mirror",
+             desc="The same map with ZREVERSE = TRUE, which turns the magnet round.",
+             physics=ramp,
+             checked="Must reproduce cyl_ramp_mirror to round-off, and must differ from "
+                     "cyl_ramp -- otherwise the profile was symmetric and the test would "
+                     "prove nothing."),
+        dict(name="cyl_ramp_mirror", group="ZREVERSE", fmt="cylinder",
+             mapfile="ramp_cyl_mirror.g4blmap",
+             desc="The mirrored field written out as its own map file: z reflected and "
+                  "Bz negated, Br left alone.",
+             physics=ramp + " Written out already turned round.",
+             checked="The reference cyl_ramp_zrev is compared with."),
+    ]
+
+
+def main() -> None:
+    write_maps()
+    manifest = [build_case(cfg) for cfg in case_list()]
+    (HERE / "cases.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"wrote {len(manifest)} cases and "
+          f"{len(list(MAPS.glob('*.g4blmap')))} maps")
+    for m in manifest:
+        print(f"  {m['name']:20s} {m['fmt']:9s} {m['element']:9s} "
+              f"field {m['field_s0']:.2f}..{m['field_s1']:.2f} m")
+
+
+if __name__ == "__main__":
+    main()
