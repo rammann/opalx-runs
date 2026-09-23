@@ -1,0 +1,53 @@
+/*  probe.in -- does a 42-element, all-posed, 19 m muE4 lattice track at all?
+
+    This is the cheap structural probe, not a verified stage. A handful of on-axis muons at
+    the design momentum go through the whole generated lattice, and the questions are only:
+    does OPALX accept 42 elements placed by absolute lab pose, does the reference orbit follow
+    the maps around 108 degrees of bending, and does ZSTOP terminate the run.
+
+    Physics comparison against G4beamline comes later, on the staged cases.
+
+    Run from this directory (map paths in lattice.in are absolute, but OPALX writes its
+    output here):
+      mpirun -n 1 $OPALX probe.in --info 3 > run.log 2>&1
+*/
+
+OPTION, PSDUMPFREQ    = 100000;
+OPTION, STATDUMPFREQ  = 1;         // reference orbit every step; the geometry check reads it
+OPTION, BOUNDPDESTROY = 0;         // only the collimators may remove particles
+OPTION, VERSION       = 10900;
+
+Title, string="muE4 all-posed lattice probe";
+
+REAL MUON_MASS = 0.1056583755;     // GeV
+REAL P0        = 0.028;            // GeV/c, the channel's design momentum
+
+CALL, FILE = "../lattice.in";
+
+FS1: FIELDSOLVER, TYPE = NONE,
+     NX = 8, NY = 8, NZ = 8,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+
+REAL n_particles = 5;
+
+Dist1: DISTRIBUTION, TYPE = FROMFILE, FNAME = "parts.txt", NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+// CHARGE = 1 is mandatory: ParticleProperties maps MUON to -1 and Beam::execute only
+// consults that table when the attribute is absent. Check run.log for "CHARGE      +e * 1".
+BEAM1: BEAM, PARTICLE = MUON, NALLOC = n_particles,
+       BCHARGE = 1e-15, SOURCES = mySources, CHARGE = 1;
+
+// ZSTOP is accumulated PATH LENGTH, not lab z, so it is directly comparable with the
+// G4beamline centreline coordinate: 19.25 m to the last detector, 19.40 with margin.
+// DT = 1e-11 s is 0.768 mm/step at beta = 0.256, about 6 steps per 5 mm dipole map cell.
+TRACK, LINE = MUE4, BEAM = BEAM1,
+       MAXSTEPS = {60000},
+       DT = {1e-11},
+       ZSTOP = {19.40};
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;

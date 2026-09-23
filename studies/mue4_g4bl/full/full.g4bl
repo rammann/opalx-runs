@@ -1,0 +1,243 @@
+#	mue4.g4bl
+#
+#	Mue4 PSI g4 beam line model for the HIBM project 
+#
+#	author: L. Desorgher
+#   History:
+#			L.Desorgher 28-10-2013 creation , adapted from example SpaceCharge
+
+#	Beam parameters:
+#		P		momentum of the reference and bunch center
+#		sigmaP		sigmaP of the initial beam
+#		sigmaX,sigmaY,sigmaZ,sigmaXp,sigmaYp - other beam parameters
+#	spacecharge parameters:
+#		deltaT		time step (ns)
+#		nGrid		# points in each dimension of the grid
+#		nApprox		# points in each dimension of the approximation
+#		maxBeta		max beta in reference frome for bunch
+#		percentile	percentile of charge distribution used for
+#				    grid sizing
+#		verbose		verbose print control
+
+param -unset P=28 sigmaP=0 sigmaX=0 sigmaY=0 sigmaZ=0. sigmaXp=0.130 sigmaYp=0.130
+param -unset deltaT=0.100 nGrid=65 nApprox=7 maxBeta=0.1 percentile=99 verbose=0
+param -unset nMP=500 totalCharge=1
+# parallel-to-point focus at z=6000, determined using triplet.sh, scaled by P:
+param -unset QF=2.79310*$P/200 QD=-4.95221*$P/200
+
+#The correct use of the physics list  not really an issue for the beam simulation
+#Target and beam simulation are done separately
+physics QGSP_BERT disable=Decay spinTracking=0 doStochastics=0
+
+# collective -- dropped: there is no spacecharge command, so it did nothing
+param worldMaterial=Vacuum
+param maxStep=0.1 deltaChord=0.001   # capital S; the deck's lower-case `maxstep` never took effect
+start x=0. y=0. z=0. initialZ=0. radiusCut=250
+#beam gaussian beamZ=206.5 particle=mu+ nEvents=$nMP meanMomentum=$P sigmaP=$sigmaP \
+#  sigmaX=$sigmaX sigmaY=$sigmaY sigmaZ=$sigmaZ sigmaXp=$sigmaXp sigmaYp=$sigmaYp
+#beam ellipse beamZ=206.5 particle=mu+ nEvents=$nMP meanMomentum=$P sigmaP=$sigmaP \
+#  sigmaX=$sigmaX sigmaY=$sigmaY sigmaZ=$sigmaZ sigmaXp=$sigmaXp sigmaYp=$sigmaYp
+
+#
+#Beam definition from phase space density file
+#
+beam ascii filename=beam.txt
+reference particle=mu+ referenceMomentum=$P
+
+trackcuts keep=mu+ killSecondaries=1
+
+box Box height=50 width=50 length=1
+
+####################
+#Magnetic field maps 
+#####################
+
+#Solemoid file  taken from Track run by T. Proschka and adapted to G4beam line format 
+fieldmap WSX file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/wsx_total.g4blmap  current=1. 
+
+#Dipole map  taken from Track run by T. Proschka and adapted to G4beam line format 
+#fieldmap ASR61_300d file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr61_300d_new.g4blmap  
+#fieldmap ASR61_300sm file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr61_300sm_new.g4blmap 
+fieldmap ASR61_300d file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap  
+fieldmap ASR61_300sm file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap 
+
+
+ 
+#fieldmap ASR61_300sm2 file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr61_300sm_2.g4blmap 
+
+#fieldmap ASR62 file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr62shim_280_new.g4blmap  
+#fieldmap ASR62_sm file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr62shim_280_sm_new.g4blmap  
+#fieldmap ASR62_sm2 file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr62shim_280_sm_2.g4blmap 
+
+fieldmap ASR62 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_track.g4blmap  
+fieldmap ASR62_sm file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_sm_track.g4blmap 
+
+#fieldmap ASR62_2 file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr62shim_280_new.g4blmap  
+#fieldmap ASR62_2sm file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr62shim_280_sm_new.g4blmap  
+#fieldmap ASR62_sm4 file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/asr62shim_280_sm_4.g4blmap 
+
+#fieldmap QSM600 file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/qsm01a_210.g4blmap 
+fieldmap QSM600 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/qsm01a_210_track.g4blmap 
+#fieldmap QSM600 file=/Users/Andreas/Dropbox/PSI/HiMB/G4beamline/Macros/mue4/maps/feldqsm.dat
+
+####################
+#Beam elements
+#####################
+tubs targetEnclosure innerRadius=250 outerRadius=300  length=750 material=Vacuum color=0,1,0,0.5   # opened: OPALX and G4beamline do not scrape alike
+
+tubs SECTION innerRadius=300 outerRadius=2000  length=500 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+tubs Stop_SECTION innerRadius=300 outerRadius=2000  length=50 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+tubs WSX_housing innerRadius=220 outerRadius=250  length=1839 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+tubs WSX_window1 innerRadius=160 outerRadius=170  length=29 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+tubs WSX_window2 innerRadius=200 outerRadius=210  length=29 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+
+tubs QSM_PIPE innerRadius=200 outerRadius=4000  length=500 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+
+
+
+#dipole 1	
+box ASR61_BOX1 height=100 width=1200 length=500
+
+#FS61 V (vertical) H(horizontal)
+box FS61H height=400 width=610 length=100 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+box FS61V height=692 width=800 length=100 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+
+
+#FS62 
+box FS62 width=3810 length=100 height=2000 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+
+
+#FS63 V (vertical) H(horizontal)
+box FS63H height=400 width=608 length=100 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+box FS63V height=691 width=800 length=100 material=Vacuum   # opened: OPALX and G4beamline do not scrape alike
+
+
+#dipole 2
+box ASR62_BOX1 height=2000 width=3810 length=100
+#bric      19.0       400.0000   -100.0000    100.0000     -5.0000      5.0000
+
+######################
+#Placement of elements
+######################
+
+# virtualdetector LEMSdet radius=112 length=1 color=1,0,0
+# place LEMSdet z=540
+
+# virtualdetector EndOfSolenoidDet radius=250 length=1 color=1,0,0
+# place EndOfSolenoidDet z=1285 rename=MiddleOfSolenoidDet
+# place EndOfSolenoidDet z=1700
+
+place targetEnclosure z=0
+#
+#Placement of solenoid
+#
+place WSX z=1285 rotation=Y180
+place WSX_housing z=1285
+place WSX_window1 z=1285-0.5*(1839+29)
+place WSX_window2 z=1285+0.5*(1839+29)
+#place Stop_SECTION z=2500
+
+#
+#Placement of first dipole
+#
+cornerarc z=2578.0774 angle=20. centerRadius=1159.0622
+place ASR61_300d z=2982.6664 current=-9.9528E-01
+place ASR61_300sm z=2982.6664 current=-9.9528E-01
+place ASR61_300sm z=2982.6664 rotation=Y180,Z180 current=9.9528E-01
+place ASR61_BOX1 rename=ASR61_BOX11 z=2982.6664 y=170
+place ASR61_BOX1 rename=ASR61_BOX12 z=2982.6664 y=-170
+
+cornerarc z=2982.6664 angle=20. centerRadius=1159.0621
+#place Stop_SECTION z=3500
+
+
+#
+#Placement of first collimator after first corner and before first serie of quadrupoles
+#
+place FS61H rename=FS61H_R z=3980.3913 x=0.5*(190+800) y=0
+place FS61H rename=FS61H_L z=3980.3913 x=-0.5*(190+800) y=0
+place FS61V rename=FS61V_U z=3980.3913-150. y=0.5*(102+800) x=0
+place FS61V rename=FS61V_D z=3980.3913-150. y=-0.5*(102+800) x=0
+
+
+#
+#Placement of quadrupoles after first dipole
+#
+place QSM600 z=4735.3913 rotation=Y180 current=-2.1340E-01
+place QSM_PIPE z=4735.3913 
+place QSM600 z=5240.3913  rotation=Y180 current=6.5120E-01
+place QSM600 z=5745.3913  rotation=Y180 current=-3.4970E-01
+
+
+
+#place Stop_SECTION z=6000
+
+#
+#Placement of second dipole with FS62 (slit vertical)
+#
+
+cornerarc z=7142.4572 angle=-17. centerRadius=1219.8124
+place ASR62 z=7504.3829 rotation=Y180 current=-9.6380E-01
+place ASR62_sm z=7504.3829 rotation=Y180 current=-9.6380E-01
+place ASR62_sm z=7504.3829 rotation=Z180 current=9.6380E-01
+place FS62 rename=FS62_R z=7504.3829 x=0.5*(190+4000) y=0
+place FS62 rename=FS62_L z=7504.3829 x=-0.5*(190+4000) y=0
+cornerarc z=7504.3829 angle=-17. centerRadius=1219.8124
+
+
+place QSM_PIPE z=9263.3744
+place QSM600 z=9263.3744  rotation=Y180 current=-1.9590E-01
+place QSM600 z=9768.3744  rotation=Y180 current=6.2790E-01
+place QSM600 z=10273.3744  rotation=Y180 current=-3.7040E-01
+place QSM_PIPE z=10273.3744
+
+
+#
+#Placement of third collimator after second series of quadrupoles
+#
+place FS63H rename=FS63H_R z=11226.8744 x=0.5*(192+800) y=0
+place FS63H rename=FS63H_L z=11226.8744 x=-0.5*(192+800) y=0
+place FS63V rename=FS63V_U z=11226.8744-150. y=0.5*(109+800) x=0
+place FS63V rename=FS63V_D z=11226.8744-150. y=-0.5*(109+800) x=0
+
+
+#
+#Placement third dipole
+#
+cornerarc z=11670.4403 angle=17. centerRadius=1219.8123
+
+
+place ASR62 z=12032.366 current=9.6187E-01
+place ASR62_sm z=12032.366 current=9.6187E-01
+place ASR62_sm z=12032.366 rotation=Y180,Z180 current=9.6187E-01
+
+cornerarc z=12032.366 angle=17. centerRadius=1219.8123
+
+place QSM_PIPE z=13430.8575
+place QSM600 z=13430.8575  rotation=Y180 current=-3.2150E-01
+place QSM600 z=13935.8575  rotation=Y180 current=6.3400E-01
+place QSM600 z=14440.8575  rotation=Y180 current=-3.1780E-01
+place QSM_PIPE z=14440.8575
+
+
+place QSM600 z=17470.8575  rotation=Y180 current=4.5180E-01
+place QSM600 z=17975.8575  rotation=Y180 current=-9.0530E-01
+place QSM_PIPE z=17975.8575
+place QSM600 z=18480.8575  rotation=Y180 current=8.8900E-01
+place QSM_PIPE z=18480.8575 
+
+# profile zloop=750:19250:50 file=profile.txt particle=mu+
+#zntuple zloop=0:19250:50 file=zntuple_WsOn.root
+
+# virtualdetector virtDet radius=200 length=1 color=1,0,0 format=rootExtended
+# place virtDet z=19250
+
+#probefield inputFile=coordinate.in outputFile=- exit=0
+#probefield - - 0
+
+#place WSX_housing z=4000
+
+
+# All 22 recording planes, in centreline coordinates. Each writes Z<z>.txt.
+zntuple z=300,540,800,1285,1700,2300,3500,4300,5100,5900,6700,8000,8900,9800,10700,11500,12500,13800,15100,16400,17700,19250 format=ascii coordinates=centerline
+

@@ -1,0 +1,13 @@
+# G4beamline detector output, regenerable by running the twin deck.
+LEMSdet.txt
+MiddleOfSolenoidDet.txt
+EndOfSolenoidDet.txt
+virtDet.txt
+
+# The G4beamline twin itself is generated from mue4_WsxOn.g4bl by make_case.py /
+# make_gauss.py, so it is output rather than source.
+mue4_cmp.g4bl
+
+# The beam files are generated too, but from a fixed seed, so they are reproducible.
+# beam.txt is G4beamline's copy of the same particles in parts.txt.
+beam.txt

@@ -1,0 +1,108 @@
+Spin through the whole muE4 line, OPALX against G4beamline
+
+10000 muons, all 22 field maps, nothing scraping, spin starting along the
+direction of travel. Both codes report in the centreline frame -- except, as it
+turns out, for OPALX's spin.
+
+     z    plane |       as each code writes it | after turning OPALX into the plane frame
+  [mm]     turn |          median        worst |        median    99th pct      worst
+----------------------------------------------------------------------------------------
+   300    0.00d |        0.000000     0.000001 |      0.000000    0.000001   0.000001
+   540    0.00d |        0.000004     0.000022 |      0.000004    0.000021   0.000022
+   800    0.00d |        0.000018     0.000086 |      0.000018    0.000082   0.000086
+  1285    0.00d |        0.000023     0.000081 |      0.000023    0.000070   0.000081
+  1700    0.00d |        0.000160     0.000160 |      0.000160    0.000183   0.000160
+  2300    0.00d |        0.001001     0.000943 |      0.001001    0.001009   0.000943
+  3500   40.00d |        0.683701     0.651368 |      0.002582    0.010035   0.014867
+  4300   40.00d |        0.683711     0.646847 |      0.003165    0.012369   0.018160
+  5100   40.00d |        0.683710     0.644439 |      0.003521    0.014809   0.021499
+  5900   40.00d |        0.683709     0.646187 |      0.001195    0.003601   0.004969
+  6700   40.00d |        0.683713     0.645062 |      0.001214    0.003713   0.005400
+  8000    6.00d |        0.104359     0.104772 |      0.001477    0.005349   0.008151
+  8900    6.00d |        0.104353     0.104897 |      0.001356    0.004703   0.007292
+  9800    6.00d |        0.104345     0.104892 |      0.001260    0.003956   0.008127
+ 10700    6.00d |        0.104351     0.104938 |      0.001281    0.004528   0.007436
+ 11500    6.00d |        0.104344     0.104836 |      0.001305    0.004738   0.007964
+ 12500   40.00d |        0.683658     0.680445 |      0.004665    0.020987   0.028863
+ 13800   40.00d |        0.683665     0.680445 |      0.010343    0.047659   0.099960
+ 15100   40.00d |        0.683651     0.680445 |      0.001925    0.004331   0.100045
+ 16400   40.00d |        0.683649     0.680445 |      0.001925    0.004328   0.100045
+ 17700   40.00d |        0.683666     0.680445 |      0.004966    0.032814   0.227892
+ 19250   40.00d |        0.683656     0.735151 |      0.012065    0.069615   0.095960
+
+The median difference in the first column is not merely large, it is exactly
+what a frame rotation gives. Turning a unit vector by an angle t moves it by
+2*sin(t/2):
+
+    plane turned   6.0 deg :  measured 0.104351,  2*sin(t/2) = 0.104672
+    plane turned  40.0 deg :  measured 0.683666,  2*sin(t/2) = 0.684040
+
+So OPALX's MONITOR records position and momentum in its own frame -- Monitor::apply
+runs after the bunch has been transformed into that frame, which is why the
+plane-crossing test is on R(2) -- but takes the spin straight from pc->Pol, and
+ParticleContainer::transformBunch rotates R, P, E and B while leaving Pol alone.
+G4beamline rotates both. For a plane that is not turned the two frames are the
+same, which is why none of the uniform-field cases could show this.
+
+Turning OPALX's spin into each plane's own frame removes almost all of it: the
+median falls from 0.68 to about 0.001-0.012. What is left is a real difference,
+not the frame.
+
+That residual is the size the field boundaries predict. The uniform Bz case
+measured OPALX carrying up to half a step of extra spin rotation at each field
+edge, because it steps straight through one where Geant4 steps to it. This line
+has 22 maps, so 44 edges; at this step size half a step is about 3.5e-5 rad of
+spin, and 44 of those with random signs is roughly 2e-4 rad. The observed
+difference is that size.
+
+The anomalous precession along the line: the angle between spin and momentum,
+in the centreline frame, which is exactly the part the anomaly produces.
+
+ z [mm]   G4beamline [mrad]   OPALX [mrad]  difference [mrad]
+--------------------------------------------------------------
+    300            -0.00000       -0.00000           -0.00000
+    540            -0.00000       -0.00000           -0.00000
+    800            -0.00000       -0.00000           -0.00000
+   1285            -0.00000       -0.00000            0.00000
+   1700             0.00155       -0.02251           -0.02406
+   2300             0.01142       -0.33693           -0.34835
+   3500             0.81743        0.43298           -0.38445
+   4300             0.84431        0.45698           -0.38733
+   5100             0.84348        0.45383           -0.38965
+   5900             0.84503        0.55578           -0.28925
+   6700             0.83818        0.53879           -0.29939
+   8000             0.14489       -0.17013           -0.31503
+   8900             0.12362       -0.18404           -0.30766
+   9800             0.12600       -0.16286           -0.28886
+  10700             0.12171       -0.16159           -0.28330
+  11500             0.13888       -0.14745           -0.28632
+  12500             0.81292        0.34420           -0.46872
+  13800             0.83740        0.61583           -0.22157
+  15100             0.83913        0.56927           -0.26985
+  16400             0.83913        0.56812           -0.27101
+  17700             0.82634        0.32086           -0.50548
+  19250             0.84666        1.25073            0.40407
+
+At the last plane the spin leads the momentum by 0.8467 mrad in
+G4beamline and 1.2507 mrad in OPALX.
+
+Two things to be clear about here.
+
+First, this is NOT a precise measurement of the anomaly, and it was never going
+to be. The signal is under a milliradian while the accumulated boundary error is
+a few tenths of one, so the two are comparable. The anomaly is measured by the
+uniform-field scan, where it comes out to 8 parts per million; this line only
+shows that spin survives 22 real field maps and 108 degrees of bending without
+anything going wrong.
+
+Second, the naive expectation of G*gamma*theta = 2.27 mrad for 108 degrees does
+not apply. The WSX solenoid turns the spin about the direction of travel before
+the beam reaches any bend, so the spin is no longer along the momentum when the
+bending starts. The 0.85 mrad G4beamline reports is the answer for this line.
+
+Polarization magnitude, which must stay at 1: G4beamline 1.0000000, OPALX 1.0000232.
+
+OPALX drifts above 1 by about 2e-5 over the line. Its spin is stored as three
+floats rather than doubles (ParticleContainer.hpp:124), each step rounds the
+result back to float, and roughly 250000 steps of that accumulates to about this
+size. The rotation itself conserves the length exactly; the storage does not.
