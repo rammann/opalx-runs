@@ -1,0 +1,51 @@
+Spin in a uniform Bz: the one case with no orbit at all
+
+1.000 m of uniform Bz = 0.0933979467 T, a mu+ at 28 MeV/c travelling along the
+field. Nothing pushes the particle sideways, so the momentum must come out
+exactly as it went in and the only thing that changes is the spin. It turns about
+the field by (1+G) times the cyclotron angle of 1.0 rad.
+
+                               spin x         spin y     angle [rad]
+--------------------------------------------------------------------
+G4beamline                0.539321000   -0.842100000    -1.001165599
+OPALX                     0.539293170   -0.842118561    -1.001199045
+closed form               0.539320850   -0.842100362    -1.001165921
+
+G4beamline - closed form : +3.213e-07 rad  (3.21e-07 relative)
+OPALX      - closed form : -3.312e-05 rad  (3.31e-05 relative)
+
+Both turn the spin the same way, and that way is the one the torque mu x B gives
+for a positive muon: the spin goes from +x towards -y. OPALX has no test of its
+own for the direction -- its unit test takes the absolute value of the angle and
+says so in a comment -- so this is the first check of it.
+
+momentum unchanged: OPALX px,py = 0.00e+00,0.00e+00, pz = 0.265005021
+                    G4BL  Px,Py = 0.00e+00,0.00e+00, Pz = 28.000000 MeV/c
+
+How the OPALX answer moves as the time step shrinks
+
+    DT [s]  mm per step     angle [rad]   error [rad]   half a step
+--------------------------------------------------------------------
+     1e-12      0.07680    -1.001199045    -3.312e-05     3.844e-05
+     5e-13      0.03840    -1.001160357    +5.564e-06     1.922e-05
+   2.5e-13      0.01920    -1.001159238    +6.682e-06     9.611e-06
+  1.25e-13      0.00960    -1.001170268    -4.348e-06     4.805e-06
+
+Every error sits inside half a step's worth of rotation, and that bound shrinks
+with the step, but the error itself jumps around inside it rather than falling
+smoothly. That is what an error made at the field edge looks like: it depends on
+where the boundary happens to fall between two steps.
+
+Is the error made at the boundary, or does it build up along the field?
+
+  field length     angle [rad]     closed form   error [rad]
+------------------------------------------------------------
+         1.0 m    -1.001199045    -1.001165921    -3.312e-05
+         2.0 m    -2.002321076    -2.002331841    +1.076e-05
+
+The rotation doubled and the error did not: it went from 3.31e-05 to 1.08e-05 rad.
+Nothing accumulates along the field, so the Thomas-BMT integration itself is
+right and what is left is the entry and exit. Geant4 steps exactly to a geometry
+boundary; OPALX steps straight through it and carries up to half a step of extra
+rotation, which is why G4beamline sits a hundred times closer to the closed form
+at a comparable step size.

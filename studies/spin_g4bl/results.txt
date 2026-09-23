@@ -1,0 +1,32 @@
+Thomas-BMT spin precession: OPALX and G4beamline against the closed form
+
+A muon bends through a uniform By. The spin starts along the momentum and ends
+ahead of it by G*gamma*theta -- the only term in the equation that is not the
+same one that turns the momentum. The bend angle is held fixed while the
+momentum changes, so the five cases differ only in gamma.
+
+p [GeV/c]    gamma  bend [rad] |  G4beamline       OPALX      theory   [mrad]
+------------------------------------------------------------------------------
+    0.028   1.0345  -0.5235959 |    -0.63258    -0.63368    -0.63154
+    0.100   1.3769  -0.5236051 |    -0.84097    -0.84110    -0.84055
+    0.300   3.0103  -0.5236003 |    -1.83838    -1.83732    -1.83771
+    1.000   9.5171  -0.5235979 |    -5.81008    -5.81011    -5.80997
+    3.094  29.3001  -0.5235981 |   -17.88806   -17.88698   -17.88696
+
+Anomaly fitted from each code's own five points:
+  G4beamline   G = 1.165991281e-03   its compiled value 1.165920800e-03   +0.0060 %
+  OPALX        G = 1.165930429e-03   its compiled value 1.165920610e-03   +0.0008 %
+
+The bend angle and the spin-momentum angle come out with the same sign in both
+codes, which is what a positive anomaly requires: the spin leads the momentum.
+
+      p  G4BL - theory  OPALX - theory  OPALX - G4BL   [mrad]
+------------------------------------------------------
+  0.028      -0.001038       -0.002138     -0.001099
+  0.100      -0.000415       -0.000550     -0.000135
+  0.300      -0.000669        0.000389      0.001059
+  1.000      -0.000112       -0.000145     -0.000033
+  3.094      -0.001095       -0.000018      0.001077
+
+G4beamline prints six digits, so a spin component of order one is resolved to
+1e-6 and an angle to about 0.001 mrad. Both codes sit at that floor.

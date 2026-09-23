@@ -1,0 +1,31 @@
+# uniform_bz.g4bl -- the G4beamline half of the spin test.
+#
+# One metre of uniform Bz, the same .g4blmap OPALX reads. The particle travels
+# along the field, so nothing pushes it sideways and the orbit is a straight
+# line; only the spin turns.
+#
+# spinTracking=1 is what switches Geant4's Thomas-BMT integration on. It also
+# swaps the muon decay for the channels that know about spin, which is why decay
+# is disabled here -- otherwise this would change more than the spin.
+#
+# format=asciiExtended is the 28-column output that carries PolX PolY PolZ as
+# plain text. Plain `Extended` would resolve to ROOT in this build.
+
+physics QGSP_BERT disable=Decay doStochastics=0 spinTracking=1
+
+param worldMaterial=Vacuum
+param maxStep=0.1 deltaChord=0.001
+
+start x=0 y=0 z=0 initialZ=0 radiusCut=500
+reference particle=mu+ referenceMomentum=28
+trackcuts keep=mu+ killSecondaries=1
+
+beam ascii filename=beam.txt
+
+box WORLDBOX height=600 width=600 length=1600 material=Vacuum
+place WORLDBOX z=650
+
+fieldmap BZ file=uniform_bz.g4blmap
+place BZ z=600 current=1.
+
+zntuple z=50,1200 format=asciiExtended coordinates=centerline

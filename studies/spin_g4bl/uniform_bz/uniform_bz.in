@@ -1,0 +1,68 @@
+/*  uniform_bz.in -- does OPALX turn the spin, and by how much?
+
+    One metre of uniform Bz = 0.093397947 T, which is exactly one radian of
+    cyclotron angle for a 28 MeV/c muon. The particle travels ALONG the field, so
+    there is no force on it at all and the orbit is a straight line. The spin,
+    however, turns about z by
+
+        phi = (1 + G) * theta_c = 1.001165921 rad
+
+    with G = 1.16592061e-03 the muon anomaly. Starting the spin at (1, 0, 0) it
+    should end at (cos phi, +/- sin phi, 0) -- and WHICH sign is the thing no test
+    in OPALX currently checks, because the unit test takes the absolute value of
+    the angle and says so.
+
+    Nothing about the orbit can contaminate this: the momentum must come out
+    exactly as it went in.
+*/
+
+OPTION, PSDUMPFREQ    = 100000;
+OPTION, STATDUMPFREQ  = 10;        // mean_polx/poly/polz along the line
+OPTION, BOUNDPDESTROY = 0;
+OPTION, VERSION       = 10900;
+
+Title, string="spin_g4bl / uniform Bz";
+
+REAL MUON_MASS = 0.1056583755;
+REAL P0        = 0.028;
+
+E01_MON_IN : MONITOR, X = 0.0, Y = 0.0, Z = 0.050,
+             THETA = 0.0, PHI = 0.0, PSI = 0.0,
+             DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_IN";
+
+// The map's own z runs -550..550 mm, so placing its centre at 0.600 m puts the
+// field at 0.050..1.150 m. SCALE = 1 reproduces the map as written.
+E02_BZ     : FIELDMAP, X = 0.0, Y = 0.0, Z = 0.600,
+             THETA = 0.0, PHI = 0.0, PSI = 0.0,
+             FMAPFN = "uniform_bz.g4blmap", SCALE = 1.0;
+
+E03_MON_OUT: MONITOR, X = 0.0, Y = 0.0, Z = 1.200,
+             THETA = 0.0, PHI = 0.0, PSI = 0.0,
+             DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_OUT";
+
+SpinLine : LINE = (E01_MON_IN, E02_BZ, E03_MON_OUT);
+
+FS1: FIELDSOLVER, TYPE = NONE, NX = 8, NY = 8, NZ = 8,
+     PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+     BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+     BBOXINCR = 1, GREENSF = INTEGRATED;
+
+REAL n_particles = 3;
+Dist1: DISTRIBUTION, TYPE = FROMFILE, FNAME = "parts.txt", NPARTDIST = n_particles;
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;
+mySources: EMISSIONSOURCELIST = (ES1);
+
+// POLARIZATION is what switches spin tracking on. Setting it at all -- even to
+// {0,0,0} -- makes OPALX carry a spin vector per particle and run Thomas-BMT.
+// FROMFILE ignores any spin in parts.txt, so every particle starts at this vector.
+BEAM1: BEAM, PARTICLE = MUON, NALLOC = n_particles,
+       BCHARGE = 1e-15, SOURCES = mySources, CHARGE = 1,
+       POLARIZATION = {1.0, 0.0, 0.0};
+
+TRACK, LINE = SpinLine, BEAM = BEAM1,
+       MAXSTEPS = {2000000},
+       DT = {1e-12},
+       ZSTOP = {1.30};
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;
