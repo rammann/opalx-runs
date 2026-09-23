@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+#
+# Generate every case, run both codes on it, test, and plot.
+#
+#   ./run_all.sh                 everything
+#   ./run_all.sh --test-only     skip both codes, just re-run the analysis
+#   ./run_all.sh --pair-only     skip the 20000-particle stage
+#   ./run_all.sh asr61_dipole    one case (repeatable)
+#
+# Both codes resolve relative paths from the working directory, so every run
+# happens inside the case's own folder.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
+PY="${PY:-/opt/homebrew/Caskroom/miniconda/base/bin/python}"
+G4BL_APP="${G4BL_APP:-/Users/rammann/Code/G4BL/G4beamline-3.08.app}"
+
+TEST_ONLY=0
+PAIR_ONLY=0
+ONLY_CASES=()
+for arg in "$@"; do
+    case "$arg" in
+        --test-only) TEST_ONLY=1 ;;
+        --pair-only) PAIR_ONLY=1 ;;
+        --*) echo "unknown option $arg" >&2; exit 2 ;;
+        *) ONLY_CASES+=("$arg") ;;
+    esac
+done
+
+# --- OPALX binary ----------------------------------------------------------
+# The CMake target is opalx_exe. `make opalx` builds only the static library and
+# leaves whatever executable was there before, which is how a run silently uses
+# a binary from weeks ago.
+if [[ -z "${OPALX_BIN:-}" ]]; then
+    for cand in "$ROOT/build/src/opalx" "$ROOT/opalx/build_serial/src/opalx" \
+                "$ROOT/opalx/build/src/opalx"; do
+        [[ -x "$cand" ]] && { OPALX_BIN="$cand"; break; }
+    done
+fi
+[[ -n "${OPALX_BIN:-}" ]] || { echo "no opalx binary found" >&2; exit 1; }
+
+# Every deck here places elements with a FIELDMAP, which an older binary rejects
+# at parse time with a message about SCALE. Refuse to run rather than produce a
+# log full of parse errors.
+# grep -c, not grep -q: with `set -o pipefail`, grep -q exits on the first match,
+# strings then dies of SIGPIPE, and the pipeline reports failure on a binary that
+# is perfectly fine. grep -c reads to the end.
+if [[ "$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L")" -eq 0 ]]; then
+    echo "ERROR: $OPALX_BIN has no FIELDMAP element." >&2
+    echo "       Rebuild with: cd $ROOT/build && make -j8 opalx_exe" >&2
+    exit 1
+fi
+echo "opalx:  $OPALX_BIN"
+echo "python: $PY"
+
+export PATH="$G4BL_APP/Contents/MacOS:$PATH"
+command -v g4bl >/dev/null || { echo "g4bl not on PATH" >&2; exit 1; }
+
+# --- cases -----------------------------------------------------------------
+"$PY" "$HERE/make_cases.py"
+
+# macOS ships bash 3.2, which has no mapfile and errors on expanding an empty
+# array under `set -u`, so both are done the long way.
+CASES=()
+if [[ "${#ONLY_CASES[@]}" -gt 0 ]]; then
+    CASES=("${ONLY_CASES[@]}")
+else
+    while IFS= read -r line; do
+        CASES+=("$line")
+    done < <("$PY" -c "
+import json
+print('\n'.join(c['name'] for c in json.load(open('$HERE/cases.json'))))")
+fi
+
+run_one() {   # <dir> <stem> <what>
+    local d="$1" stem="$2" what="$3"
+    echo "  $what"
+    ( cd "$d"
+      rm -f Z*.txt g4bl_field_*.txt "$stem".h5 "$stem".stat MON_*.h5
+      rm -rf data
+      g4bl "$stem.g4bl" > "g4bl_$what.log" 2>&1 \
+        || { echo "    g4bl FAILED, see $d/g4bl_$what.log" >&2; return 1; }
+      mpirun -n 1 "$OPALX_BIN" "$stem.in" --info 1 > "run_$what.log" 2>&1 \
+        || { echo "    opalx FAILED, see $d/run_$what.log" >&2; return 1; }
+      # Both stages write the same plane and field filenames, so the pair stage's
+      # output is kept before the 20000-particle stage overwrites it.
+      if [[ "$what" == "fine" ]]; then
+          mkdir -p fine && mv -f Z*.txt fine/ 2>/dev/null || true
+          for f in MON_*.h5; do [[ -e "$f" ]] && mv -f "$f" fine/; done
+          [[ -f "$stem.stat" ]] && mv -f "$stem.stat" fine/
+      elif [[ "$what" == "pair" ]]; then
+          mkdir -p pair && mv -f Z*.txt pair/ 2>/dev/null || true
+          for f in g4bl_field_*.txt; do [[ -e "$f" ]] && mv -f "$f" pair/; done
+          for f in MON_*.h5; do [[ -e "$f" ]] && mv -f "$f" pair/; done
+          [[ -d data ]] && cp -f data/opalx_field_*.dat pair/ 2>/dev/null || true
+          [[ -f "$stem.stat" ]] && mv -f "$stem.stat" pair/
+      else
+          mkdir -p gauss && mv -f Z*.txt gauss/ 2>/dev/null || true
+          for f in MON_*.h5; do [[ -e "$f" ]] && mv -f "$f" gauss/; done
+          [[ -f "$stem.stat" ]] && mv -f "$stem.stat" gauss/
+      fi )
+}
+
+if [[ "$TEST_ONLY" -eq 0 ]]; then
+    for c in "${CASES[@]}"; do
+        echo "== $c"
+        run_one "$HERE/$c" "$c" pair
+        # Cases sensitive enough to resolve below their own step error run the pair
+        # stage again at half the step, so run_tests can extrapolate rather than
+        # assume the step is fine.
+        [[ -f "$HERE/$c/${c}_fine.in" ]] && run_one "$HERE/$c" "${c}_fine" fine
+        [[ "$PAIR_ONLY" -eq 1 ]] || run_one "$HERE/$c" "${c}_gauss" gauss
+    done
+fi
+
+"$PY" "$HERE/run_tests.py" "${CASES[@]}"

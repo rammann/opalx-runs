@@ -1,6 +1,6 @@
-/*  asr61_dipole.in -- muE4 ASR61_300d dipole map on its own.
+/*  asr61_group.in -- ASR61_300d and both ASR61_300sm placements, as muE4 places them.
 
-    Paired with asr61_dipole.g4bl: the same 19 muons and the same map files go
+    Paired with asr61_group.g4bl: the same 19 muons and the same map files go
     through both codes. Nothing else can differ -- no space charge, no material,
     no decay, no scraping.
 
@@ -21,7 +21,7 @@ OPTION, STATDUMPFREQ  = 1;        // reference orbit and its field, every step
 OPTION, BOUNDPDESTROY = 1000000;  // never trip the statistical loss box
 OPTION, VERSION       = 10900;
 
-Title, string="g4bl_compare / asr61_dipole";
+Title, string="g4bl_compare / asr61_group";
 
 REAL MUON_MASS = 0.1056583755;              // GeV
 REAL P0        = 0.028;                     // GeV/c; FROMFILE forbids PC on BEAM
@@ -48,19 +48,31 @@ E04_ASR61_300D_T: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
     FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap",
     SCALE = -9.952800E-01;
 
-E05_MON_2000: MONITOR, X = 0.0, Y = 0.0, Z = 2.000000,
+// g4bl: place ... z=1500.0000 current=-9.95280E-01
+E05_ASR61_300SM_: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
+    THETA = 0.000000000, PHI = 0.000000000, PSI = 0.000000000,
+    FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap",
+    SCALE = -9.952800E-01;
+
+// g4bl: place ... z=1500.0000 rotation=Y180,Z180 current=9.95280E-01
+E06_ASR61_300SM_: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
+    THETA = -3.141592654, PHI = -0.000000000, PSI = -3.141592654,
+    FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap",
+    SCALE = 9.952800E-01;
+
+E07_MON_2000: MONITOR, X = 0.0, Y = 0.0, Z = 2.000000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
     DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2000";
 
-E06_MON_2500: MONITOR, X = 0.0, Y = 0.0, Z = 2.500000,
+E08_MON_2500: MONITOR, X = 0.0, Y = 0.0, Z = 2.500000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
     DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2500";
 
-E07_MON_2950: MONITOR, X = 0.0, Y = 0.0, Z = 2.950000,
+E09_MON_2950: MONITOR, X = 0.0, Y = 0.0, Z = 2.950000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
     DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2950";
 
-CaseLine : LINE = (E01_MON_50, E02_MON_1000, E03_MON_1500, E04_ASR61_300D_T, E05_MON_2000, E06_MON_2500, E07_MON_2950);
+CaseLine : LINE = (E01_MON_50, E02_MON_1000, E03_MON_1500, E04_ASR61_300D_T, E05_ASR61_300SM_, E06_ASR61_300SM_, E07_MON_2000, E08_MON_2500, E09_MON_2950);
 
 // Field sampling, in lab metres. OPALX writes these into data/, not here.
 // `grid` lands on the map's own grid points, `half` halfway between them,

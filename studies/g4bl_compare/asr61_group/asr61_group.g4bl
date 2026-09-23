@@ -1,6 +1,6 @@
-# asr61_dipole.g4bl -- muE4 ASR61_300d dipole map on its own.
+# asr61_group.g4bl -- ASR61_300d and both ASR61_300sm placements, as muE4 places them.
 #
-# Paired with asr61_dipole.in: the same muons and the same map files go through both
+# Paired with asr61_group.in: the same muons and the same map files go through both
 # codes. Vacuum world, no material, no decay, no stochastic processes, so only
 # the field can cause a difference.
 #
@@ -35,10 +35,13 @@ box WORLDBOX height=1000 width=4000 length=4200 material=Vacuum
 place WORLDBOX z=1500 x=1000
 
 fieldmap M0 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap
+fieldmap M1 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap
 
 # current= on the place line is the deck-side multiplier on the tabulated
 # Tesla, the same quantity OPALX spells SCALE. The readers do not normalise.
 place M0 z=1500.0 current=-9.95280E-01
+place M1 z=1500.0 current=-9.95280E-01
+place M1 z=1500.0 rotation=Y180,Z180 current=9.95280E-01
 
 # Recording planes. zntuple interpolates each track linearly onto the exact
 # plane, the same construction an OPALX MONITOR uses. One file per plane,

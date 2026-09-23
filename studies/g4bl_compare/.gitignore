@@ -16,9 +16,22 @@ Z[0-9]*.txt
 g4bl_axis.txt
 g4bl_hist*
 
-# Particle files -- written by the first cell of compare.ipynb, not hand-edited
+# Particle files -- written by make_cases.py (or, in the solenoid cases, by the
+# first cell of the notebook). Never hand-edited.
 parts.txt
 beam.txt
+parts_gauss.txt
+beam_gauss.txt
+
+# Where run_all.sh files each stage's output, and the field dumps in it
+pair/
+gauss/
+g4bl_field_*.txt
+opalx_field_*.dat
+
+# Analysis output
+results.txt
+plots/
 
 *.png
 .ipynb_checkpoints/

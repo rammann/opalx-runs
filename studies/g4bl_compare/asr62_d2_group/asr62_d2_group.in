@@ -1,6 +1,6 @@
-/*  asr61_dipole.in -- muE4 ASR61_300d dipole map on its own.
+/*  asr62_d2_group.in -- ASR62 and both ASR62_sm placements of the second bend, all turned by Y180.
 
-    Paired with asr61_dipole.g4bl: the same 19 muons and the same map files go
+    Paired with asr62_d2_group.g4bl: the same 19 muons and the same map files go
     through both codes. Nothing else can differ -- no space charge, no material,
     no decay, no scraping.
 
@@ -21,7 +21,7 @@ OPTION, STATDUMPFREQ  = 1;        // reference orbit and its field, every step
 OPTION, BOUNDPDESTROY = 1000000;  // never trip the statistical loss box
 OPTION, VERSION       = 10900;
 
-Title, string="g4bl_compare / asr61_dipole";
+Title, string="g4bl_compare / asr62_d2_group";
 
 REAL MUON_MASS = 0.1056583755;              // GeV
 REAL P0        = 0.028;                     // GeV/c; FROMFILE forbids PC on BEAM
@@ -38,55 +38,67 @@ E02_MON_1000: MONITOR, X = 0.0, Y = 0.0, Z = 1.000000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
     DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_1000";
 
-E03_MON_1500: MONITOR, X = 0.0, Y = 0.0, Z = 1.500000,
+E03_MON_1550: MONITOR, X = 0.0, Y = 0.0, Z = 1.550000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
-    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_1500";
+    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_1550";
 
-// g4bl: place ... z=1500.0000 current=-9.95280E-01
-E04_ASR61_300D_T: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
-    THETA = 0.000000000, PHI = 0.000000000, PSI = 0.000000000,
-    FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap",
-    SCALE = -9.952800E-01;
+// g4bl: place ... z=1550.0000 rotation=Y180 current=-9.63800E-01
+E04_ASR62SHIM_28: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.550000000,
+    THETA = 3.141592654, PHI = -0.000000000, PSI = 0.000000000,
+    FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_track.g4blmap",
+    SCALE = -9.638000E-01;
 
-E05_MON_2000: MONITOR, X = 0.0, Y = 0.0, Z = 2.000000,
+// g4bl: place ... z=1550.0000 rotation=Y180 current=-9.63800E-01
+E05_ASR62SHIM_28: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.550000000,
+    THETA = 3.141592654, PHI = -0.000000000, PSI = 0.000000000,
+    FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_sm_track.g4blmap",
+    SCALE = -9.638000E-01;
+
+// g4bl: place ... z=1550.0000 rotation=Z180 current=9.63800E-01
+E06_ASR62SHIM_28: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.550000000,
+    THETA = 0.000000000, PHI = -0.000000000, PSI = 3.141592654,
+    FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_sm_track.g4blmap",
+    SCALE = 9.638000E-01;
+
+E07_MON_2100: MONITOR, X = 0.0, Y = 0.0, Z = 2.100000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
-    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2000";
+    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2100";
 
-E06_MON_2500: MONITOR, X = 0.0, Y = 0.0, Z = 2.500000,
+E08_MON_2600: MONITOR, X = 0.0, Y = 0.0, Z = 2.600000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
-    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2500";
+    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2600";
 
-E07_MON_2950: MONITOR, X = 0.0, Y = 0.0, Z = 2.950000,
+E09_MON_3050: MONITOR, X = 0.0, Y = 0.0, Z = 3.050000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,
-    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_2950";
+    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_3050";
 
-CaseLine : LINE = (E01_MON_50, E02_MON_1000, E03_MON_1500, E04_ASR61_300D_T, E05_MON_2000, E06_MON_2500, E07_MON_2950);
+CaseLine : LINE = (E01_MON_50, E02_MON_1000, E03_MON_1550, E04_ASR62SHIM_28, E05_ASR62SHIM_28, E06_ASR62SHIM_28, E07_MON_2100, E08_MON_2600, E09_MON_3050);
 
 // Field sampling, in lab metres. OPALX writes these into data/, not here.
 // `grid` lands on the map's own grid points, `half` halfway between them,
 // `yscan` walks the full height. See make_cases.py for why.
 DUMPEMFIELDS, FILE_NAME = "opalx_field_grid.dat", COORDINATE_SYSTEM = CARTESIAN,
-    X_START = -0.200000000, DX = 0.010000000, X_STEPS = 59,
+    X_START = -0.420000000, DX = 0.010000000, X_STEPS = 61,
     Y_START = 0.000000000, DY = 0.010000000, Y_STEPS = 1,
-    Z_START = 0.120000000, DZ = 0.005000000, Z_STEPS = 552,
+    Z_START = 0.100000000, DZ = 0.005000000, Z_STEPS = 580,
     T_START = 0.0, DT = 1.0, T_STEPS = 1;
 
 DUMPEMFIELDS, FILE_NAME = "opalx_field_half.dat", COORDINATE_SYSTEM = CARTESIAN,
-    X_START = -0.195000000, DX = 0.010000000, X_STEPS = 59,
+    X_START = -0.415000000, DX = 0.010000000, X_STEPS = 61,
     Y_START = 0.005000000, DY = 0.010000000, Y_STEPS = 1,
-    Z_START = 0.122500000, DZ = 0.005000000, Z_STEPS = 552,
+    Z_START = 0.102500000, DZ = 0.005000000, Z_STEPS = 580,
     T_START = 0.0, DT = 1.0, T_STEPS = 1;
 
 DUMPEMFIELDS, FILE_NAME = "opalx_field_yscan.dat", COORDINATE_SYSTEM = CARTESIAN,
-    X_START = -0.190000000, DX = 0.280000000, X_STEPS = 3,
-    Y_START = -0.110000000, DY = 0.010000000, Y_STEPS = 23,
-    Z_START = 0.125000000, DZ = 1.375000000, Z_STEPS = 3,
+    X_START = -0.410000000, DX = 0.290000000, X_STEPS = 3,
+    Y_START = -0.100000000, DY = 0.010000000, Y_STEPS = 21,
+    Z_START = 0.105000000, DZ = 1.445000000, Z_STEPS = 3,
     T_START = 0.0, DT = 1.0, T_STEPS = 1;
 
 DUMPEMFIELDS, FILE_NAME = "opalx_field_edge.dat", COORDINATE_SYSTEM = CARTESIAN,
-    X_START = 0.390000000, DX = 0.010000000, X_STEPS = 1,
-    Y_START = -0.120000000, DY = 0.010000000, Y_STEPS = 24,
-    Z_START = 0.120000000, DZ = 0.005000000, Z_STEPS = 552,
+    X_START = 0.190000000, DX = 0.010000000, X_STEPS = 1,
+    Y_START = -0.110000000, DY = 0.010000000, Y_STEPS = 22,
+    Z_START = 0.100000000, DZ = 0.005000000, Z_STEPS = 580,
     T_START = 0.0, DT = 1.0, T_STEPS = 1;
 
 

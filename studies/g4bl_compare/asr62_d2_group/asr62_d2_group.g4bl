@@ -1,6 +1,6 @@
-# asr61_dipole.g4bl -- muE4 ASR61_300d dipole map on its own.
+# asr62_d2_group.g4bl -- ASR62 and both ASR62_sm placements of the second bend, all turned by Y180.
 #
-# Paired with asr61_dipole.in: the same muons and the same map files go through both
+# Paired with asr62_d2_group.in: the same muons and the same map files go through both
 # codes. Vacuum world, no material, no decay, no stochastic processes, so only
 # the field can cause a difference.
 #
@@ -31,24 +31,27 @@ beam ascii filename=beam.txt
 
 # `fieldmap` places no physical volume, so without this nothing expands the world
 # and every track leaves immediately, leaving the ntuples silently empty.
-box WORLDBOX height=1000 width=4000 length=4200 material=Vacuum
-place WORLDBOX z=1500 x=1000
+box WORLDBOX height=1000 width=4000 length=4400 material=Vacuum
+place WORLDBOX z=1550 x=-1000
 
-fieldmap M0 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap
+fieldmap M0 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_track.g4blmap
+fieldmap M1 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_sm_track.g4blmap
 
 # current= on the place line is the deck-side multiplier on the tabulated
 # Tesla, the same quantity OPALX spells SCALE. The readers do not normalise.
-place M0 z=1500.0 current=-9.95280E-01
+place M0 z=1550.0 rotation=Y180 current=-9.63800E-01
+place M1 z=1550.0 rotation=Y180 current=-9.63800E-01
+place M1 z=1550.0 rotation=Z180 current=9.63800E-01
 
 # Recording planes. zntuple interpolates each track linearly onto the exact
 # plane, the same construction an OPALX MONITOR uses. One file per plane,
 # named after it: Z50.txt and so on.
-zntuple z=50,1000,1500,2000,2500,2950 format=ascii coordinates=centerline
+zntuple z=50,1000,1550,2100,2600,3050 format=ascii coordinates=centerline
 
 # The same three sample sets the OPALX deck asks for, in the same order.
 # No tracking is involved, so a difference here is a field difference and
 # everything below it is meaningless until it passes.
-fieldntuple FGRID format=ascii filename=g4bl_field_grid.txt x=-200.000000,380.100000,10.000000 y=0.000000 z=120.000000,2875.050000,5.000000 t=0
-fieldntuple FHALF format=ascii filename=g4bl_field_half.txt x=-195.000000,385.100000,10.000000 y=5.000000 z=122.500000,2877.550000,5.000000 t=0
-fieldntuple FYSCAN format=ascii filename=g4bl_field_yscan.txt x=-190.000000,372.800000,280.000000 y=-110.000000,110.100000,10.000000 z=125.000000,2888.750000,1375.000000 t=0
-fieldntuple FEDGE format=ascii filename=g4bl_field_edge.txt x=390.000000 y=-120.000000,110.100000,10.000000 z=120.000000,2875.050000,5.000000 t=0
+fieldntuple FGRID format=ascii filename=g4bl_field_grid.txt x=-420.000000,180.100000,10.000000 y=0.000000 z=100.000000,2995.050000,5.000000 t=0
+fieldntuple FHALF format=ascii filename=g4bl_field_half.txt x=-415.000000,185.100000,10.000000 y=5.000000 z=102.500000,2997.550000,5.000000 t=0
+fieldntuple FYSCAN format=ascii filename=g4bl_field_yscan.txt x=-410.000000,172.900000,290.000000 y=-100.000000,100.100000,10.000000 z=105.000000,3009.450000,1445.000000 t=0
+fieldntuple FEDGE format=ascii filename=g4bl_field_edge.txt x=190.000000 y=-110.000000,100.100000,10.000000 z=100.000000,2995.050000,5.000000 t=0

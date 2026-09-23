@@ -1,6 +1,6 @@
-# asr61_dipole.g4bl -- muE4 ASR61_300d dipole map on its own.
+# asr62_dipole_gauss.g4bl -- muE4 ASR62 dipole map on its own, at the polarity of the third bend.
 #
-# Paired with asr61_dipole.in: the same muons and the same map files go through both
+# Paired with asr62_dipole_gauss.in: the same muons and the same map files go through both
 # codes. Vacuum world, no material, no decay, no stochastic processes, so only
 # the field can cause a difference.
 #
@@ -8,7 +8,7 @@
 #   field starts to bend the orbit and s runs ahead of z. The centreline is
 #   straight -- no cornerarc -- which is what makes the two frames one to one.
 #
-# maxStep=0.1 mm: the step at which G4beamline has stopped moving. Its default
+# maxStep=0.5 mm: the step at which G4beamline has stopped moving. Its default
 #   is 100 mm and this deck's ancestors used 1 mm; at 1 mm the answer is still
 #   30 um from its own limit, which is larger than anything being measured.
 #   NOTE the capital S -- `maxstep` is a different, unused parameter.
@@ -17,7 +17,7 @@
 
 physics QGSP_BERT disable=Decay doStochastics=0
 param worldMaterial=Vacuum
-param maxStep=0.1 deltaChord=0.001
+param maxStep=0.5 deltaChord=0.001
 
 # `start` must come before every `place` or g4bl aborts with `Invalid start`.
 start x=0 y=0 z=0 initialZ=0 radiusCut=2000
@@ -27,28 +27,21 @@ trackcuts keep=mu+ killSecondaries=1
 # renumber=0 (the default) keeps EventID from the file, so EventID == OPALX id + 1.
 # Do NOT set beamZ: it forces z=0 on every particle and wipes out any longitudinal
 # offset the file carries.
-beam ascii filename=beam.txt
+beam ascii filename=beam_gauss.txt
 
 # `fieldmap` places no physical volume, so without this nothing expands the world
 # and every track leaves immediately, leaving the ntuples silently empty.
-box WORLDBOX height=1000 width=4000 length=4200 material=Vacuum
-place WORLDBOX z=1500 x=1000
+box WORLDBOX height=1000 width=4000 length=4400 material=Vacuum
+place WORLDBOX z=1550 x=-1000
 
-fieldmap M0 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap
+fieldmap M0 file=/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr62shim_280_track.g4blmap
 
 # current= on the place line is the deck-side multiplier on the tabulated
 # Tesla, the same quantity OPALX spells SCALE. The readers do not normalise.
-place M0 z=1500.0 current=-9.95280E-01
+place M0 z=1550.0 current=9.61870E-01
 
 # Recording planes. zntuple interpolates each track linearly onto the exact
 # plane, the same construction an OPALX MONITOR uses. One file per plane,
 # named after it: Z50.txt and so on.
-zntuple z=50,1000,1500,2000,2500,2950 format=ascii coordinates=centerline
+zntuple z=50,1000,1550,2100,2600,3050 format=ascii coordinates=centerline
 
-# The same three sample sets the OPALX deck asks for, in the same order.
-# No tracking is involved, so a difference here is a field difference and
-# everything below it is meaningless until it passes.
-fieldntuple FGRID format=ascii filename=g4bl_field_grid.txt x=-200.000000,380.100000,10.000000 y=0.000000 z=120.000000,2875.050000,5.000000 t=0
-fieldntuple FHALF format=ascii filename=g4bl_field_half.txt x=-195.000000,385.100000,10.000000 y=5.000000 z=122.500000,2877.550000,5.000000 t=0
-fieldntuple FYSCAN format=ascii filename=g4bl_field_yscan.txt x=-190.000000,372.800000,280.000000 y=-110.000000,110.100000,10.000000 z=125.000000,2888.750000,1375.000000 t=0
-fieldntuple FEDGE format=ascii filename=g4bl_field_edge.txt x=390.000000 y=-120.000000,110.100000,10.000000 z=120.000000,2875.050000,5.000000 t=0

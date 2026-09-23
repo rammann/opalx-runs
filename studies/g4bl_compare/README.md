@@ -1,252 +1,301 @@
-# g4bl_compare — checking OPALX elements against G4beamline
+# g4bl_compare — checking OPALX field maps against G4beamline
 
-One folder per element. Each holds a G4BL input, an OPALX input describing the same
-element, and a notebook that pushes the **same particles** through both and compares
-the outputs particle by particle.
+One folder per element. Each holds a G4beamline input, an OPALX input describing the
+same element, and the same particles going through both. The two codes read the **same
+`.g4blmap` file** — no conversion, no derived map.
 
 The point is attribution. Comparing whole beamlines only says "roughly agrees";
-comparing one element in isolation says which element, and which term of its map, is
-wrong.
+comparing one map in isolation says which map, and where in it, is wrong.
+
+**Scope.** These cases cover the five `grid` maps muE4 uses. They do **not** cover
+`wsx_total.g4blmap`, the sixth map and the only `cylinder` one — the only file read by
+`G4BL2DMagnetoStatic` rather than `G4BL3DGrid`. `make_cases.py` excludes it by design and
+its only comparison is the older `wsx_solenoid/` notebooks, which run at the step sizes
+this README shows are not converged and compare the field on the axis only, so that map's
+off-axis `Br` has never been compared with anything. Read every statement below as being
+about the five grid maps.
 
 ```
 g4bl_compare/
-  wsx_solenoid/              13 test particles -> per-particle diff + transfer matrix
-    wsx_solenoid.g4bl
-    wsx_solenoid.in
-    compare.ipynb
-  wsx_solenoid_gauss/        15000 Gaussian particles -> monitor plots, 8 planes
-    wsx_solenoid_gauss.g4bl
-    wsx_solenoid_gauss.in
-    compare_gauss.ipynb
-  asr61_dipole/              13 test particles -> per-particle diff, SBEND + 3D grid map
-    asr61_dipole.g4bl
-    asr61_dipole.in
-    make_parts.py
-    compare.py
-  toy_transfer_matrix.py     how the finite-difference transfer matrix works
+  cmplib.py        readers for both codes, the six coordinates, tolerances, the result table
+  make_cases.py    writes every case's decks and particle files from one description
+  cases.json       generated; one record per case
+  run_all.sh       generate, run both codes, test, plot
+  run_tests.py     every check -> results.txt
+  plot_tests.py    -> plots/
+  results.txt      generated; ends with an N/N count
+  plots/           generated; nine figures
+
+  asr61_dipole/    ASR61_300d, the first bend's main map
+  asr61_300sm/     ASR61_300sm, moved onto the axis so a beam can reach it
+  asr62_dipole/    ASR62, the second and third bends' main map
+  qsm600_quad/     QSM600, the only nine-column file
+  asr61_group/     ASR61_300d + both ASR61_300sm placements, as muE4 places them
+  asr62_d2_group/  ASR62 + both ASR62_sm placements of the bend at 7504 mm
+  asr62_d3_group/  the same for the bend at 12032 mm
+
+  wsx_solenoid/          WSX, 13 particles, notebook      (older, still valid)
+  wsx_solenoid_gauss/    WSX, 15000 particles, notebook   (older, still valid)
 ```
 
-`asr61_dipole/` is the bend case: an SBEND taking its field from a G4beamline 3D
-`grid` map instead of from ANGLE. It has its own README; the short version is that
-the on-axis field agrees to 5e-8 T, i.e. exactly, and the exit positions after a
-41 degree bend to 50 um out of 1.24 m.
-
-Two ways of looking at the same solenoid. `wsx_solenoid/` is the strict one: few
-particles, compared one by one, plus a 6x6 transfer matrix. `wsx_solenoid_gauss/` is
-the visual one: a real bunch, phase-space plots at 8 planes from both codes side by
-side, with sigma_x != sigma_y so the Larmor rotation is directly visible as the x-y
-ellipse turning.
-
-`parts.txt` (OPALX) and `beam.txt` (G4BL) are written by the first cell of the
-notebook from one array, so the two codes cannot be fed different particles. They are
-gitignored for the same reason run output is.
-
-## Running a case
+## Running it
 
 ```bash
-cd wsx_solenoid
+# The CMake target is opalx_exe. `make opalx` builds only the static library and
+# leaves whatever executable was there before.
+cd /Users/rammann/Code/OPALX/build && make -j8 opalx_exe
 
-# 1. first two cells of compare.ipynb -> parts.txt, beam.txt
-
-# 2. G4BL
-source /Users/rammann/Code/G4BL/G4beamline-3.08.app/Contents/root/bin/thisroot.sh
-g4bl wsx_solenoid.g4bl > g4bl.log 2>&1
-
-# 3. OPALX  (one rank only -- particle-to-row identity across ranks is not guaranteed)
-mpirun -n 1 /Users/rammann/Code/OPALX/build/src/opalx wsx_solenoid.in --info 1 > run.log 2>&1
-
-# 4. rest of compare.ipynb
+cd /Users/rammann/Code/OPALX/opalx-runs/studies/g4bl_compare
+./run_all.sh                  # everything
+./run_all.sh --pair-only      # skip the 20000-particle stage
+./run_all.sh --test-only      # re-run the analysis without re-tracking
+./run_all.sh asr61_dipole     # one case
+cat results.txt
 ```
 
-The notebook has a cell that runs both for you if the binaries are in the usual places
-(`build/src/opalx`, `opalx/build_serial/src/opalx`, `opalx/build/src/opalx`).
+Python is the conda base environment, `/opt/homebrew/Caskroom/miniconda/base/bin/python`;
+the system `python3` has no h5py or numpy. One MPI rank only — which row a particle lands
+on across ranks is not guaranteed. Both codes resolve relative paths from the working
+directory, so each case runs from inside its own folder.
 
-Python is the conda base env — `/opt/homebrew/Caskroom/miniconda/base/bin/python`. The
-system `python3` has no h5py or numpy.
+## What the study measures
 
-Both codes must run **from inside the case folder**: field map and particle file paths
-are relative to the working directory.
+Three stages per case, in the order in which a failure makes the next one meaningless.
 
-## How a case is built
+**The field, with no tracking.** Both codes are asked for the field at the same points,
+OPALX through `DUMPEMFIELDS` and G4beamline through `fieldntuple`. Sampled at the map's
+own grid points, which reads the table back, and halfway between them, which makes both
+codes interpolate. If the interpolation schemes differed, the second would fail while the
+first passed.
 
-**Same particles.** The reference plus a ± step in each of the 6 phase-space
-coordinates — 13 particles. Small enough to compare one by one instead of
-statistically, and the ± pairs give a 6×6 transfer matrix from each code by centered
-finite differences.
+**Nineteen particles.** The reference, then a small ± step in each of the six coordinates,
+then a large ± step in x, y and dp/p. The small steps give a transfer matrix from each code
+by centred differences; the large ones probe where the map stops being linear, which the
+small steps cannot see. The set is exactly symmetric in ±, so its mean is exactly zero:
+OPALX under `FROMFILE` takes its reference orbit from the bunch mean, and that is what
+makes the mean coincide with G4beamline's declared reference particle.
 
-The set must stay **exactly symmetric in ±**. OPALX under `FROMFILE` takes its
-reference orbit from the bunch *mean*, and that symmetry is what makes the mean
-coincide with G4BL's `reference particle`. One asymmetric particle puts a silent
-offset into every transverse comparison.
+**Twenty thousand Gaussian muons.** Matched by id, so the comparison is still per particle
+and not only a comparison of distribution widths. A map that is read correctly near the
+axis and wrongly further out shows up here as a difference that grows with amplitude, and
+nowhere else.
 
-**Same frame.** The element is tested in isolation, so its position is free. Pick it so
-`z` in the G4BL input [mm] / 1000 equals path length `s` in the OPALX input [m],
-exactly. Nothing to fit, no offset in the notebook.
+## What it found
 
-For WSX: the map's own z runs −1500…+1500 mm, so `place MAG z=1800` puts the field at
-z = 300…3300 mm. OPALX places a map as `z_lab = ELEMEDGE + z_map`, so **`ELEMEDGE` is
-the lab position of the map centre, not of the field start** — hence `ELEMEDGE = 1.800`.
-Recording planes at 150 and 3450 mm, both in field-free drift.
+**The two codes agree on the field to the last digit G4beamline prints.** In all seven
+cases the worst difference is exactly one printing step — 1e-7 T on the 0.086 T ASR61 map,
+1e-6 T on the 0.215 T quadrupole — at the map's own grid points and halfway between them
+alike. So both the table and the trilinear interpolation match.
 
-**Same field.** The OPALX input points `FMAPFN` straight at the G4BL `.g4blmap`. No
-conversion, no derived map files. OPALX reads the G4BL `cylinder` format natively
-(`G4BL2DMagnetoStatic`) and does not normalise it, so `KS = 1.0` is G4BL's `current=1.`.
-`ZREVERSE = TRUE` on the solenoid reproduces G4BL's `place ... rotation=Y180` (see
-below); without it the on-axis peak lands at s = 2.150 m with the wrong sign instead of
-at s = 1.450 m.
+**Tracking agrees to between 3.9e-8 and 9.4e-6 m** at the exit plane, over orbits that bend
+through 41 degrees and reach 1.27 m off axis, and to between 1.2e-7 and 8.2e-6 rad in angle.
 
-**Nothing else can differ.** Vacuum world, no iron, no decay, no stochastic processes,
-no space charge, no scraping.
+**OPALX conserves |p| far better than G4beamline can report it.** A static magnetic field
+does no work, and OPALX holds |p| between 1.7e-14 and 6.2e-11 across the seven cases.
+G4beamline's own figure is 1.5e-6 to 2.2e-6, which is its six-figure ASCII output rather
+than its tracking.
 
-## What the notebooks report
+**The transfer matrices agree to within the precision the comparison has.** This is now a
+real check, and it was not at first. `row_floors()` originally took each row's floor from
+the worst measured OPALX-minus-G4beamline disagreement in that coordinate; since the matrix
+difference is built from those same differences, the ratio was bounded by about one by
+construction and, against a tolerance of 3, **could not fail**. Replacing the OPALX exit
+state with zeros, with noise, or with x doubled all still passed, so the "0.49 to 0.89 of
+the floor" it printed carried no information. The floor is now derived from G4beamline's
+printed precision alone, per coordinate, with no reference to the OPALX data: the real data
+passes at 0.49 and those same corruptions fail by two to three orders of magnitude.
 
-Both open with a **setup diagram**: where the solenoid field sits, where the recording
-planes are, the map centre (`ELEMEDGE`), the creation point and `ZSTOP`, over a plot of
-the on-axis Bz. It renders before either code has run — the field panel just says so
-until `g4bl_axis.txt` exists.
+**With 20000 particles, every one is recorded at every plane in both codes**, and the rms
+of the bunch agrees to the digit G4beamline prints. Nothing is lost, so no number here is
+biased by a missing tail.
 
-### wsx_solenoid/compare.ipynb
+**The difference does not grow with amplitude.** This is the result the large bunch exists
+to produce. For the ASR61 dipole the median per-particle difference at the exit is flat at
+about 8 µm from 0 to 40 mm of starting radius — the map is read as well 40 mm off axis as
+on it. The one case where it does grow is `qsm600_quad`, from 3e-9 m on axis to 3e-7 m at
+30 mm, which is what a quadrupole must do: its field is proportional to displacement, so a
+particle further out sees more field and accumulates more of everything, including the
+difference. Figure `07_gauss_per_particle.png`.
 
-- per-particle exit `x, y, x', y', ζ, δ` from both codes and the difference
-- the same at the entrance plane — pure plumbing, and it should be zero
-- the 6×6 transfer matrix from each code, side by side, plus the element-wise
-  difference and the symplectic residual
-- the same three matrices as annotated heatmaps — G4BL and OPALX on a shared colour
-  scale, the difference on its own — and a second panel showing the difference
-  *relative to each element's own size*, so a small element that is badly wrong isn't
-  hidden by a large element that is slightly off
-- the Larmor rotation angle, **with sign**, three ways: from each matrix, from the x+
-  particle's trajectory, and from ∫Bz ds / (2Bρ)
-- OPALX `Bx_ref, By_ref, Bz_ref` from the `.stat` file against G4BL's on-axis
-  `fieldntuple` dump, plotted per component. No tracking is involved, so a mismatch
-  there is a field-import problem and everything below it is meaningless until it
-  passes. `Bx` and `By` vanish on the axis of an axisymmetric magnet, so those two are
-  an alignment check — nonzero means the reference orbit is off the magnet axis, or
-  the map isn't axisymmetric about it.
+Two things the 20000-particle stage measures that 19 particles cannot, and both are about
+where a monitor samples rather than about the maps:
 
-`x'` and `y'` are the primary comparison: they're momentum ratios, so they don't depend
-on either code's frame convention.
+- **At a plane inside the field the angle disagrees by up to 2.4e-4 rad** while the
+  position still agrees to 2e-5 m. Both codes interpolate the position onto the plane, but
+  the momentum is reported from whichever tracking step the particle was on, and inside a
+  field the momentum is changing with z. At 0.086 T and Bρ = 0.0934 T·m that angle is
+  **0.26 mm of longitudinal sampling offset** — one to two OPALX steps. Outside the field
+  there is nothing to change and the same planes agree to 2e-8 rad. `run_tests.py` reports
+  the in-field planes separately and converts the angle into the length that explains it;
+  for the quadrupole it cannot, because a quadrupole is zero on its own axis and the
+  `.stat` file only carries the reference orbit.
+- **The largest of 20000 draws is not comparable to the largest of 19.** The per-particle
+  difference has a distribution: median 8.0e-6 rad, worst 3.7e-5. The 19-particle stage's
+  worst is 8.2e-6, i.e. the median of the same distribution. Halving the time step moves
+  the worst only from 3.7e-5 to 3.1e-5, so it is the tail and not the step. The
+  20000-particle stage is therefore tested on its median and 99th percentile, which do not
+  depend on how many particles were drawn, and the maximum is reported rather than tested.
 
-## Adding an element
+**Adding a map of zeros changes nothing, measured rather than assumed.** `asr62_d3_group`
+is `asr62_dipole` plus two placements of `asr62shim_280_sm_track.g4blmap`, and its exit
+state comes out identical — exactly in G4beamline, to 1.5e-11 m in OPALX.
 
-Copy `wsx_solenoid/`, and change three things: the G4BL element (`fieldmap`/`genericquad`/…
-plus its `place`), the OPALX element line, and the plane positions if the element has a
-different length. The notebook is element-agnostic below the first two cells.
+### The two cases at the real muE4 angle
 
-## Notes for whoever hits these next
+`asr61_bisector` and `asr61_group_bisector` place the ASR61 magnet the way muE4 does:
+between two `cornerarc` commands that turn the centreline 20 degrees before it and 20
+degrees after, so the beam enters the map at 20 degrees to the map's own axis instead of
+straight down it. The positions and rotations come from `mue4lib.walk()`, the same code
+the whole-line study uses, and they reproduce that study's numbers exactly --
+`X = 0.069900004`, `Z = 2.974500020`, `THETA = 0.349065850`.
 
-- **`rotation=Y180`** in G4BL is `R = diag(−1, 1, −1)`: it mirrors the map in z *and*
-  flips the sign of Bz (`Bz_lab(z) = −Bz_map(z_place − z)`, Br unchanged). The WSX map
-  is strongly asymmetric in z — peak at map-local +350 mm — so this is not a
-  symmetry you can ignore. Confirmed here by G4BL's own field dump: with
-  `place MAG z=1800` the on-axis peak comes out at **z = 1450 mm** (= 1800 − 350) and
-  `∫Bz dz = −0.259104 T·m`, i.e. mirrored and negative. OPALX reproduces it with
-  `ZREVERSE = TRUE` on the solenoid, which mirrors the map in z and negates Bz at load
-  time. `KS = −1` is *not* the same thing: it would negate Br too. With `ZREVERSE` the
-  OPALX `Bz_ref` trace gives peak −0.260442 T at s = 1.4499 m and `∫Bz dz = −0.259104
-  T·m`, matching G4BL to the `%.6g` output floor.
-  `opalx-runs/data/wsx_solenoid_1D.map`, produced by
-  `runs/mue4_fieldmaps/tools/g4blmap_solenoid_to_astra.py`, applies neither: its peak
-  sits 700 mm the other side of centre and `∫Bz ds` comes out **positive**. The
-  Larmor-angle sign is the sharpest test of it.
-- **The Larmor angle has to be read off the matrix carefully.** `M[0:2,0:2] = cosθ·A`
-  and `M[2:4,0:2] = −sinθ·A` for a common 2×2 `A`, so `atan2(−M[2,0], M[0,0])` gives θ
-  only modulo π — and it lands on the wrong branch here, because `A` has a negative
-  leading element. The notebook picks the branch by requiring `A[0,1] > 0` (a
-  net-drifting channel). A much stronger solenoid, with Larmor phase advance past π,
-  would need a different discriminant.
-- **The symplectic residual sits around 1e-3 in both codes.** `ζ` and `δ` as defined
-  here are conjugate only up to a factor, and the finite-difference steps are 1e-3, so
-  that is the method, not the code. Compare the two codes' residuals to each other.
-- **The pointwise `Bz` difference is a sampling offset, not a field error.** OPALX
-  reports `Bz_ref` at the reference particle but tags it with that step's path length
-  `s`; a sub-0.1 mm mismatch between the two is enough to show up as a few 1e-4 T
-  wherever the field is steep. The tell is that peak `Bz` and `∫Bz ds` agree to 1e-6
-  while the pointwise max is 1e-3 of peak. The notebook converts the difference into
-  the longitudinal offset that would explain it — median 0.2 µm, 25 µm at the 99th
-  percentile — so it can be read for what it is.
-- **`CHARGE = 1` on the OPALX BEAM is mandatory.** `ParticleProperties` maps `MUON` to
-  charge −1, and `Beam::execute` only consults that table when the attribute is absent.
-  A charge sign error is indistinguishable from a map orientation error in every
-  downstream number, so `run.log` is checked for `CHARGE      +e * 1`.
-- **G4BL's tracking parameter is `maxStep`, capital S.** `mue4_WsxOn.g4bl` writes
-  `param maxstep=10`, which is a different, unused parameter — that model is running on
-  the 100 mm default.
-- **`fieldmap` places no physical volume**, so nothing expands the G4BL world. Without
-  the vacuum `WORLDPIPE` every track leaves immediately and the ntuples come out empty.
-- **`start` must come before every `place`** in a G4BL input, or it aborts with
-  `Invalid start` — it refuses to run once a centerline segment exists.
-- **G4BL ASCII output is `%.6g`** — 6 significant digits. That's a ~5e-7 relative floor
-  on every comparison; don't read anything into differences below it.
-- **OPALX monitor `.h5` files have several `Step#N` groups**, one per tracking step
-  during which particles crossed the plane. All of them have to be concatenated, then
-  sorted by `id`. `time` is in seconds, `x` in m, `px` in βγ.
-- **A monitor plane inside the field, or past `ZSTOP`, records nothing** and does not
-  complain. The notebook checks the particle count at every plane.
+Two things these cases do that the straight ones cannot.
 
-## Reference numbers for the WSX on-axis map
+**They check that OPALX puts the magnet where G4beamline puts it.** G4beamline says
+`cornerarc`; OPALX needs an absolute position and rotation. Every straight case uses a
+rotation of 0 or 180 degrees, so the conversion between the two was never tested. Asking
+both codes for the field at the same 10074 points in the lab gives the same answer to
+1e-7 T, with no tracking involved. If the conversion were wrong this would fail at once.
 
-```
-peak Bz  0.260443 T at map-local z = +350 mm   (the map is NOT z-symmetric)
-int Bz dz  0.259104 T*m  ->  Leff = 0.995 m
-Brho       0.093398 T*m  ->  |Larmor angle| = 1.3871 rad = 79.5 deg
-```
-Sign of the Larmor angle is negative for the `rotation=Y180` placement.
+**They see about a hundred times more finely.** The beam stays within 35 mm of the
+centreline instead of swinging out to 1.27 m, and G4beamline prints six digits, so the
+smallest visible difference drops from 1e-5 m to 1e-7 m.
 
-## Where wsx_solenoid stands
+That extra resolution immediately showed that `DT = 1e-12` s and `maxStep = 0.1` mm are
+**not** converged after all. They only looked converged because the straight cases could
+not see below 1e-5 m. So each of these cases is run twice, at one step and at half it, and
+`run_tests.py` reports how much the answer moved. Where the error falls in proportion to
+the step -- halving the step halves it -- the step's contribution is removed and what is
+left is tested. For `asr61_bisector` that is **0.028 µm** in position and **0.069 µrad** in
+angle, against a 0.1 µm printing floor: the two codes agree as closely as this comparison
+can measure.
 
-Passing, with OPALX reading the `.g4blmap` natively.
+**`asr61_group_bisector` has not converged, and this is not hidden.** It adds the two
+`ASR61_300sm` placements, and the beam does reach them -- it gets to x = 433 mm in the
+map's own frame, past the main map's 390 mm edge, and those files move the exit by 7.7 mm
+in both codes. Crossing from one field file into another is where an integrator converges
+slowest, and it shows:
 
-| | OPALX | G4BL |
-|---|---|---|
-| peak Bz on axis | −0.260442 T at s = 1.4499 m | −0.260443 T at s = 1.4500 m |
-| ∫Bz dz | −0.259104 T·m | −0.259104 T·m |
+| step | worst position | worst angle | matrix, in printing floors |
+|---|---|---|---|
+| 1e-12 s / 0.1 mm | 2.28 µm | 0.97 µrad | 26.2 |
+| 5e-13 s / 0.05 mm | 1.20 µm | 0.58 µrad | 7.4 |
+| 2.5e-13 s / 0.025 mm | 0.75 µm | 0.40 µrad | 5.4 |
 
-Particle by particle, all 13, ids matched:
+Each halving still reduces the difference, so most of what is left is step size, but the
+reduction is slowing and the curve has not flattened. **Whether any of it is a real
+difference between the codes is not yet answered.** Four checks on this case fail as a
+result, and they are left failing rather than given a looser limit: the honest statement is
+that this geometry needs a smaller step than is affordable here, not that the codes agree.
 
-| | entrance (s = 0.150 m) | exit (s = 3.450 m) |
-|---|---|---|
-| max \|Δx, Δy\| | 1.4e-15 mm | 7.0e-06 mm |
-| max \|Δpx, Δpy\| | 1.6e-15 MeV/c | 4.2e-08 MeV/c |
-| max \|Δpz\| | 4.5e-12 MeV/c | 1.5e-05 MeV/c |
+The same applies to its 20000-particle stage, which holds the largest disagreement anywhere
+in the study -- the mean x at the last plane differs by 36 µm on a 23 mm wide beam, and the
+99th percentile of the per-particle angle difference is 91 µrad. Those are at the finest
+step the stage runs at, and they have not been shown to be converged either.
 
-Larmor rotation of the position vector: −10.5325° (OPALX) vs −10.5327° (G4BL),
-worst particle 0.0005° apart. The entrance plane is pure plumbing and comes out at
-round-off, as it should.
+### Both codes had to be converged first, and neither was
 
-## The Gaussian case
+This is the part worth knowing before trusting any number above. At G4beamline's
+`maxStep = 1` mm and OPALX's `DT = 1e-11` s, the settings this study's ancestors used, the
+ASR61 dipole comes out **49 µm apart**. Almost none of that is the map:
 
-`wsx_solenoid_gauss/` — same solenoid, same geometry, same frame; only the beam
-differs. 15000 particles, sigma_x = 10 mm, sigma_y = 3 mm, sigma_x' = sigma_y' = 2 mrad,
-monoenergetic at 28 MeV/c. Eight recording planes at z = 150, 600, 1050, 1500, 1950,
-2400, 2850, 3450 mm — the first and last field-free, the middle six inside the field so
-the rotation can be watched developing.
+| OPALX `DT` [s] | worst exit \|dx\| against G4beamline, by `maxStep` [mm] |
+|---|---|
+| | **1.0** — **0.5** — **0.25** — **0.1** |
+| 1e-11 | 48.8 — 72.0 — 62.0 — 62.0 µm |
+| 5e-12 | 46.3 — 38.1 — 38.1 — 38.1 µm |
+| 2e-12 | 24.4 — 12.1 — 12.0 — 12.0 µm |
+| 1e-12 | 31.7 — 12.1 — 11.4 — **7.5** µm |
 
-`compare_gauss.ipynb` writes one figure per plane with the same three panels as
-`runs/processing/plot_monitors.py` (x-x', y-y', x-y), OPALX on the top row and G4BL on
-the bottom. It also plots the measured x-y ellipse tilt at every plane against the
-field-only prediction.
+OPALX's own answer moves 84, then 34, then 14 µm as the step halves, so at 1e-11 s it is
+still some 30 µm from its own limit. G4beamline at 1 mm is 30 µm from its limit too. Once
+both are converged the difference falls to 7.5 µm, which is G4beamline's ASCII resolution
+on a 1.27 m coordinate. The decks therefore use `DT = 1e-12` s and `maxStep = 0.1` mm for
+the 19-particle stage, and one step coarser for the 20000-particle stage, where what is
+left is 12 µm against a bunch 10 mm across.
 
-Panels are direct particle scatters with `alpha = 0.18` — lower than the house 0.35,
-which at 15000 points saturates the core to a solid block. Axis limits are shared down
-each column so the two rows can be read against each other.
+**A comparison can sit inside its tolerance and measure nothing.** Every tolerance in
+`cmplib.TOL` is written against its measurement floor, and two of them cannot be constants:
 
-**The sample mean is subtracted exactly** when the beam is generated. OPALX under
-`FROMFILE` takes its reference orbit from the bunch mean, and a raw draw of 5000 is off
-by ~sigma/sqrt(15000) (0.08 mm in x) — enough to tilt the OPALX reference away from
-G4BL's fixed `reference particle` and offset every comparison. The same reason the
-13-particle set has to stay symmetric.
+- The **field** tolerance is three printing steps *of that case's own peak field*. A fixed
+  2e-7 T passes the dipoles and fails the quadrupole while both agree perfectly, because
+  six significant figures resolve 0.086 T to 1e-7 T but 0.215 T only to 1e-6 T.
+- The **transfer matrix** tolerance is three times *that row's own* floor, measured as the
+  worst disagreement in that coordinate divided by the difference step. The six rows do not
+  share a floor: after a 41 degree bend the `delta` row's is twenty times the `x` row's.
+  A single number for the whole matrix reports the `x` row's floor and then fails the
+  `delta` row with it.
 
-Two things to know when reading the rotation plot:
+A relative test needs the same care. M[ζ ← x] of the ASR61 group is 3.6% of the largest
+element in the matrix, so dividing a difference that *is* the floor by it reports 3.4% and
+looks like a real disagreement. The relative check is therefore secondary, and only runs on
+elements at least a hundred times the floor.
 
-- **Sign.** With the block convention `M = [[cos*A, sin*A], [-sin*A, cos*A]]`, the lab
-  beam turns by `-theta_L`, not `+theta_L` — the (x,y) pair is acted on by `R(-theta)`.
-  The notebook compares the tilt against `-int Bz ds / 2*Brho`.
-- **The tilt is degenerate at a round waist.** At z = 2400 mm the beam is nearly
-  circular (rms 2.03 x 2.13 mm) and the ellipse orientation carries little information.
-  It happens to land close to the prediction at 15000 particles (+75.02 vs +75.34 deg)
-  but wandered 14 deg off it at 5000 — it is sampling noise either way, not a result.
-  Those planes are ringed in the plot.
+### Things about the maps worth recording
 
-Result: the two codes agree on the tilt to **<= 5e-4 deg** at all eight planes and on
-rms x and y to the printed precision, with all 15000 particles surviving to every plane.
+- **`asr62shim_280_sm_track.g4blmap` is identically zero** — all 52726 rows, confirmed by
+  reading the file. It is placed four times in muE4 and contributes nothing, so
+  `asr62_d2_group` and `asr62_d3_group` add no field over `asr62_dipole`. What they do test
+  is that OPALX handles `rotation=Y180` and `rotation=Y180,Z180` as a rotation of the
+  element — grid maps do not support `ZREVERSE`, so it has to be expressed that way — and
+  `asr62_d3_group`'s exit state does come out equal to `asr62_dipole`'s.
+- **`ASR61_300sm` never sees a beam on the axis.** Its box is x = 380…630 mm; in muE4 the
+  orbit reaches it only after the main map has bent the beam outward. Standalone its
+  position is shifted so the box straddles the axis. Both codes get the identical shift, so
+  the comparison stays one to one, and its behaviour at the real muE4 position is covered
+  by `asr61_group`.
+- **Both codes drop the top face of a map box** when the map is placed without rotation,
+  although the file holds values there — the ASR61 map has 0.033 T at x = 390 mm. The
+  OPALX readers exclude it by `r < end`, never `<=`, because interpolating needs a whole
+  cell above the point, and G4beamline does the same. Where a map is placed with a 180
+  degree rotation they do **not** agree on the face: `sin(pi)` is 1.22e-16 rather than 0,
+  so the sample lands a few 1e-16 m either side of it and each code falls on a different
+  side. `asr61_group` measures 0.0026 T there and `asr62_d2_group` 0.105 T. The `edge`
+  sample set reports what each code returned; it is never tested, because a face has no
+  thickness and no particle spends path length on it.
+- **A sample point a few 1e-14 m inside a face is resolved differently by the two codes**:
+  OPALX interpolates and G4beamline returns zero. That is a knife edge 0.04 picometres
+  wide, so no particle can land on it, but a sample grid can — a scan written as
+  `-190 + 2*290` lands on 389.99999999999996 and reads as a 0.05 T disagreement that is
+  entirely the last bit of a float. `run_tests.py` reports points on a box face separately
+  instead of testing them, and `three_inside()` keeps the scans a whole step clear of both
+  ends. A face is found by checking the point is on the boundary **and** inside the box in
+  the other two axes; testing the face plane alone flags every sample in the ASR62 groups,
+  because `ASR62_sm` has a boundary at y = 0 and the sample plane is y = 0.
+
+### Things about the two codes worth recording
+
+- **OPALX writes `DUMPEMFIELDS` output into `data/`**, not the working directory.
+- `DUMPEMFIELDS` does see a `FIELDMAP` element. It runs from `ParallelTracker.cpp` just
+  before the tracking loop, after the maps are read, and `studies/mue4_g4bl/README.md`
+  listed this as untried.
+- **A `FIELDMAP` element takes neither `ELEMEDGE` nor `L`**, and OPALX allows one placement
+  convention per beamline, so every element in these decks is placed by absolute position
+  and rotation. OPALX then sorts the line alphabetically by element name rather than by
+  position, which is why the names carry a number in front.
+- **Monitors inside the field do record.** Four of the six planes in the bend cases sit
+  inside the map and all of them fill.
+- **`SCALE` on `FIELDMAP` is G4beamline's deck-side `current=`, verbatim.** The G4beamline
+  readers store absolute Tesla and do not normalise.
+- **`CHARGE = 1` on the OPALX `BEAM` is mandatory.** `ParticleProperties` maps `MUON` to
+  −1 and `Beam::execute` only consults that table when the attribute is absent. A charge
+  sign error looks exactly like a map turned the wrong way round.
+- **G4beamline's parameter is `maxStep`, capital S.** `maxstep` is a different, unused one.
+- **`fieldmap` places no physical volume**, so without the vacuum `WORLDBOX` every track
+  leaves the world immediately and the ntuples come out empty without complaint.
+- **`start` must come before every `place`**, or g4bl aborts with `Invalid start`.
+- **In `run_all.sh`, `grep -c` not `grep -q`.** Under `set -o pipefail`, `grep -q` exits on
+  the first match, `strings` then dies of SIGPIPE, and the pipeline reports failure on a
+  binary that is perfectly fine.
+- macOS ships **bash 3.2**, which has no `mapfile` and errors on expanding an empty array
+  under `set -u`.
+
+## The older solenoid cases
+
+`wsx_solenoid/` and `wsx_solenoid_gauss/` predate this harness and still work. They cover
+the one `cylinder` map in muE4 and are driven by notebooks rather than `run_all.sh`; their
+`ELEMEDGE` placement is still valid because a `SOLENOID` — unlike a `FIELDMAP` — accepts
+it. `asr61_dipole/` used to be a third case of that kind, built on `SBEND` with `FMAPSCALE`;
+neither that attribute nor `SBEND` + `FMAPFN` exists on this branch, so it has been rebuilt
+as a `FIELDMAP` placed by position. Its recorded result, exit |dx| ≤ 50 µm, is reproduced
+exactly, and it now records all 19 particles where the old case dropped two.
