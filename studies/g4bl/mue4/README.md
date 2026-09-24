@@ -227,7 +227,6 @@ the measured fields' own deviation, now corroborated by both codes agreeing on i
 ## Running
 
 ```bash
-export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx   # NOT build/src/opalx
 PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
 $PY tools/test_geometry.py              # gate 0, no tracking
 $PY tools/make_lattice.py               # regenerate lattice.in and poses.json
@@ -249,7 +248,7 @@ and secondaries off, since OPALX has no material physics) and `maxStep` (1 mm, c
 deck's own `param maxstep=10` is a lower-case typo that never took effect, so the archived run
 used 100 mm).
 
-Only `build_serial/src/opalx` has the `FIELDMAP` element; the older binary rejects `SCALE` at
-parse time. Both codes resolve relative paths from the working directory; `opalxruns.run` runs
+The binary (`$OPALX`, or the workspace build `/Users/rammann/Code/OPALX/build/src/opalx`) needs the `FIELDMAP` element; an
+older one rejects `SCALE` at parse time. Both codes resolve relative paths from the working directory; `opalxruns.run` runs
 them in the case's folder under `output/`, with links to every file the inputs name. One rank — particle-to-row identity across ranks is not guaranteed, and comparisons match
 on the `id` dataset, never on row order.

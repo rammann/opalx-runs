@@ -15,7 +15,6 @@ Run one case from the repo root; the output goes to the same path under `output/
 
 ```bash
 PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
-export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx
 $PY -m opalxruns.run studies/features/decay/muon_decay/muon_decay.in
 $PY -m opalxruns.process_run studies/features/decay/muon_decay      # plots and ParaView files for that run
 ```

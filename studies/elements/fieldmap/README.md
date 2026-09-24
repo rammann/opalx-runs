@@ -28,15 +28,14 @@ The sharp results:
 ## Run it
 
 ```bash
-export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx
 ./run_all.sh              # write the maps and inputs, track every case, test
 ./run_all.sh --test-only  # just re-run the analysis
 ```
 
 Takes about five minutes with a Release build (a Debug build is several times
 slower): 18 runs at roughly 17 s each, one rank, no space charge. The output goes
-to `output/elements/fieldmap/<case>/`. `run_all.sh` takes the binary from `$OPALX`
-and refuses to run if it has no `FIELDMAP` element, because a stale one gives 14
+to `output/elements/fieldmap/<case>/`. `run_all.sh` takes the binary from `$OPALX`,
+or the workspace build `/Users/rammann/Code/OPALX/build/src/opalx` when that is not set, and refuses to run if it has no `FIELDMAP` element, because a stale one gives 14
 identical parse errors and no hint why.
 
 **The executable target is `opalx_exe`, not `opalx`.** `make opalx` builds only

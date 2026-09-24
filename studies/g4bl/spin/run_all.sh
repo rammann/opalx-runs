@@ -3,8 +3,9 @@
 # run_all.sh -- write the spin cases, run G4beamline and OPALX on each, then
 #               compare both with the closed form.
 #
-#     OPALX=/path/to/opalx ./run_all.sh   # write + run + analyse
+#     ./run_all.sh                        # write + run + analyse
 #     ./run_all.sh --test-only            # just re-run the analysis
+#     (the opalx binary is $OPALX, or /Users/rammann/Code/OPALX/build/src/opalx if unset)
 #
 # Output goes to output/g4bl/spin/, same folders as here. uniform_bz/ gets one run
 # folder per input: uniform_bz (both codes), dt_<dt> (OPALX, one per scan/dt_*.in)
@@ -21,7 +22,11 @@ TEST_ONLY=0
 cd "$HERE"
 
 if [[ $TEST_ONLY -eq 0 ]]; then
-    : "${OPALX:?set OPALX to the opalx executable}"
+    # The binary: $OPALX if it is set, else the workspace build,
+    # /Users/rammann/Code/OPALX/build/src/opalx. opalxruns.paths decides, so this
+    # script and the runner use the same file.
+    OPALX_BIN="$("$PY" -m opalxruns.paths --opalx)" || exit 2
+    echo "opalx: $OPALX_BIN"
     OUT="$("$PY" -m opalxruns.paths "$HERE")"
 
     echo "== writing the cases =="

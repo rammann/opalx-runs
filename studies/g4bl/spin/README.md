@@ -10,7 +10,7 @@
 `uniform_bz/`.
 
 ```bash
-OPALX=/path/to/opalx ./run_all.sh   # write the cases, run both codes, analyse
+./run_all.sh                        # write the cases, run both codes, analyse
 ./run_all.sh --test-only            # analyse the existing output only
 ```
 

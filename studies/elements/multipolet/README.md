@@ -39,13 +39,14 @@ position output treat it as the bend it is.
 ## Run it
 
 ```bash
-OPALX=/path/to/opalx ./run_all.sh   # write the inputs, track all cases, run the tests
+./run_all.sh                        # write the inputs, track all cases, run the tests
 ./run_all.sh --test-only            # re-run only the analysis on existing output
 ```
 
 Tracking takes about 2 min with a Release build; with a Debug build each 8000-particle
-case alone takes about 11 min. `run_all.sh` takes the binary from `$OPALX` (required)
-and the conda `python` (`/opt/homebrew/Caskroom/miniconda/base/bin/python`, has
+case alone takes about 11 min. `run_all.sh` takes the binary from `$OPALX`, or the
+workspace build `/Users/rammann/Code/OPALX/build/src/opalx` when that is not set, and
+the conda `python` (`/opt/homebrew/Caskroom/miniconda/base/bin/python`, has
 h5py/numpy/scipy/matplotlib; override with `PY=...`). The tracking output goes to
 `output/elements/multipolet/<case>/`. The table goes to stdout and `results.txt`; figures
 to `output/elements/multipolet/plots/30deg/` and `.../60deg/`, one per test.

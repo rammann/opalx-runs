@@ -137,7 +137,7 @@ def main(argv=None) -> int:
     # Find both codes before anything is emptied: a missing binary must not cost the
     # last good output, or an hour of G4beamline before OPALX is found missing.
     if any(i.suffix != ".g4bl" for i in inputs):
-        paths.opalx()
+        print(f"opalx:  {paths.opalx()}")
     if any(i.suffix == ".g4bl" for i in inputs) and not paths.g4bl().is_file():
         raise RuntimeError(f"no G4beamline at {paths.g4bl()}; set G4BL_APP")
     run_dir = a.run_dir or paths.output_dir(inputs[0].parent)

@@ -3,7 +3,9 @@
 Run from the repo root:  python -m unittest discover -s tests
 """
 
+import contextlib
 import importlib
+import io
 import os
 import tempfile
 import unittest
@@ -53,12 +55,42 @@ class G4blAppTest(unittest.TestCase):
             self.assertEqual(paths.G4BL_APP, Path("/opt/other.app"))
 
 
+def executable(folder):
+    exe = Path(folder) / "opalx"
+    exe.write_text("#!/bin/sh\n")
+    exe.chmod(0o755)
+    return exe
+
+
 class OpalxTest(unittest.TestCase):
-    def test_unset_variable_is_an_error_that_names_it(self):
-        with mock.patch.dict(os.environ):
+    def test_default_is_the_workspace_build(self):
+        self.assertEqual(paths.OPALX_DEFAULT, paths.REPO.parent / "build" / "src" / "opalx")
+
+    def test_unset_variable_means_the_workspace_build(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ):
             os.environ.pop("OPALX", None)
-            with self.assertRaisesRegex(RuntimeError, "OPALX"):
+            with mock.patch.object(paths, "OPALX_DEFAULT", executable(d)):
+                self.assertEqual(paths.opalx(), Path(d) / "opalx")
+
+    def test_missing_workspace_build_is_an_error_that_names_it(self):
+        with mock.patch.dict(os.environ), mock.patch.object(paths, "OPALX_DEFAULT", Path("/no/build/opalx")):
+            os.environ.pop("OPALX", None)
+            with self.assertRaisesRegex(RuntimeError, "OPALX.*/no/build/opalx"):
                 paths.opalx()
+
+    def test_command_prints_the_executable(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {"OPALX": str(executable(d))}):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(paths.main(["--opalx"]), 0)
+            self.assertEqual(buf.getvalue().strip(), str(Path(d) / "opalx"))
+
+    def test_command_reports_a_missing_executable_without_a_traceback(self):
+        with mock.patch.dict(os.environ, {"OPALX": "/no/such/opalx"}):
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(paths.main(["--opalx"]), 1)
+            self.assertIn("/no/such/opalx", err.getvalue())
 
     def test_path_that_is_not_an_executable_is_an_error(self):
         with tempfile.NamedTemporaryFile() as f:           # exists, but not executable

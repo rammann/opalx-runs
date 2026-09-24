@@ -7,9 +7,8 @@
 
     Physics comparison against G4beamline comes later, on the staged cases.
 
-    Run from this directory (map paths in lattice.in are absolute, but OPALX writes its
-    output here):
-      mpirun -n 1 $OPALX probe.in --info 3 > run.log 2>&1
+    Run from the repo root; the output goes to output/g4bl/mue4/probe/:
+      python -m opalxruns.run studies/g4bl/mue4/probe/probe.in
 */
 
 OPTION, PSDUMPFREQ    = 100000;

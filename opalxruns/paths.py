@@ -1,7 +1,8 @@
 """Where things are. The only place in the Python code that knows machine paths.
 
 Environment variables override the defaults:
-  OPALX       the opalx executable (required to run OPALX; there is no default)
+  OPALX       the opalx executable (default: build/src/opalx in the workspace, the
+              folder that holds this repo)
   G4BL_APP    the G4beamline app (default: the one in /Users/rammann/Code/G4BL)
   G4BL_FILES  folder with the muE4 G4beamline input and field maps
               (default: g4bl-files/ next to this repo)
@@ -25,6 +26,9 @@ G4BL_FILES = Path(os.environ.get("G4BL_FILES", REPO.parent / "g4bl-files")).expa
 
 G4BL_APP = Path(os.environ.get("G4BL_APP", "/Users/rammann/Code/G4BL/G4beamline-3.08.app")).expanduser()
 
+# The workspace build: /Users/rammann/Code/OPALX/build, configured from opalx/.
+OPALX_DEFAULT = REPO.parent / "build" / "src" / "opalx"
+
 
 def output_dir(folder) -> Path:
     """The folder under output/ that belongs to a folder under studies/."""
@@ -37,24 +41,35 @@ def g4bl() -> Path:
 
 
 def main(argv=None) -> int:
-    """python -m opalxruns.paths <folder> ...: print the output/ folder of each."""
+    """python -m opalxruns.paths <folder> ...   print the output/ folder of each
+    python -m opalxruns.paths --opalx          print the opalx executable runs use"""
     import sys
 
-    for folder in (argv if argv is not None else sys.argv[1:]):
+    argv = argv if argv is not None else sys.argv[1:]
+    if argv == ["--opalx"]:
+        try:
+            print(opalx())
+        except RuntimeError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return 1
+        return 0
+    for folder in argv:
         print(output_dir(folder))
     return 0
 
 
 def opalx() -> Path:
-    """The opalx executable named by $OPALX.
+    """The opalx executable: $OPALX if it is set, else the workspace build.
 
-    There is no default on purpose: build trees move, and a stale binary that
-    still runs leaves old output on disk that reads as a passing result.
+    Rebuild that with `cd /Users/rammann/Code/OPALX/build && make -j8 opalx_exe` --
+    `make opalx` builds only the library and leaves a stale executable in place.
     """
     value = os.environ.get("OPALX", "")
     if not value:
-        raise RuntimeError("set OPALX to the opalx executable, "
-                           "e.g. export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx")
+        if not (OPALX_DEFAULT.is_file() and os.access(OPALX_DEFAULT, os.X_OK)):
+            raise RuntimeError(f"OPALX is not set and the workspace build {OPALX_DEFAULT} "
+                               "is missing; build it or set OPALX to an opalx executable")
+        return OPALX_DEFAULT
     path = Path(value).expanduser()
     if not (path.is_file() and os.access(path, os.X_OK)):
         raise RuntimeError(f"OPALX={value} is not an executable file")

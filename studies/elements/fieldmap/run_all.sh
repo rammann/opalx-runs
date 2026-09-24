@@ -3,8 +3,9 @@
 # run_all.sh -- write the G4beamline field maps and inputs, track them all
 #               through OPALX, then run the comparison tests.
 #
-#     OPALX=/path/to/opalx ./run_all.sh   # generate + track + test
+#     ./run_all.sh                        # generate + track + test
 #     ./run_all.sh --test-only            # skip tracking, just re-run the analysis
+#     (the opalx binary is $OPALX, or /Users/rammann/Code/OPALX/build/src/opalx if unset)
 #
 set -euo pipefail
 
@@ -17,14 +18,11 @@ TEST_ONLY=0
 cd "$HERE"
 
 if [[ $TEST_ONLY -eq 0 ]]; then
-    # The binary comes from $OPALX and nowhere else. Build trees move, and a
-    # stale default path is the worst failure mode here: the run aborts, the old
-    # output stays on disk and reads as a passing result.
-    OPALX_BIN="${OPALX:?set OPALX to the opalx executable}"
-    if [[ ! -x "$OPALX_BIN" ]]; then
-        echo "ERROR: OPALX=$OPALX_BIN is not an executable file" >&2
-        exit 2
-    fi
+    # The binary: $OPALX if it is set, else the workspace build,
+    # /Users/rammann/Code/OPALX/build/src/opalx. opalxruns.paths decides, so this
+    # script and the runner use the same file.
+    OPALX_BIN="$("$PY" -m opalxruns.paths --opalx)" || exit 2
+    echo "opalx: $OPALX_BIN"
 
     # This study needs the FIELDMAP element and the 3D grid reader, which are newer
     # than some build trees lying around. Checking here turns a confusing parse
@@ -37,7 +35,7 @@ if [[ $TEST_ONLY -eq 0 ]]; then
     have_fieldmap="$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L" || true)"
     if [[ "$have_fieldmap" -eq 0 ]]; then
         echo "ERROR: $OPALX_BIN has no FIELDMAP element." >&2
-        echo "       Rebuild with: cd <build dir> && make -j8 opalx_exe" >&2
+        echo "       Rebuild with: cd $(dirname "$(dirname "$OPALX_BIN")") && make -j8 opalx_exe" >&2
         exit 2
     fi
 

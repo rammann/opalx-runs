@@ -46,8 +46,8 @@ g4bl/elements/     (was g4bl_compare)
 # leaves whatever executable was there before.
 cd /Users/rammann/Code/OPALX/build && make -j8 opalx_exe
 
-export OPALX=/Users/rammann/Code/OPALX/build/src/opalx      # a build with the FIELDMAP element
-# (today that is opalx/build_serial/src/opalx; run_all.sh checks and refuses one without it)
+# run_all.sh uses this build unless OPALX is set, and refuses a binary without the
+# FIELDMAP element.
 cd /Users/rammann/Code/OPALX/opalx-runs/studies/g4bl/elements
 ./run_all.sh                  # everything
 ./run_all.sh --pair-only      # skip the 20000-particle stage

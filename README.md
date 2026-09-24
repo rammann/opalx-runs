@@ -27,7 +27,7 @@ $PY -m pip install -e . --no-deps
 
 | variable | what | default |
 |---|---|---|
-| `OPALX` | the opalx executable | none: required to run OPALX |
+| `OPALX` | the opalx executable | `/Users/rammann/Code/OPALX/build/src/opalx`, the workspace build |
 | `G4BL_APP` | the G4beamline app | `/Users/rammann/Code/G4BL/G4beamline-3.08.app` |
 | `G4BL_FILES` | the muE4 G4beamline input and field maps (889 MB, not in this repo) | `../g4bl-files` |
 | `PY` | the Python the `run_all.sh` scripts use | the miniconda one above |
@@ -37,14 +37,16 @@ $PY -m pip install -e . --no-deps
 One case, from the repo root:
 
 ```bash
-export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx
 $PY -m opalxruns.run studies/elements/collimator/circle/circle.in          # --np 2 for 2 ranks
 $PY -m opalxruns.process_run studies/elements/collimator/circle           # plots, ParaView files
 ```
 
 The run happens in `output/elements/collimator/circle/`. The runner clears that folder's
 own output (folders of other runs inside it stay), links in the input and every file the
-input names, and starts OPALX there, so all of the output lands there. `--keep -- --restart <file>` resumes from a checkpoint. G4beamline
+input names, and starts OPALX there, so all of the output lands there. The binary is
+the workspace build unless `OPALX` is set (`OPALX=/path/to/opalx $PY -m opalxruns.run ...`
+for one run); rebuild it with `cd /Users/rammann/Code/OPALX/build && make -j8 opalx_exe`
+(`make opalx` builds only the library and leaves an old executable in place). `--keep -- --restart <file>` resumes from a checkpoint. G4beamline
 inputs (`.g4bl`) run the same way, and
 `$PY -m opalxruns.run <case>.g4bl <case>.in` runs both codes, one after the other, in one folder.
 

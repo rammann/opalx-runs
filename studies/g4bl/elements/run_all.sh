@@ -30,10 +30,13 @@ done
 # --- OPALX and G4beamline --------------------------------------------------
 # Only needed to run the codes; --test-only works without either.
 if [[ "$TEST_ONLY" -eq 0 ]]; then
-    # The binary comes from $OPALX and nowhere else. The CMake target is opalx_exe.
-    # `make opalx` builds only the static library and leaves whatever executable
-    # was there before, which is how a run silently uses a binary from weeks ago.
-    OPALX_BIN="${OPALX:?set OPALX to the opalx executable}"
+    # The binary: $OPALX if it is set, else the workspace build,
+    # /Users/rammann/Code/OPALX/build/src/opalx. opalxruns.paths decides, so this
+    # script and the runner use the same file.
+    # The CMake target is opalx_exe: `make opalx` builds only the static library
+    # and leaves whatever executable was there before, which is how a run silently
+    # uses a binary from weeks ago.
+    OPALX_BIN="$("$PY" -m opalxruns.paths --opalx)" || exit 2
 
     # Every deck here places elements with a FIELDMAP, which an older binary rejects
     # at parse time with a message about SCALE. Refuse to run rather than produce a
@@ -43,7 +46,7 @@ if [[ "$TEST_ONLY" -eq 0 ]]; then
     # is perfectly fine. grep -c reads to the end.
     if [[ "$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L")" -eq 0 ]]; then
         echo "ERROR: $OPALX_BIN has no FIELDMAP element." >&2
-        echo "       Rebuild with: cd <build dir> && make -j8 opalx_exe" >&2
+        echo "       Rebuild with: cd $(dirname "$(dirname "$OPALX_BIN")") && make -j8 opalx_exe" >&2
         exit 1
     fi
     echo "opalx:  $OPALX_BIN"

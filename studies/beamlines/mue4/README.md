@@ -18,7 +18,6 @@ Run one case from the repo root; the output goes to the same path under `output/
 
 ```bash
 PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
-export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx
 $PY -m opalxruns.run studies/beamlines/mue4/mue4_analytical/mue4_analytical.in
 $PY -m opalxruns.process_run studies/beamlines/mue4/mue4_analytical      # plots and ParaView files for that run
 ```

@@ -2,8 +2,9 @@
 #
 # run_all.sh -- generate the MULTIPOLET bend-study decks, track them all through
 #               OPALX, then run the analytic-comparison tests.
-#     OPALX=/path/to/opalx ./run_all.sh   # generate + track + test
+#     ./run_all.sh                        # generate + track + test
 #     ./run_all.sh --test-only            # skip tracking, just re-run the analysis
+#     (the opalx binary is $OPALX, or /Users/rammann/Code/OPALX/build/src/opalx if unset)
 #
 set -euo pipefail
 
@@ -17,7 +18,11 @@ TEST_ONLY=0
 cd "$HERE"
 
 if [[ $TEST_ONLY -eq 0 ]]; then
-    : "${OPALX:?set OPALX to the opalx executable}"
+    # The binary: $OPALX if it is set, else the workspace build,
+    # /Users/rammann/Code/OPALX/build/src/opalx. opalxruns.paths decides, so this
+    # script and the runner use the same file.
+    OPALX_BIN="$("$PY" -m opalxruns.paths --opalx)" || exit 2
+    echo "opalx: $OPALX_BIN"
 
     echo "== generating decks =="
     "$PY" make_decks.py

@@ -179,9 +179,11 @@ class MainTest(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_inputs_run_in_order_in_one_folder(self):
-        with contextlib.redirect_stdout(io.StringIO()):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
             rc = run.main([str(self.case / "case.g4bl"), str(self.case / "case.in")])
         self.assertEqual(rc, 0)
+        self.assertIn(f"opalx:  {self.opalx}", out.getvalue())     # which binary ran
         self.assertEqual((self.run_dir / "order.txt").read_text().splitlines(),
                          ["g4bl case.g4bl", "opalx case.in"])
         self.assertTrue((self.run_dir / "beam.txt").is_symlink())
@@ -189,7 +191,8 @@ class MainTest(unittest.TestCase):
     def test_missing_opalx_is_an_error_before_anything_is_emptied(self):
         self.run_dir.mkdir(parents=True)
         (self.run_dir / "case.h5").write_text("last good output")
-        with mock.patch.dict(os.environ, {"OPALX": ""}):
+        with mock.patch.dict(os.environ, {"OPALX": ""}), \
+                mock.patch.object(paths, "OPALX_DEFAULT", self.case / "no_build" / "opalx"):
             with self.assertRaisesRegex(RuntimeError, "OPALX"):
                 run.main([str(self.case / "case.in")])
         self.assertTrue((self.run_dir / "case.h5").exists())
@@ -197,7 +200,8 @@ class MainTest(unittest.TestCase):
     def test_missing_g4bl_is_an_error_before_anything_is_emptied(self):
         self.run_dir.mkdir(parents=True)
         (self.run_dir / "Z100.txt").write_text("last good output")
-        with mock.patch.object(paths, "G4BL_APP", self.app.parent / "missing.app"):
+        with mock.patch.object(paths, "G4BL_APP", self.app.parent / "missing.app"), \
+                contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaisesRegex(RuntimeError, "G4beamline"):
                 run.main([str(self.case / "case.g4bl"), str(self.case / "case.in")])
         self.assertTrue((self.run_dir / "Z100.txt").exists())

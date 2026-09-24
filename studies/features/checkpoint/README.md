@@ -14,7 +14,6 @@ Run and restart from the repo root; the checkpoint file stays in the run folder:
 
 ```bash
 PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
-export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx
 $PY -m opalxruns.run studies/features/checkpoint/repro_drift/repro_drift.in
 $PY -m opalxruns.run studies/features/checkpoint/repro_drift/repro_drift.in \
     --keep -- --restart repro_drift_checkpoint.h5

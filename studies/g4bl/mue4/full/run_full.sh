@@ -7,7 +7,9 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY="${PY:-/opt/homebrew/Caskroom/miniconda/base/bin/python}"
-: "${OPALX:?set OPALX to the opalx executable}"
+# opalx: $OPALX, else the workspace build /Users/rammann/Code/OPALX/build/src/opalx
+OPALX_BIN="$("$PY" -m opalxruns.paths --opalx)" || exit 2
+echo "opalx: $OPALX_BIN"
 OUT="$("$PY" -m opalxruns.paths "$HERE")"
 "$PY" -m opalxruns.run "$HERE/full.g4bl" "$HERE/full.in"
 echo "   $(ls "$OUT"/Z*.txt 2>/dev/null | wc -l | tr -d ' ') G4beamline planes, $(ls "$OUT"/E*_PL*.h5 2>/dev/null | wc -l | tr -d ' ') OPALX planes"
