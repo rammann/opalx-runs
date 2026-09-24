@@ -1,10 +1,15 @@
-# OPALX run output -- all regenerable from the deck + the binary
+# Run output. Runs write into output/, which has the same folder tree as studies/.
+/output/
+
+# OPALX run output -- all regenerable from the input file + the binary. These
+# rules also catch output of a run started by hand inside studies/.
 *.h5
 *.stat
 *.lbal
 *.trackOrbit
 *.log
 timing.dat
+errormsg.txt
 
 # ParaView / VTK export
 *.vtp
@@ -12,9 +17,8 @@ timing.dat
 *.pvd
 paraview/
 
-# OPALX per-run geometry export. OPALX writes a directory literally named
-# `data` next to the deck; the repo's shared-asset dir is also `data`, so the
-# root one is re-added at the bottom of this file.
+# OPALX per-run geometry export: OPALX writes a folder named `data` in the
+# working directory.
 data/
 *_DesignPath.dat
 *_ElementPositions.py
@@ -37,9 +41,5 @@ __pycache__/
 .DS_Store
 
 # `*.dat` is deliberately not blanket-ignored: timing.dat and *_DesignPath.dat
-# are covered above by name, while data/beam_WsxOn*.dat is a committed input.
-# `parts.txt` is likewise kept -- the decks will not run without it.
-
-# Re-include the committed assets. MUST BE LAST -- last matching rule wins.
-!/data/
-!/data/**
+# are covered above by name, while shared/beam_WsxOn*.dat is a committed input.
+# `parts.txt` is likewise kept -- the input files will not run without it.

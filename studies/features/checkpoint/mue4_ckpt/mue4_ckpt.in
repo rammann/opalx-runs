@@ -1,0 +1,200 @@
+/*  mue4_ckpt.in -- muE4 beamline, used as an end-to-end checkpoint/restart test.
+
+    Physics is a verbatim copy of studies/mue4/mue4_WsxOn/mue4_WsxOn.in (see that deck
+    for the G4beamline translation notes). Only three things differ:
+      * 5000 muons from beam_WsxOn_5k.dat instead of 14462 from beam_WsxOn.dat, to keep
+        a run at ~15 s so the kill/restart cycle can be repeated.
+      * OPTION, CHECKPOINTFREQ = 2000 -- write mue4_ckpt_checkpoint.h5 whenever the
+        global track step is a multiple of 2000 (~12 checkpoints over the ~25.6k steps).
+      * STATDUMPFREQ stays at 1 so the .stat has one row per step; that makes the
+        rewind/append seam at the restart point checkable exactly.
+
+    Why this deck: it exercises the parts of the restart path that a unit test cannot --
+    solenoid + 3 SBENDs + 12 quads, aperture scraping (the particle count changes during
+    tracking, so the checkpoint must restore a shrinking bunch), and 20 MONITOR planes
+    (separate HDF5 files that are NOT rewound by DataSink, only re-initialised).
+    FROMFILE input means no random numbers anywhere, so an uninterrupted run and a
+    killed-and-restarted run are directly comparable.
+
+    The deck also satisfies the restart preconditions in TrackRun.cpp: non-emitting
+    distribution, no T0, not EMITTEDFROMFILE, no GLOBALPROCESSES (DECAY is off).
+
+    The bends carry no DESIGNENERGY, unlike the mue4_WsxOn deck this came from: since
+    PR #520 OpalSBend::update throws on it. It was a no-op before that (setDesignEnergy
+    was commented out), so dropping it changes nothing -- the bend field still comes
+    from the P0 deck variable and ANGLE.
+
+    Usage (see ../README.md and ../run_checkpoint_test.sh):
+      mpirun -n 1 opalx mue4_ckpt.in --info 2
+      mpirun -n 1 opalx mue4_ckpt.in --restart mue4_ckpt_checkpoint.h5 --info 2
+    NOTE the argument order: the input file must be the first argument or the last one,
+    otherwise Main.cpp rejects it as "Unknown argument".
+*/
+
+OPTION, PSDUMPFREQ     = 100;   // phase-space .h5 dump every 100 steps
+OPTION, STATDUMPFREQ   = 1;     // beam moments (sigma, emittance, N) every step -> .stat
+OPTION, CHECKPOINTFREQ = 2000;  // restart checkpoint whenever globalTrackStep % 2000 == 0
+OPTION, BOUNDPDESTROY  = 10;    // statistical 10-sigma loss box (separate from apertures)
+OPTION, VERSION        = 10900;
+
+Title, string="muE4 beamline — checkpoint/restart test (WSX On)";
+
+// ============================================================================
+// Reference particle / global constants
+// ============================================================================
+REAL MUON_MASS = 0.1056583755;                 // muon rest mass [GeV]
+REAL P0        = 0.028;                         // reference momentum [GeV/c]  (g4bl P=28 MeV/c)
+REAL Edes      = sqrt(P0*P0 + MUON_MASS*MUON_MASS) - MUON_MASS; // kinetic energy [GeV]
+REAL Brho      = P0 / 0.299792458;             // magnetic rigidity [T*m] = 0.09340
+
+REAL n_particles       = 5000;                 // 5k subset (beam_WsxOn_5k.dat) -- keeps a run at ~15 s
+REAL beam_bunch_charge = 1e-15;                // nominal bunch charge [C] (space charge is OFF)
+
+value, {P0, Edes, Brho};
+
+// ============================================================================
+// Quadrupole calibration  (K1_n = QSM_K1_SCALE * I_Qn)
+// ============================================================================
+REAL L_QUAD       = 0.395;
+REAL QSM_K1_SCALE = 8.188865;                  // = GL/(L_QUAD*Brho) [m^-2]  (GL=0.302 T, 210 A map)
+
+REAL I_Q1  = -0.21340;  REAL I_Q2  =  0.65120;  REAL I_Q3  = -0.34970;   // triplet 1
+REAL I_Q4  = -0.19590;  REAL I_Q5  =  0.62790;  REAL I_Q6  = -0.37040;   // triplet 2
+REAL I_Q7  = -0.32150;  REAL I_Q8  =  0.63400;  REAL I_Q9  = -0.31780;   // triplet 3
+REAL I_Q10 =  0.45180;  REAL I_Q11 = -0.90530;  REAL I_Q12 =  0.88900;   // triplet 4 (final focus)
+
+// ============================================================================
+// Element definitions  (ELEMEDGE = entrance path length [m]; positions from g4bl)
+//   Beam pipe: drifts circle(0.60) = +/-300 mm (g4bl SECTION); quads circle(0.40)
+//   = +/-200 mm (QSM_PIPE); solenoid circle(0.44) = +/-220 mm (WSX housing).
+//   rectangle/circle args are FULL width/diameter (stored as half).
+// ============================================================================
+
+// WSX solenoid (on-axis Bz map, peak 0.260 T at ~1.635 m; map carries lab z).
+SOL   : SOLENOID, L = 2.7850, ELEMEDGE = 0.00000,
+        FMAPFN = "../../../../shared/wsx_solenoid_1D.map", KS = 1.0, APERTURE = "circle(0.44)";
+
+// Sector dipoles (ASR61 / ASR62). Field from P0 + ANGLE; HAPERT = pipe half-gap (scrapes).
+BEND1 : SBEND, L = 0.8091, ELEMEDGE =  2.57800, ANGLE = +0.69813, HGAP = 0.02, HAPERT = 0.20; // +40 deg
+BEND2 : SBEND, L = 0.7238, ELEMEDGE =  7.14246, ANGLE = -0.59341, HGAP = 0.02, HAPERT = 0.20; // -34 deg
+BEND3 : SBEND, L = 0.7238, ELEMEDGE = 11.67044, ANGLE = +0.59341, HGAP = 0.02, HAPERT = 0.20; // +34 deg
+
+// Quadrupoles (12 x QSM600). K1 from the calibration above; +/-200 mm pipe.
+Q1  : QUADRUPOLE, L = L_QUAD, ELEMEDGE =  4.53789, K1 = QSM_K1_SCALE * I_Q1,  APERTURE = "circle(0.40)";
+Q2  : QUADRUPOLE, L = L_QUAD, ELEMEDGE =  5.04289, K1 = QSM_K1_SCALE * I_Q2,  APERTURE = "circle(0.40)";
+Q3  : QUADRUPOLE, L = L_QUAD, ELEMEDGE =  5.54789, K1 = QSM_K1_SCALE * I_Q3,  APERTURE = "circle(0.40)";
+Q4  : QUADRUPOLE, L = L_QUAD, ELEMEDGE =  9.06587, K1 = QSM_K1_SCALE * I_Q4,  APERTURE = "circle(0.40)";
+Q5  : QUADRUPOLE, L = L_QUAD, ELEMEDGE =  9.57087, K1 = QSM_K1_SCALE * I_Q5,  APERTURE = "circle(0.40)";
+Q6  : QUADRUPOLE, L = L_QUAD, ELEMEDGE = 10.07587, K1 = QSM_K1_SCALE * I_Q6,  APERTURE = "circle(0.40)";
+Q7  : QUADRUPOLE, L = L_QUAD, ELEMEDGE = 13.23336, K1 = QSM_K1_SCALE * I_Q7,  APERTURE = "circle(0.40)";
+Q8  : QUADRUPOLE, L = L_QUAD, ELEMEDGE = 13.73836, K1 = QSM_K1_SCALE * I_Q8,  APERTURE = "circle(0.40)";
+Q9  : QUADRUPOLE, L = L_QUAD, ELEMEDGE = 14.24336, K1 = QSM_K1_SCALE * I_Q9,  APERTURE = "circle(0.40)";
+Q10 : QUADRUPOLE, L = L_QUAD, ELEMEDGE = 17.27336, K1 = QSM_K1_SCALE * I_Q10, APERTURE = "circle(0.40)";
+Q11 : QUADRUPOLE, L = L_QUAD, ELEMEDGE = 17.77836, K1 = QSM_K1_SCALE * I_Q11, APERTURE = "circle(0.40)";
+Q12 : QUADRUPOLE, L = L_QUAD, ELEMEDGE = 18.28336, K1 = QSM_K1_SCALE * I_Q12, APERTURE = "circle(0.40)";
+
+// Collimators (SCRAPING). rectangle(a,b) = FULL gap a x b.
+FS61 : DRIFT, L = 0.100, ELEMEDGE =  3.93039, APERTURE = "rectangle(0.380,0.210)"; // +/-190 x +/-105 mm
+FS63 : DRIFT, L = 0.100, ELEMEDGE = 11.17687, APERTURE = "rectangle(0.384,0.217)"; // +/-192 x +/-108 mm
+// FS62 momentum slit (g4bl inside BEND2 at 7.504; horizontal +/-190 mm only).
+// Modelled as a thin scraping drift at the BEND2 exit; vertical left open (+/-1 m).
+FS62 : DRIFT, L = 0.100, ELEMEDGE =  7.86626, APERTURE = "rectangle(0.380,2.000)"; // +/-190 mm horizontal
+
+// Drift fills (beam pipe +/-200 mm)
+D1  : DRIFT, L = 0.5433, ELEMEDGE =  3.38710, APERTURE = "circle(0.60)";
+D2  : DRIFT, L = 0.5075, ELEMEDGE =  4.03039, APERTURE = "circle(0.60)";
+D3  : DRIFT, L = 0.1100, ELEMEDGE =  4.93289, APERTURE = "circle(0.60)";
+D4  : DRIFT, L = 0.1100, ELEMEDGE =  5.43789, APERTURE = "circle(0.60)";
+D5  : DRIFT, L = 1.1996, ELEMEDGE =  5.94289, APERTURE = "circle(0.60)";
+D6  : DRIFT, L = 1.1996, ELEMEDGE =  7.86626, APERTURE = "circle(0.60)";
+D7  : DRIFT, L = 0.1100, ELEMEDGE =  9.46087, APERTURE = "circle(0.60)";
+D8  : DRIFT, L = 0.1100, ELEMEDGE =  9.96587, APERTURE = "circle(0.60)";
+D9  : DRIFT, L = 0.7060, ELEMEDGE = 10.47087, APERTURE = "circle(0.60)";
+D10 : DRIFT, L = 0.3936, ELEMEDGE = 11.27687, APERTURE = "circle(0.60)";
+D11 : DRIFT, L = 0.8391, ELEMEDGE = 12.39424, APERTURE = "circle(0.60)";
+D12 : DRIFT, L = 0.1100, ELEMEDGE = 13.62836, APERTURE = "circle(0.60)";
+D13 : DRIFT, L = 0.1100, ELEMEDGE = 14.13336, APERTURE = "circle(0.60)";
+D14 : DRIFT, L = 2.6350, ELEMEDGE = 14.63836, APERTURE = "circle(0.60)";
+D15 : DRIFT, L = 0.1100, ELEMEDGE = 17.66836, APERTURE = "circle(0.60)";
+D16 : DRIFT, L = 0.1100, ELEMEDGE = 18.17336, APERTURE = "circle(0.60)";
+D17 : DRIFT, L = 0.5616, ELEMEDGE = 18.67836, APERTURE = "circle(0.60)";
+
+// ============================================================================
+// Phase-space monitors — before & after each element group (g4bl zntuple planes).
+// DELETEONTRANSVERSEEXIT=FALSE so they record the full beam (no +/-0.5 m default cut).
+// Each writes <name>.h5 (full 6D, co-moving/centerline frame).
+// ============================================================================
+mon_01_sol_in   : MONITOR, ELEMEDGE =  0.300, DELETEONTRANSVERSEEXIT = FALSE;
+mon_02_sol_out  : MONITOR, ELEMEDGE =  2.300, DELETEONTRANSVERSEEXIT = FALSE;
+mon_03_bend1_in : MONITOR, ELEMEDGE =  2.680, DELETEONTRANSVERSEEXIT = FALSE;
+mon_04_bend1_out: MONITOR, ELEMEDGE =  3.300, DELETEONTRANSVERSEEXIT = FALSE;
+mon_05_fs61_in  : MONITOR, ELEMEDGE =  3.850, DELETEONTRANSVERSEEXIT = FALSE;
+mon_06_fs61_out : MONITOR, ELEMEDGE =  4.100, DELETEONTRANSVERSEEXIT = FALSE;
+mon_07_q1_in    : MONITOR, ELEMEDGE =  4.450, DELETEONTRANSVERSEEXIT = FALSE;
+mon_08_q1_out   : MONITOR, ELEMEDGE =  6.050, DELETEONTRANSVERSEEXIT = FALSE;
+mon_09_bend2_in : MONITOR, ELEMEDGE =  7.150, DELETEONTRANSVERSEEXIT = FALSE;
+mon_10_bend2_out: MONITOR, ELEMEDGE =  7.850, DELETEONTRANSVERSEEXIT = FALSE;
+mon_11_q2_in    : MONITOR, ELEMEDGE =  8.950, DELETEONTRANSVERSEEXIT = FALSE;
+mon_12_q2_out   : MONITOR, ELEMEDGE = 10.600, DELETEONTRANSVERSEEXIT = FALSE;
+mon_13_fs63_in  : MONITOR, ELEMEDGE = 11.100, DELETEONTRANSVERSEEXIT = FALSE;
+mon_14_fs63_out : MONITOR, ELEMEDGE = 11.350, DELETEONTRANSVERSEEXIT = FALSE;
+mon_15_bend3_in : MONITOR, ELEMEDGE = 11.750, DELETEONTRANSVERSEEXIT = FALSE;
+mon_16_bend3_out: MONITOR, ELEMEDGE = 12.350, DELETEONTRANSVERSEEXIT = FALSE;
+mon_17_q3_in    : MONITOR, ELEMEDGE = 13.150, DELETEONTRANSVERSEEXIT = FALSE;
+mon_18_q3_out   : MONITOR, ELEMEDGE = 14.750, DELETEONTRANSVERSEEXIT = FALSE;
+mon_19_q4_in    : MONITOR, ELEMEDGE = 17.150, DELETEONTRANSVERSEEXIT = FALSE;
+mon_20_q4_out   : MONITOR, ELEMEDGE = 18.800, DELETEONTRANSVERSEEXIT = FALSE;
+
+// ============================================================================
+// Beamline  (elements are placed by ELEMEDGE; LINE order is not significant)
+// ============================================================================
+muE4line: Line = (
+    SOL, mon_01_sol_in, mon_02_sol_out, BEND1, mon_03_bend1_in,
+    mon_04_bend1_out, D1, mon_05_fs61_in, FS61, D2,
+    mon_06_fs61_out, mon_07_q1_in, Q1, D3, Q2,
+    D4, Q3, D5, mon_08_q1_out, BEND2,
+    mon_09_bend2_in, mon_10_bend2_out, D6, FS62, mon_11_q2_in,
+    Q4, D7, Q5, D8, Q6,
+    D9, mon_12_q2_out, mon_13_fs63_in, FS63, D10,
+    mon_14_fs63_out, BEND3, mon_15_bend3_in, mon_16_bend3_out, D11,
+    mon_17_q3_in, Q7, D12, Q8, D13,
+    Q9, D14, mon_18_q3_out, mon_19_q4_in, Q10,
+    D15, Q11, D16, Q12, D17,
+    mon_20_q4_out
+);
+
+// ============================================================================
+// Beam distribution (converted BLTrackFile; 5k subset of beam_WsxOn.dat, n=14462)
+// ============================================================================
+Dist1: DISTRIBUTION, TYPE = FROMFILE,
+    FNAME     = "../../../../shared/beam_WsxOn_5k.dat",
+    NPARTDIST = n_particles;
+
+ES1: EMISSIONSOURCE, DISTRIBUTION = Dist1;   // EMISSIONMODEL defaults NONE (required by FROMFILE)
+mySources: EMISSIONSOURCELIST = (ES1);
+
+// ============================================================================
+// Field solver — space charge OFF (matches g4bl totalCharge=1)
+// ============================================================================
+FS1: Fieldsolver, TYPE = NONE,
+    NX = 16, NY = 16, NZ = 16,
+    PARFFTX = true, PARFFTY = true, PARFFTZ = true,
+    BCFFTX = open, BCFFTY = open, BCFFTZ = open,
+    BBOXINCR = 1, GREENSF = INTEGRATED;
+
+// ============================================================================
+// Beam — mu+ at 28 MeV/c. FROMFILE forbids PC on BEAM; field reference is P0.
+// ============================================================================
+BEAM1: BEAM, PARTICLE = MUON, NALLOC = n_particles,
+       BCHARGE = beam_bunch_charge, SOURCES = mySources, CHARGE = +1;
+
+// ============================================================================
+// Tracking
+// ============================================================================
+TRACK, LINE = muE4line, BEAM = BEAM1,
+       MAXSTEPS = 100000,
+       DT = {1e-11},          // time step [s]  (~0.77 mm/step at beta=0.256)
+       ZSTOP = 19.25;         // end of beamline [m]
+RUN, METHOD = "PARALLEL", FIELDSOLVER = FS1;
+ENDTRACK;
+Quit;
