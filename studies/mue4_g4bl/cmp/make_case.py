@@ -36,8 +36,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from opalxruns.paths import G4BL_FILES
+
 HERE = Path(__file__).resolve().parent
-G4BL_DIR = Path("/Users/rammann/Code/OPALX/g4bl-files/muE4")
+G4BL_DIR = G4BL_FILES / "muE4"
 SRC = G4BL_DIR / "g4bl_input" / "mue4_WsxOn.g4bl"
 MAPS = G4BL_DIR / "maps"
 

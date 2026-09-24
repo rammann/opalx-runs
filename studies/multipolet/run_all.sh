@@ -2,13 +2,12 @@
 #
 # run_all.sh -- generate the MULTIPOLET bend-study decks, track them all through
 #               OPALX, then run the analytic-comparison tests.
-#     ./run_all.sh              # generate + track + test
-#     ./run_all.sh --test-only  # skip tracking, just re-run the analysis
+#     OPALX=/path/to/opalx ./run_all.sh   # generate + track + test
+#     ./run_all.sh --test-only            # skip tracking, just re-run the analysis
 #
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OPALX_BIN="${OPALX:-/Users/rammann/Code/OPALX/build/src/opalx}"
 # numpy/h5py/scipy/matplotlib live in the conda base env, not the system python3.
 PY="${PY:-/opt/homebrew/Caskroom/miniconda/base/bin/python}"
 
@@ -18,6 +17,8 @@ TEST_ONLY=0
 cd "$HERE"
 
 if [[ $TEST_ONLY -eq 0 ]]; then
+    OPALX_BIN="${OPALX:?set OPALX to the opalx executable}"
+
     echo "== generating decks =="
     "$PY" make_decks.py
 

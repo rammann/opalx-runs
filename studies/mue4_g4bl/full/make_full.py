@@ -5,7 +5,7 @@ Differences from studies/mue4_g4bl/lattice.in, all deliberate:
 
   * Recording planes every metre or so, 22 of them, instead of the 4 detectors the
     real line carries. They sit only where the reference line is straight -- a plane
-    inside one of the six turns has no well defined frame, and mue4lib.walk() refuses
+    inside one of the six turns has no well defined frame, and opalxruns.mue4.walk() refuses
     to place one there.
   * Nothing scrapes. The 12 iron objects become vacuum in G4beamline and the matching
     COLLIMATOR elements are left out of the OPALX line. The two codes remove different
@@ -20,18 +20,16 @@ Differences from studies/mue4_g4bl/lattice.in, all deliberate:
 Run:  python make_full.py
 """
 from __future__ import annotations
-import math, re, sys
+import math, re
 from pathlib import Path
 import numpy as np
 
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[3]
-sys.path.insert(0, str(HERE.parent / "tools"))
-import mue4lib
-from mue4lib import CornerArc, Placement, Solid, parse_deck, walk
+from opalxruns.mue4 import CornerArc, Placement, Solid, parse_deck, walk
+from opalxruns.paths import G4BL_FILES
 
-SRC = ROOT / "g4bl-files" / "muE4" / "g4bl_input" / "mue4_WsxOn.g4bl"
-MAPS = ROOT / "g4bl-files" / "muE4" / "maps"
+HERE = Path(__file__).resolve().parent
+SRC = G4BL_FILES / "muE4" / "g4bl_input" / "mue4_WsxOn.g4bl"
+MAPS = G4BL_FILES / "muE4" / "maps"
 MM = 1.0e-3
 
 MUON_MASS = 0.1056583755

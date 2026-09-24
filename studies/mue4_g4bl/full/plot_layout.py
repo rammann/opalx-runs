@@ -8,16 +8,15 @@ recording plane is drawn as a short bar across the orbit.
 """
 from __future__ import annotations
 import re
-import sys
 from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from opalxruns.opalx_diagnostics import parse_opal_stat
+
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / "g4bl_compare"))
-import cmplib
 
 INK, MUTED = "#222222", "#777777"
 # One fixed colour per kind of magnet, from the palette checked earlier in this work.
@@ -61,7 +60,7 @@ def elements():
 
 def main():
     maps, planes = elements()
-    df = cmplib.read_stat(HERE / "full.stat")
+    _meta, df = parse_opal_stat(str(HERE / "full.stat"))
     rz, rx = np.asarray(df["ref_z"]), np.asarray(df["ref_x"])
 
     fig, ax = plt.subplots(figsize=(10.6, 6.4))

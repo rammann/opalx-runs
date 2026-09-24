@@ -27,18 +27,16 @@ from __future__ import annotations
 
 import json
 import math
-import sys
 from pathlib import Path
 
 import numpy as np
 
-HERE = Path(__file__).resolve().parent
-ROOT = HERE.parents[2]
-MAPS = ROOT / "g4bl-files" / "muE4" / "maps"
+from opalxruns.mue4 import (CornerArc, Placement, matmul, parse_rotation,
+                            rot_y, to_tait_bryan, walk)
+from opalxruns.paths import G4BL_FILES
 
-sys.path.insert(0, str(ROOT / "opalx-runs" / "studies" / "mue4_g4bl" / "tools"))
-from mue4lib import (CornerArc, Placement, matmul, parse_rotation,   # noqa: E402
-                     rot_y, to_tait_bryan, walk)
+HERE = Path(__file__).resolve().parent
+MAPS = G4BL_FILES / "muE4" / "maps"
 
 MUON_MASS = 0.1056583755
 P0 = 0.028

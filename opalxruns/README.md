@@ -1,23 +1,27 @@
-# OPALX post-processing
+# opalxruns
 
-Plots and ParaView geometry from an OPALX run directory. One entry point,
-`process_run.py`, plus the individual scripts it calls.
+Shared Python for the studies in this repo: plots and ParaView geometry from an
+OPALX run directory, readers for OPALX and G4beamline files, and the helpers that
+more than one study uses.
 
-This is the maintained copy (moved here from `runs/processing/`, which still
-holds the old version for the legacy `runs/` decks). New here: proper element
-rendering — `elements_to_vtk.py` builds hollow pipes with the element's real
-OPALX aperture as the bore (see below).
+Install once, into the miniconda Python — it has `numpy`, `h5py`, `matplotlib`,
+`pandas`, `scipy` and `vtk`; the system `python3` has none of them:
 
 ```bash
-cd opalx-runs/processing
 PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
-
-$PY process_run.py ../studies/ring/square_ring   # everything
-$PY process_run.py ../studies/ring/square_ring --dry-run   # what would run
+$PY -m pip install -e /Users/rammann/Code/OPALX/opalx-runs --no-deps
 ```
 
-Use the miniconda Python — it has `numpy`, `h5py`, `matplotlib`, `pandas` and
-`vtk`. The system `python3` has none of them.
+## Plots and ParaView geometry for one run
+
+One entry point, `process_run`, plus the individual scripts it calls. Elements
+are drawn as hollow pipes with the element's real OPALX aperture as the bore
+(see below).
+
+```bash
+$PY -m opalxruns.process_run studies/ring/square_ring             # everything
+$PY -m opalxruns.process_run studies/ring/square_ring --dry-run   # what would run
+```
 
 ## What a run directory needs
 
@@ -52,15 +56,20 @@ OPALX wrote last. The others are named in the inventory and reachable with
 | `particles_to_vtk.py` | bunch dumps to `.pvd` + `.vtp`, in lab and/or co-moving coordinates |
 | `elements_to_vtk.py` | element bodies and the reference orbit as `.vtp`, in lab coordinates. An element with an aperture becomes a hollow pipe (bore = the real aperture per OPALX rules: `APERTURE` string, or `HGAP`/`HAPERT` rectangle for bends, `--wall` thick); one without (hard-edge bend, bare element) a solid tube of `--default-aperture` radius. Cell arrays `element_type` and `element_id` (per-element index, names printed at run time) |
 | `opalx_run.py` | shared: the `Run` file-discovery class, `timing.dat` / `DesignPath` / `ElementPositions` readers, co-moving→lab frame math |
-| `opalx_diagnostics.py` | `.stat` and `.h5` readers, plus the notebook dropdown widgets. Imported from outside this directory (`bendtest/`, `aperture/`, `collimator/`, `multipoletest/`) — keep its names stable |
+| `opalx_diagnostics.py` | `.stat` and `.h5` readers, plus the notebook dropdown widgets. Imported by `fmlib.py`, `bendlib.py`, `cmplib.py` and `plot_layout.py` — keep its names stable |
+| `paths.py` | where things are: the repo, `G4BL_FILES`, `G4BL_APP`, and `opalx()` from `$OPALX` |
+| `h5.py` | `read_monitor`: every `Step#` group of an OPALX monitor file, sorted by id |
+| `g4bl.py` | writers for G4beamline's `grid` and `cylinder` field map formats |
+| `mue4.py` | where every element of the muE4 G4beamline input ends up (the centreline walk) |
+| `mue4_beam.py` | the muE4 reference muon (28 MeV/c) and the functions that assume it: G4beamline track files in beta*gamma, the six comparison coordinates, matching the two codes by particle id |
 
 Every script also runs on its own, taking a run directory:
 
 ```bash
-$PY plot_stat.py       ../mue4_analytical --columns rms_x,rms_y,Dx
-$PY plot_monitors.py   ../mue4_analytical
-$PY particles_to_vtk.py ../mue4_analytical --frame lab --stride 5
-$PY elements_to_vtk.py  ../mue4_analytical --default-aperture 0.05
+$PY -m opalxruns.plot_stat        studies/mue4/mue4_analytical --columns rms_x,rms_y,Dx
+$PY -m opalxruns.plot_monitors    studies/mue4/mue4_analytical
+$PY -m opalxruns.particles_to_vtk studies/mue4/mue4_analytical --frame lab --stride 5
+$PY -m opalxruns.elements_to_vtk  studies/mue4/mue4_analytical --default-aperture 0.05
 ```
 
 ## Two things worth knowing

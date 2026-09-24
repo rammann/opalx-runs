@@ -3,8 +3,9 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
-export PATH="/Users/rammann/Code/G4BL/G4beamline-3.08.app/Contents/MacOS:$PATH"
-OPALX=/Users/rammann/Code/OPALX/build/src/opalx
+G4BL_APP="${G4BL_APP:-/Users/rammann/Code/G4BL/G4beamline-3.08.app}"
+export PATH="$G4BL_APP/Contents/MacOS:$PATH"
+: "${OPALX:?set OPALX to the opalx executable}"
 rm -f Z*.txt E*.h5 full.h5 full.stat full.lbal timing.dat
 rm -rf data
 echo "== G4beamline"

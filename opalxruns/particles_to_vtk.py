@@ -51,8 +51,7 @@ import numpy as np
 from vtk import vtkCellArray, vtkPoints, vtkPolyData, vtkXMLPolyDataWriter
 from vtk.util.numpy_support import numpy_to_vtk
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from opalx_run import (  # noqa: E402
+from opalxruns.opalx_run import (
     ZHAT,
     Run,
     build_transport_frames,

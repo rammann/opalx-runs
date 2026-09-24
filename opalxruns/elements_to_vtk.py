@@ -67,8 +67,7 @@ from vtk import (vtkCellArray, vtkPoints, vtkPolyData, vtkPolyLine, vtkTriangle,
                  vtkXMLPolyDataWriter)
 from vtk.util.numpy_support import numpy_to_vtk
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from opalx_run import Run, load_designpath, parse_element_positions  # noqa: E402
+from opalxruns.opalx_run import Run, load_designpath, parse_element_positions
 
 # element type -> integer code (colour on `element_type` in ParaView)
 TYPE_CODE = {"DRIFT": 0, "SOLENOID": 1, "SBEND": 2, "RBEND": 2,

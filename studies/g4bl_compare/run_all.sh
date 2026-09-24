@@ -12,7 +12,6 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../.." && pwd)"
 PY="${PY:-/opt/homebrew/Caskroom/miniconda/base/bin/python}"
 G4BL_APP="${G4BL_APP:-/Users/rammann/Code/G4BL/G4beamline-3.08.app}"
 
@@ -28,34 +27,31 @@ for arg in "$@"; do
     esac
 done
 
-# --- OPALX binary ----------------------------------------------------------
-# The CMake target is opalx_exe. `make opalx` builds only the static library and
-# leaves whatever executable was there before, which is how a run silently uses
-# a binary from weeks ago.
-if [[ -z "${OPALX_BIN:-}" ]]; then
-    for cand in "$ROOT/build/src/opalx" "$ROOT/opalx/build_serial/src/opalx" \
-                "$ROOT/opalx/build/src/opalx"; do
-        [[ -x "$cand" ]] && { OPALX_BIN="$cand"; break; }
-    done
-fi
-[[ -n "${OPALX_BIN:-}" ]] || { echo "no opalx binary found" >&2; exit 1; }
+# --- OPALX and G4beamline --------------------------------------------------
+# Only needed to run the codes; --test-only works without either.
+if [[ "$TEST_ONLY" -eq 0 ]]; then
+    # The binary comes from $OPALX and nowhere else. The CMake target is opalx_exe.
+    # `make opalx` builds only the static library and leaves whatever executable
+    # was there before, which is how a run silently uses a binary from weeks ago.
+    OPALX_BIN="${OPALX:?set OPALX to the opalx executable}"
 
-# Every deck here places elements with a FIELDMAP, which an older binary rejects
-# at parse time with a message about SCALE. Refuse to run rather than produce a
-# log full of parse errors.
-# grep -c, not grep -q: with `set -o pipefail`, grep -q exits on the first match,
-# strings then dies of SIGPIPE, and the pipeline reports failure on a binary that
-# is perfectly fine. grep -c reads to the end.
-if [[ "$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L")" -eq 0 ]]; then
-    echo "ERROR: $OPALX_BIN has no FIELDMAP element." >&2
-    echo "       Rebuild with: cd $ROOT/build && make -j8 opalx_exe" >&2
-    exit 1
+    # Every deck here places elements with a FIELDMAP, which an older binary rejects
+    # at parse time with a message about SCALE. Refuse to run rather than produce a
+    # log full of parse errors.
+    # grep -c, not grep -q: with `set -o pipefail`, grep -q exits on the first match,
+    # strings then dies of SIGPIPE, and the pipeline reports failure on a binary that
+    # is perfectly fine. grep -c reads to the end.
+    if [[ "$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L")" -eq 0 ]]; then
+        echo "ERROR: $OPALX_BIN has no FIELDMAP element." >&2
+        echo "       Rebuild with: cd <build dir> && make -j8 opalx_exe" >&2
+        exit 1
+    fi
+    echo "opalx:  $OPALX_BIN"
+
+    export PATH="$G4BL_APP/Contents/MacOS:$PATH"
+    command -v g4bl >/dev/null || { echo "g4bl not on PATH" >&2; exit 1; }
 fi
-echo "opalx:  $OPALX_BIN"
 echo "python: $PY"
-
-export PATH="$G4BL_APP/Contents/MacOS:$PATH"
-command -v g4bl >/dev/null || { echo "g4bl not on PATH" >&2; exit 1; }
 
 # --- cases -----------------------------------------------------------------
 "$PY" "$HERE/make_cases.py"

@@ -14,13 +14,12 @@ gamma recovers G in each code separately. That is a stronger statement than the
 two codes agreeing once.
 """
 from __future__ import annotations
-import sys
 from pathlib import Path
 import numpy as np
 
+from opalxruns.g4bl import write_grid_map
+
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, "/Users/rammann/Code/OPALX/opalx-runs/studies/fieldmap_g4bl")
-import fmlib
 
 M = 0.1056583755          # muon rest mass [GeV]
 G_OPALX = 1.16592061e-03
@@ -56,7 +55,7 @@ def main():
         xs = np.arange(-400.0, 400.1, 20.0)
         ys = np.arange(-60.0, 60.1, 20.0)
         zs = np.arange(-500.0, 500.1, 10.0)
-        fmlib.write_grid_map(d / "by.g4blmap", lambda x, y, z: (0.0, B, 0.0), xs, ys, zs)
+        write_grid_map(d / "by.g4blmap", lambda x, y, z: (0.0, B, 0.0), xs, ys, zs)
 
         # one particle on the reference path, spin along the direction of travel
         pz_bg = bg

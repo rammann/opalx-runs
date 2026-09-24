@@ -25,9 +25,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm, TwoSlopeNorm
 
+from opalxruns import mue4_beam
+from opalxruns.h5 import read_monitor
+
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / "g4bl_compare"))
-import cmplib
 
 PLOTS = HERE / "plots"
 PLOTS.mkdir(exist_ok=True)
@@ -38,7 +39,7 @@ plt.rcParams.update({"font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
                      "ytick.color": MUTED, "axes.grid": False,
                      "legend.frameon": False, "figure.facecolor": "white"})
 
-# x, x', y, y' in the six coordinates cmplib.canonical returns
+# x, x', y, y' in the six coordinates mue4_beam.canonical returns
 PAIRS = [(0, 1, "x [mm]", "x' [mrad]"), (2, 3, "y [mm]", "y' [mrad]"),
          (0, 2, "x [mm]", "y [mm]")]
 PROJ = [(0, "x [mm]"), (1, "x' [mrad]"), (2, "y [mm]"), (3, "y' [mrad]")]
@@ -139,7 +140,7 @@ def main():
         if z not in P:
             continue
         gt, oh = P[z]
-        Xg, Xo, ids, _ = cmplib.matched(cmplib.read_bltrack(gt), cmplib.read_monitor(oh))
+        Xg, Xo, ids, _ = mue4_beam.matched(mue4_beam.read_bltrack(gt), read_monitor(oh))
         heat(z, Xg, Xo, len(ids))
         proj(z, Xg, Xo, len(ids))
         print(f"  z = {z:5d} mm  {len(ids):,} particles")

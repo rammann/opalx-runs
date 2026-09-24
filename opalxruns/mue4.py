@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""mue4lib.py -- read a G4beamline deck and work out where every element ends up.
+"""mue4.py -- read a G4beamline deck and work out where every element ends up.
 
 G4beamline places elements in *centreline* coordinates: a running coordinate whose z is
 path length along the beamline and whose orientation is changed by `cornerarc` commands.

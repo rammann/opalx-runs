@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """make_lattice.py -- turn the G4beamline muE4 deck into OPALX elements.
 
-Reads mue4_WsxOn.g4bl, replays its centreline walk (mue4lib.py), and writes:
+Reads mue4_WsxOn.g4bl, replays its centreline walk (opalxruns/mue4.py), and writes:
 
   poses.json          every element's lab pose, map, scale and aperture
   lattice.in          the OPALX element definitions and LINE, for inclusion in a case deck
@@ -31,13 +31,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import mue4lib as m4
+from opalxruns import mue4 as m4
+from opalxruns.paths import G4BL_FILES
 
-G4BL_DIR = Path("/Users/rammann/Code/OPALX/g4bl-files/muE4")
+G4BL_DIR = G4BL_FILES / "muE4"
 DECK = G4BL_DIR / "g4bl_input" / "mue4_WsxOn.g4bl"
 MAPS = G4BL_DIR / "maps"
 

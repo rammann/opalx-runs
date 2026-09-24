@@ -34,12 +34,9 @@ system ``python3``.
 from __future__ import annotations
 
 import argparse
-import sys
 import traceback
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from opalx_run import Run  # noqa: E402
+from opalxruns.opalx_run import Run
 
 STEPS = ("stat", "timing", "monitors", "elements", "particles")
 
@@ -65,7 +62,7 @@ def _why_skip(run, step):
 
 
 def _run_stat(run, args):
-    import plot_stat
+    from opalxruns import plot_stat
 
     argv = [str(run.dir), "--vs", args.vs]
     if args.base:
@@ -76,7 +73,7 @@ def _run_stat(run, args):
 
 
 def _run_timing(run, args):
-    import plot_timing
+    from opalxruns import plot_timing
 
     argv = [str(run.dir)]
     if args.base:
@@ -85,7 +82,7 @@ def _run_timing(run, args):
 
 
 def _run_monitors(run, args):
-    import plot_monitors
+    from opalxruns import plot_monitors
 
     argv = [str(run.dir), "--step", str(args.step)]
     if args.base:
@@ -94,7 +91,7 @@ def _run_monitors(run, args):
 
 
 def _run_elements(run, args):
-    import elements_to_vtk
+    from opalxruns import elements_to_vtk
 
     argv = [str(run.dir), "--default-aperture", str(args.default_aperture)]
     if args.base:
@@ -103,7 +100,7 @@ def _run_elements(run, args):
 
 
 def _run_particles(run, args):
-    import particles_to_vtk
+    from opalxruns import particles_to_vtk
 
     argv = [str(run.dir), "--frame", args.frame, "--stride", str(args.stride),
             "--mass", str(args.mass), "--quiet"]

@@ -35,8 +35,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from opalx_run import Run, parse_timing  # noqa: E402
+from opalxruns.opalx_run import Run, parse_timing
 
 MAIN = "mainTimer"
 BAR = "#1f5fd1"

@@ -37,8 +37,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from opalx_run import Run, parse_opal_stat  # noqa: E402
+from opalxruns.opalx_run import Run, parse_opal_stat
 
 # (title, y-label, [(column, label, scale)], kind)
 #   kind "xy"    -> plot the two columns against each other, equal aspect

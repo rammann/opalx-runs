@@ -3,7 +3,7 @@
 
 `g4bl.out` is the log of an archived run of the muE4 deck. When G4beamline constructs each
 element it prints the global position it placed it at, so that log is an independent oracle
-for the walk in mue4lib.py: if the two agree for every element, the lab poses the OPALX deck
+for the walk in opalxruns/mue4.py: if the two agree for every element, the lab poses the OPALX deck
 will be built from are right, and no tracking has to happen to find that out.
 
 g4bl prints one decimal, so agreement means within half of the last printed digit, 0.05 mm.
@@ -18,14 +18,13 @@ Usage:  python3 tools/test_geometry.py
 from __future__ import annotations
 
 import re
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import mue4lib as m4
+from opalxruns import mue4 as m4
+from opalxruns.paths import G4BL_FILES
 
 HERE = Path(__file__).resolve().parent
-G4BL_DIR = Path("/Users/rammann/Code/OPALX/g4bl-files/muE4")
+G4BL_DIR = G4BL_FILES / "muE4"
 DECK = G4BL_DIR / "g4bl_input" / "mue4_WsxOn.g4bl"
 LOG = G4BL_DIR / "g4bl_input" / "g4bl.out"
 MAPS = G4BL_DIR / "maps"

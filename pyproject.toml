@@ -1,0 +1,17 @@
+# Makes the shared Python in opalxruns/ importable from every study, notebook and editor.
+# Install once, into the Python the studies use:
+#   /opt/homebrew/Caskroom/miniconda/base/bin/python -m pip install -e . --no-deps
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opalxruns"
+version = "0.1.0"
+description = "Shared helpers for the OPALX input files and checks in this repo"
+requires-python = ">=3.10"
+dependencies = ["numpy", "pandas", "h5py", "matplotlib", "scipy"]
+
+[tool.setuptools]
+# Named explicitly: automatic discovery would also pick up studies/, shared/ and output/.
+packages = ["opalxruns"]

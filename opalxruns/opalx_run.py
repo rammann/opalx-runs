@@ -11,8 +11,8 @@ Holds two things:
   rotation.
 
 The ``.stat`` and per-particle ``.h5`` readers live in
-:mod:`opalx_diagnostics` and are re-exported here for convenience -- six files
-outside ``processing/`` import them from there, so they must keep their home.
+:mod:`opalxruns.opalx_diagnostics` and are re-exported here for convenience --
+study scripts import them from there, so they must keep their home.
 
 Assumed run layout::
 
@@ -35,7 +35,7 @@ from pathlib import Path
 
 import numpy as np
 
-from opalx_diagnostics import (  # noqa: F401  (re-exported for the scripts)
+from opalxruns.opalx_diagnostics import (  # noqa: F401  (re-exported for the scripts)
     list_h5_datasets,
     list_h5_steps,
     load_h5_dataset,

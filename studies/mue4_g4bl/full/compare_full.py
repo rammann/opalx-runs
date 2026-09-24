@@ -8,16 +8,17 @@ Writes:
   plots/growth.png      how the per-particle difference grows along the line
 """
 from __future__ import annotations
-import json, re, sys
+import json, re
 from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from opalxruns import mue4_beam
+from opalxruns.h5 import read_monitor
+
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1] / "g4bl_compare"))
-import cmplib
 
 PLOTS = HERE / "plots"
 PLOTS.mkdir(exist_ok=True)
@@ -104,9 +105,9 @@ def main():
         return 1
     rows, z_list, hist = [], [], {}
     for z, (gt, oh) in P.items():
-        dg = cmplib.read_bltrack(gt)
-        do = cmplib.read_monitor(oh)
-        Xg, Xo, ids, miss = cmplib.matched(dg, do)
+        dg = mue4_beam.read_bltrack(gt)
+        do = read_monitor(oh)
+        Xg, Xo, ids, miss = mue4_beam.matched(dg, do)
         if len(ids) < 10:
             continue
         vp = np.abs(Xo[[0, 2]] - Xg[[0, 2]]).max(axis=0)

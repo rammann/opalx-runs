@@ -24,7 +24,7 @@ centre of curvature and the plain sector matrix applies (``x_sign`` = +1). The
 conjugation with diag(x_sign, x_sign, 1, 1, 1, 1) is kept so a element with the
 other handedness could still be described.
 
-Uses the shared readers in opalx-runs/processing/opalx_diagnostics.py.
+Uses the shared readers in opalxruns/opalx_diagnostics.py.
 Run with the conda python (numpy/scipy/h5py/matplotlib). See run_all.sh.
 """
 
@@ -32,15 +32,14 @@ from __future__ import annotations
 
 import json
 import math
-import sys
 from pathlib import Path
 
+import h5py
 import numpy as np
 
+from opalxruns.opalx_diagnostics import parse_opal_stat, list_h5_steps
+
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent.parent / "processing"))  # opalx-runs/processing
-from opalx_diagnostics import parse_opal_stat, list_h5_steps  # noqa: E402
-import h5py  # noqa: E402
 
 COORDS = ["x", "x'", "y", "y'", "z", "delta"]
 PAIRS = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10), (11, 12)]  # (plus_idx, minus_idx)
