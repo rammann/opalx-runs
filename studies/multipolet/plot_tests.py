@@ -134,8 +134,8 @@ def test04_dispersion(man, plt, adeg):
     for tag in TAGS:
         c = bl.Case(f"{tag}_{adeg}", man)
         i_p = c.m["part_labels"].index("delta+"); i_r = c.m["part_labels"].index("ref")
-        sp, xp, _ = c.particle_trajectory(i_p)
-        _, xr, _ = c.particle_trajectory(i_r)
+        sp, xp, _ = c.trajectory(i_p)
+        _, xr, _ = c.trajectory(i_r)
         Dtraj = (xp - xr) / c.m["eps"]["delta"]
         A = bl.analytic_map(c.m)
         sg = np.linspace(sp.min(), sp.max(), 400)
@@ -173,7 +173,7 @@ def test06_vertical(man, plt, adeg):
     for tag in TAGS:
         c = bl.Case(f"{tag}_{adeg}", man)
         i_y = c.m["part_labels"].index("y+")
-        s, _, y = c.particle_trajectory(i_y)
+        s, _, y = c.trajectory(i_y)
         M, _ = c.transfer_map()
         ax.plot(s, y * 1e3, "-", color=COL[tag], label=f"{TAGS[tag]}  (R43 = {M[3,2]:+.4f})")
     _shade(ax, bl.Case(f"mt_fringe_{adeg}", man))

@@ -1,11 +1,54 @@
-"""Writers for G4beamline's two field map formats, ``grid`` and ``cylinder``."""
+"""G4beamline files: the two field map formats (``grid`` and ``cylinder``) and
+the track files a virtualdetector writes (#BLTrackFile)."""
 
 from __future__ import annotations
 
 import random
 from pathlib import Path
 
+import numpy as np
+
 MM = 1e-3                        # the map files are in millimetres
+
+
+# ---------------------------------------------------------------------------
+# Track files
+# ---------------------------------------------------------------------------
+def read_track_file(path) -> np.ndarray:
+    """Every particle row of a #BLTrackFile as floats, in the file's own units
+    (mm, MeV/c, ns). Comment and blank lines are skipped. Columns 0-11 are
+    x y z Px Py Pz t PDGid EventID TrackID ParentID Weight; spin runs add more."""
+    with open(path) as f:
+        return np.array([[float(v) for v in line.split()] for line in f
+                         if not line.startswith("#") and line.strip()])
+
+
+def track_on_plane(path, plane_z: float) -> dict[int, np.ndarray]:
+    """Track file rows drifted onto the plane z = plane_z [mm], keyed by particle
+    id (EventID - 1, which is how OPALX numbers them): x, y [mm], px, py, pz [MeV/c].
+
+    A detector is 1 mm thick and records a particle on entry, so the recorded z is
+    a little before the plane."""
+    out = {}
+    for c in read_track_file(path):
+        x, y, z, px, py, pz = c[:6]
+        dz = plane_z - z
+        out[int(c[8]) - 1] = np.array([x + px / pz * dz, y + py / pz * dz, px, py, pz])
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Field maps
+# ---------------------------------------------------------------------------
+def read_map_header(path) -> tuple[str, dict[str, float]] | None:
+    """The header line of a field map: ("grid" or "cylinder", its key=value
+    numbers, e.g. X0, nX, dX), or None when the file has neither line."""
+    with open(path) as f:
+        for line in f:
+            t = line.split()
+            if t and t[0] in ("grid", "cylinder"):
+                return t[0], {k: float(v) for k, v in (p.split("=") for p in t[1:])}
+    return None
 
 
 def write_grid_map(path: Path, field, xs_mm, ys_mm, zs_mm, norm_b=1.0,

@@ -38,6 +38,7 @@ import math
 from pathlib import Path
 
 import fmlib as F
+from opalxruns.particles import map_particles, write_parts
 
 HERE = Path(__file__).resolve().parent
 MAPS = HERE / "maps"
@@ -82,41 +83,7 @@ def write_maps() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Particle file
-# ---------------------------------------------------------------------------
-
-def map_particles() -> list[tuple[str, list[float]]]:
-    """13 rows: a reference particle plus a symmetric +/- step in each of the
-    six coordinates. Each row is (label, [x, px, y, py, z, pz]) with the
-    momenta in beta*gamma. The steps in a pair cancel in the centred
-    difference, so the transfer matrix is taken about the axis."""
-    rows: list[tuple[str, list[float]]] = [("ref", [0, 0, 0, 0, 0, F.BG0])]
-
-    def add(label, x=0.0, xp=0.0, y=0.0, yp=0.0, z=0.0, delta=0.0):
-        pz = F.BG0 * (1.0 + delta)
-        px, py = pz * math.tan(xp), pz * math.tan(yp)
-        norm = math.sqrt(px * px + py * py + pz * pz)
-        scale = F.BG0 * (1.0 + delta) / norm
-        rows.append((label, [x, px * scale, y, py * scale, z, pz * scale]))
-
-    add("x+", x=+F.EPS["x"]);                 add("x-", x=-F.EPS["x"])
-    add("xp+", xp=+F.EPS["xp"]);              add("xp-", xp=-F.EPS["xp"])
-    add("y+", y=+F.EPS["y"]);                 add("y-", y=-F.EPS["y"])
-    add("yp+", yp=+F.EPS["yp"]);              add("yp-", yp=-F.EPS["yp"])
-    add("z+", z=+F.EPS["z"]);                 add("z-", z=-F.EPS["z"])
-    add("delta+", delta=+F.EPS["delta"]);     add("delta-", delta=-F.EPS["delta"])
-    return rows
-
-
-def write_parts(path: Path, rows) -> None:
-    lines = [str(len(rows)), "x px y py z pz"]
-    for _label, v in rows:
-        lines.append(" ".join(f"{c:.12e}" for c in v))
-    path.write_text("\n".join(lines) + "\n")
-
-
-# ---------------------------------------------------------------------------
-# Input templates
+# Input templates (the particle file comes from opalxruns.particles)
 # ---------------------------------------------------------------------------
 
 _HEAD = """\
@@ -245,7 +212,7 @@ def build_case(cfg: dict) -> dict:
                              mapfile=cfg["mapfile"], scale=scale, zrev=zrev,
                              dout=zstop - field_s1, zend=field_s1)
     (d / f"{name}.in").write_text(head + body + _TAIL.format(dt=dt, zstop=zstop))
-    write_parts(d / "parts.txt", map_particles())
+    write_parts(d / "parts.txt", map_particles(F.BG0, F.EPS))
 
     m = {
         "name": name, "desc": cfg["desc"], "physics": cfg["physics"],

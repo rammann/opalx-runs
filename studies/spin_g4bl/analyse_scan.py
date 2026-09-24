@@ -19,20 +19,17 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from opalxruns import plotstyle
+from opalxruns.g4bl import read_track_file
+from opalxruns.plotstyle import G4BL as G4_C, INK, MUTED, OPALX as OPALX_C
+
 HERE = Path(__file__).resolve().parent
 G_OPALX, G_G4 = 1.16592061e-03, 0.0011659208
-OPALX_C, G4_C = "#1f5fd1", "#c1432d"
-INK, MUTED = "#222222", "#777777"
-plt.rcParams.update({"font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
-                     "axes.edgecolor": MUTED, "text.color": INK, "xtick.color": MUTED,
-                     "ytick.color": MUTED, "axes.grid": True, "grid.color": "#dddddd",
-                     "grid.linewidth": 0.5, "axes.axisbelow": True,
-                     "legend.frameon": False, "figure.facecolor": "white"})
+plotstyle.use()
 
 
 def read_g4(p):
-    return np.array([[float(v) for v in l.split()] for l in open(p)
-                     if not l.startswith("#") and l.strip()])[0]
+    return read_track_file(p)[0]
 
 
 def read_opalx(p):

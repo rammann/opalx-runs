@@ -22,17 +22,16 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+from opalxruns import plotstyle
+from opalxruns.g4bl import read_track_file
+from opalxruns.plotstyle import G4BL as G4_C, INK, OPALX as OPALX_C
+
 HERE = Path(__file__).resolve().parent
 D = HERE / "uniform_bz"
 G_OPALX, G_G4 = 1.16592061e-03, 0.0011659208
 THETA_1M, THETA_2M = 1.0, 2.0
 BETA = 0.2561627
-OPALX_C, G4_C, INK, MUTED = "#1f5fd1", "#c1432d", "#222222", "#777777"
-plt.rcParams.update({"font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
-                     "axes.edgecolor": MUTED, "text.color": INK, "xtick.color": MUTED,
-                     "ytick.color": MUTED, "axes.grid": True, "grid.color": "#dddddd",
-                     "grid.linewidth": 0.5, "axes.axisbelow": True,
-                     "legend.frameon": False, "figure.facecolor": "white"})
+plotstyle.use()
 
 
 def op_angle(path):
@@ -45,8 +44,7 @@ def op_angle(path):
 
 
 def g4_angle(path):
-    a = np.array([[float(v) for v in l.split()] for l in open(path)
-                  if not l.startswith("#") and l.strip()])[0]
+    a = read_track_file(path)[0]
     return float(np.arctan2(a[21], a[20])), a[20], a[21], list(a[3:6])
 
 

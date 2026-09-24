@@ -27,12 +27,12 @@ from matplotlib.colors import LogNorm, TwoSlopeNorm
 
 from opalxruns import mue4_beam
 from opalxruns.h5 import read_monitor
+from opalxruns.plotstyle import G4BL, INK, MUTED, OPALX
 
 HERE = Path(__file__).resolve().parent
 
 PLOTS = HERE / "plots"
 PLOTS.mkdir(exist_ok=True)
-OPALX, G4BL, INK, MUTED = "#1f5fd1", "#c1432d", "#222222", "#777777"
 NBIN = 48
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
                      "axes.edgecolor": MUTED, "text.color": INK, "xtick.color": MUTED,

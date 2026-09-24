@@ -22,7 +22,13 @@ from pathlib import Path
 
 import numpy as np
 
+from opalxruns import results
 from opalxruns.h5 import read_monitor  # noqa: F401  (used as cmplib.read_monitor)
+# symplectic_residual is a diagnostic here, not a test: zeta and delta as defined
+# here are conjugate only up to a factor and the differences are taken at a finite
+# step, so the residual sits near 1e-3 by construction in both codes. Compare the
+# two codes' residuals to each other.
+from opalxruns.matrices import symplectic_residual, transfer_matrix  # noqa: F401
 from opalxruns.mue4_beam import (  # noqa: F401  (used as cmplib.<name>)
     BETA0, BG0, BLTRACK_COLS, BRHO, C_MM_PER_NS, E0, MUON_MASS, P0,
     canonical, matched, read_bltrack,
@@ -177,24 +183,9 @@ def duplicates(d: dict) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Transfer matrix
+# Transfer matrix helpers (transfer_matrix and symplectic_residual themselves
+# are in opalxruns.matrices)
 # ---------------------------------------------------------------------------
-def transfer_matrix(Xin: np.ndarray, Xout: np.ndarray,
-                    pairs=MATRIX_PAIRS) -> np.ndarray:
-    """6 x 6 by centred differences over the +/- pairs, entrance plane to exit.
-
-    Built as (d out) @ inv(d in) rather than assuming the entrance differences
-    are exactly the nominal steps, so a plane that sits a little downstream of
-    where the particles were made does not bias it.
-    """
-    din = np.zeros((6, 6))
-    dout = np.zeros((6, 6))
-    for j, (ip, im) in enumerate(pairs):
-        din[:, j] = (Xin[:, ip] - Xin[:, im]) / 2.0
-        dout[:, j] = (Xout[:, ip] - Xout[:, im]) / 2.0
-    return dout @ np.linalg.inv(din)
-
-
 def in_field(z_mm: float, boxes, x: float = 0.0, y: float = 0.0) -> bool:
     """Whether a recording plane on the axis sits inside any map's box.
 
@@ -314,18 +305,6 @@ def significant(M: np.ndarray, floor: float, mult: float = 100.0) -> np.ndarray:
     return np.abs(M) >= mult * floor
 
 
-def symplectic_residual(M: np.ndarray) -> float:
-    """max |M^T J M - J|. A diagnostic, not a test: zeta and delta as defined
-    here are conjugate only up to a factor and the differences are taken at a
-    finite step, so the residual sits near 1e-3 by construction in both codes.
-    Compare the two codes' residuals to each other."""
-    J = np.zeros((6, 6))
-    for i in range(3):
-        J[2 * i, 2 * i + 1] = 1.0
-        J[2 * i + 1, 2 * i] = -1.0
-    return float(np.abs(M.T @ J @ M - J).max())
-
-
 def momentum_error(d: dict, code: str) -> np.ndarray:
     """|p|/p0 - 1 per particle. A static magnetic field does no work, so
     comparing this between the entrance and the exit plane tests the integrator
@@ -376,58 +355,10 @@ def load_manifest(path=None) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Result table. Lifted from studies/fieldmap_g4bl/fmlib.py so both studies
-# report the same way.
+# Result table: the one in opalxruns.results, which the other studies use too.
 # ---------------------------------------------------------------------------
-class Results:
-    """Rows of (test, quantity, measured, expected, tol) printed with PASS/FAIL.
-    A row with tol None is a diagnostic and never fails the suite."""
+class Results(results.Results):
+    """The shared result table, with the wide case column this study has always printed."""
 
     def __init__(self):
-        self.rows = []
-
-    def check(self, test, name, measured, expected, tol, rel=False, note=""):
-        if tol is None:
-            ok = None
-        elif rel:
-            ok = bool(abs(measured - expected) / max(abs(expected), 1e-30) <= tol)
-        else:
-            ok = bool(abs(measured - expected) <= tol)  # bool(): numpy bools fail `is False`
-        self.rows.append(dict(test=test, name=name, measured=measured, expected=expected,
-                              tol=tol, rel=rel, ok=ok, note=note))
-        return ok
-
-    def at_least(self, test, name, measured, minimum, note=""):
-        """A check that something is big enough rather than small enough, for
-        the cases where the point is that two results must NOT agree."""
-        self.rows.append(dict(test=test, name=name, measured=measured,
-                              expected=minimum, tol=None, rel=False,
-                              ok=bool(measured >= minimum),
-                              note=note or f"must be at least {minimum:g}"))
-        return measured >= minimum
-
-    def note(self, test, name, text):
-        self.rows.append(dict(test=test, name=name, measured=None, expected=None,
-                              tol=None, rel=False, ok=None, note=text))
-
-    @property
-    def failed(self) -> int:
-        return sum(1 for r in self.rows if r["ok"] is False)
-
-    def print_table(self, title=""):
-        if title:
-            print(f"\n{'=' * 110}\n{title}\n{'=' * 110}")
-        hdr = (f"{'case':16s} {'quantity':34s} {'measured':>13s} {'expected':>13s} "
-               f"{'|diff|':>10s} {'tol':>9s}  result")
-        print(hdr)
-        print("-" * len(hdr))
-        for r in self.rows:
-            if r["measured"] is None:
-                print(f"{r['test']:16s} {r['name']:34s} {r['note']}")
-                continue
-            diff = abs(r["measured"] - r["expected"])
-            res = "diag" if r["ok"] is None else ("PASS" if r["ok"] else "**FAIL**")
-            tolstr = "-" if r["tol"] is None else f"{r['tol']:.1e}{'r' if r['rel'] else ''}"
-            note = f"  {r['note']}" if r["note"] else ""
-            print(f"{r['test']:16s} {r['name']:34s} {r['measured']:>13.6g} "
-                  f"{r['expected']:>13.6g} {diff:>10.3g} {tolstr:>9s}  {res}{note}")
+        super().__init__(first="case", first_width=16, first_align="<", rule=110)

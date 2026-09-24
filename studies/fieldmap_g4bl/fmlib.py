@@ -37,11 +37,12 @@ import json
 import math
 from pathlib import Path
 
-import h5py
 import numpy as np
 
+from opalxruns.case import Case as CaseBase
 from opalxruns.g4bl import write_cylinder_map, write_grid_map  # noqa: F401  (used as F.write_*)
-from opalxruns.opalx_diagnostics import parse_opal_stat, list_h5_steps
+from opalxruns.matrices import drift_matrix, symplectic_residual, transfer_matrix  # noqa: F401
+from opalxruns.results import Results  # noqa: F401  (used as F.Results)
 
 HERE = Path(__file__).resolve().parent
 
@@ -146,16 +147,9 @@ def _grid_axis(start_mm, step_mm, n):
 
 
 # ---------------------------------------------------------------------------
-# Closed-form transfer matrices
+# Closed-form transfer matrices (drift_matrix and symplectic_residual are in
+# opalxruns.matrices)
 # ---------------------------------------------------------------------------
-
-def drift_matrix(L: float, gamma: float = GAMMA) -> np.ndarray:
-    M = np.eye(6)
-    M[0, 1] = L
-    M[2, 3] = L
-    M[4, 5] = L / gamma**2
-    return M
-
 
 def _focus_block(k: float, L: float) -> np.ndarray:
     """2x2 for x'' = -k x: trigonometric for k > 0, hyperbolic for k < 0."""
@@ -229,37 +223,19 @@ def energy_gain(e_mvpm: float, length: float, charge: float = CHARGE) -> float:
     return charge * e_mvpm * 1e6 * length * 1e-9
 
 
-def symplectic_residual(M4: np.ndarray) -> float:
-    """max |M^T J M - J| for the 4x4 transverse block."""
-    J = np.zeros((4, 4))
-    J[0, 1], J[1, 0] = 1.0, -1.0
-    J[2, 3], J[3, 2] = 1.0, -1.0
-    return float(np.abs(M4.T @ J @ M4 - J).max())
-
-
 # ---------------------------------------------------------------------------
 # Reading the OPALX output
 # ---------------------------------------------------------------------------
 
-class Case:
-    """One case directory: its manifest entry plus the tracking output."""
+class Case(CaseBase):
+    """One case directory: its manifest entry plus the tracking output. The
+    shared reading (stat table, dumps, read_plane, trajectory) is in
+    opalxruns.case.Case."""
 
     def __init__(self, name: str, manifest: dict):
-        self.name = name
-        self.m = manifest[name]
-        self.dir = HERE / name
-        self.h5 = self.dir / self.m["h5"]
-        self.stat = self.dir / self.m["stat"]
-        self._stat = None
-        self._steps = None
+        super().__init__(HERE / name, manifest[name], BG0)
 
     # -- stat file ---------------------------------------------------------
-    @property
-    def stat_df(self):
-        if self._stat is None:
-            _, self._stat = parse_opal_stat(self.stat)
-        return self._stat
-
     def field_window(self, frac: float = 1e-3) -> tuple[float, float]:
         """(first s, last s) at which the reference particle sees any field.
 
@@ -274,11 +250,6 @@ class Case:
         if len(nz) == 0:
             raise RuntimeError(f"{self.name}: the reference particle saw no field")
         return float(s[nz[0]]), float(s[nz[-1]])
-
-    def ref_orbit(self):
-        df = self.stat_df
-        return (df["s"].to_numpy(), df["ref_x"].to_numpy(), df["ref_z"].to_numpy(),
-                df["ref_px"].to_numpy(), df["ref_pz"].to_numpy())
 
     def ref_energy_change(self) -> float:
         """Total energy the reference particle gained over the run [GeV]."""
@@ -307,35 +278,6 @@ class Case:
         return float(np.interp(z_target, z, x))
 
     # -- particle dumps ----------------------------------------------------
-    def _steps_spos(self):
-        if self._steps is None:
-            steps = sorted(list_h5_steps(self.h5))
-            with h5py.File(self.h5, "r") as f:
-                sp = np.array([float(np.ravel(f[f"Step#{n}"].attrs["SPOS"])[0])
-                               for n in steps])
-            self._steps = (steps, sp)
-        return self._steps
-
-    def read_plane(self, step: int) -> np.ndarray:
-        """6 x Npart phase space at one dump, particles sorted by id.
-
-        Particles in one dump share a time rather than a path length, so each
-        is projected back onto the reference transverse plane by drifting it
-        through -z. Both planes we use sit in field-free space, where that
-        projection is exact."""
-        with h5py.File(self.h5, "r") as f:
-            g = f[f"Step#{step}"]
-            o = np.argsort(np.asarray(g["id"]))
-            x = np.asarray(g["x"])[o]
-            y = np.asarray(g["y"])[o]
-            z = np.asarray(g["z"])[o]
-            px = np.asarray(g["px"])[o]
-            py = np.asarray(g["py"])[o]
-            pz = np.asarray(g["pz"])[o]
-        xp, yp = px / pz, py / pz
-        delta = np.sqrt(px**2 + py**2 + pz**2) / BG0 - 1.0
-        return np.vstack([x - xp * z, xp, y - yp * z, yp, z, delta])
-
     def planes(self, margin: float = 0.03):
         """The last dump before the field and the first one after it."""
         steps, sp = self._steps_spos()
@@ -352,14 +294,9 @@ class Case:
         steps, sp, ie, ix = self.planes(margin)
         s0, s1 = self.m["field_s0"], self.m["field_s1"]
         Xin, Xout = self.read_plane(steps[ie]), self.read_plane(steps[ix])
-        din = np.zeros((6, 6))
-        dout = np.zeros((6, 6))
-        for j, (ip, im) in enumerate(PAIRS):
-            din[:, j] = (Xin[:, ip] - Xin[:, im]) / 2.0
-            dout[:, j] = (Xout[:, ip] - Xout[:, im]) / 2.0
-        M_planes = dout @ np.linalg.inv(din)
-        M = (np.linalg.inv(drift_matrix(sp[ix] - s1)) @ M_planes
-             @ np.linalg.inv(drift_matrix(s0 - sp[ie])))
+        M_planes = transfer_matrix(Xin, Xout, PAIRS)
+        M = (np.linalg.inv(drift_matrix(sp[ix] - s1, GAMMA)) @ M_planes
+             @ np.linalg.inv(drift_matrix(s0 - sp[ie], GAMMA)))
         return M, {"s_in": float(sp[ie]), "s_out": float(sp[ix])}
 
     def transfer_map4(self, margin: float = 0.03) -> np.ndarray:
@@ -375,80 +312,3 @@ class Case:
         A magnetic field does no work, so this should be at round-off."""
         steps, _ = self._steps_spos()
         return float((np.abs(self._pmag(steps[-1]) - self._pmag(steps[0])) / BG0).max())
-
-    def _pmag(self, step):
-        with h5py.File(self.h5, "r") as f:
-            g = f[f"Step#{step}"]
-            o = np.argsort(np.asarray(g["id"]))
-            return np.sqrt(np.asarray(g["px"])[o]**2 + np.asarray(g["py"])[o]**2
-                           + np.asarray(g["pz"])[o]**2)
-
-    def trajectory(self, part_index: int = 0):
-        """(s, x, y) of one particle over every dump."""
-        steps, sp = self._steps_spos()
-        xs, ys = [], []
-        with h5py.File(self.h5, "r") as f:
-            for n in steps:
-                g = f[f"Step#{n}"]
-                o = np.argsort(np.asarray(g["id"]))
-                xs.append(float(np.asarray(g["x"])[o][part_index]))
-                ys.append(float(np.asarray(g["y"])[o][part_index]))
-        return sp, np.array(xs), np.array(ys)
-
-
-# ---------------------------------------------------------------------------
-# Result table
-# ---------------------------------------------------------------------------
-
-class Results:
-    """Rows of (test, quantity, measured, expected, tol) printed with PASS/FAIL.
-    A row with tol None is a diagnostic and never fails the suite."""
-
-    def __init__(self):
-        self.rows = []
-
-    def check(self, test, name, measured, expected, tol, rel=False, note=""):
-        if tol is None:
-            ok = None
-        elif rel:
-            ok = bool(abs(measured - expected) / max(abs(expected), 1e-30) <= tol)
-        else:
-            ok = bool(abs(measured - expected) <= tol)  # bool(): numpy bools fail `is False`
-        self.rows.append(dict(test=test, name=name, measured=measured, expected=expected,
-                              tol=tol, rel=rel, ok=ok, note=note))
-        return ok
-
-    def at_least(self, test, name, measured, minimum, note=""):
-        """A check that something is big enough rather than small enough, for
-        the cases where the point is that two results must NOT agree."""
-        self.rows.append(dict(test=test, name=name, measured=measured,
-                              expected=minimum, tol=None, rel=False,
-                              ok=bool(measured >= minimum),
-                              note=note or f"must be at least {minimum:g}"))
-        return measured >= minimum
-
-    def note(self, test, name, text):
-        self.rows.append(dict(test=test, name=name, measured=None, expected=None,
-                              tol=None, rel=False, ok=None, note=text))
-
-    @property
-    def failed(self) -> int:
-        return sum(1 for r in self.rows if r["ok"] is False)
-
-    def print_table(self, title=""):
-        if title:
-            print(f"\n{'=' * 104}\n{title}\n{'=' * 104}")
-        hdr = (f"{'test':4s} {'quantity':34s} {'measured':>13s} {'expected':>13s} "
-               f"{'|diff|':>10s} {'tol':>9s}  result")
-        print(hdr)
-        print("-" * len(hdr))
-        for r in self.rows:
-            if r["measured"] is None:
-                print(f"{r['test']:>4} {r['name']:34s} {r['note']}")
-                continue
-            diff = abs(r["measured"] - r["expected"])
-            res = "diag" if r["ok"] is None else ("PASS" if r["ok"] else "**FAIL**")
-            tolstr = "-" if r["tol"] is None else f"{r['tol']:.1e}{'r' if r['rel'] else ''}"
-            note = f"  {r['note']}" if r["note"] else ""
-            print(f"{r['test']:>4} {r['name']:34s} {r['measured']:>13.6g} "
-                  f"{r['expected']:>13.6g} {diff:>10.3g} {tolstr:>9s}  {res}{note}")

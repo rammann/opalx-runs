@@ -59,7 +59,12 @@ OPALX wrote last. The others are named in the inventory and reachable with
 | `opalx_diagnostics.py` | `.stat` and `.h5` readers, plus the notebook dropdown widgets. Imported by `fmlib.py`, `bendlib.py`, `cmplib.py` and `plot_layout.py` — keep its names stable |
 | `paths.py` | where things are: the repo, `G4BL_FILES`, `G4BL_APP`, and `opalx()` from `$OPALX` |
 | `h5.py` | `read_monitor`: every `Step#` group of an OPALX monitor file, sorted by id |
-| `g4bl.py` | writers for G4beamline's `grid` and `cylinder` field map formats |
+| `g4bl.py` | G4beamline files: writers for the `grid` and `cylinder` field map formats, `read_map_header`, `read_track_file` and `track_on_plane` for #BLTrackFile output |
+| `case.py` | `Case`: one case folder of a scripted study — `.stat` table, reference orbit, dumps with their path lengths, `read_plane`, `trajectory`. `fmlib.py` and `bendlib.py` subclass it |
+| `matrices.py` | `drift_matrix`, `symplectic_residual`, and `transfer_matrix` from tracked +/- particle pairs |
+| `particles.py` | the 13-particle set (`map_particles`) and the FROMFILE particle file (`write_parts`) |
+| `results.py` | `Results`, the PASS/FAIL table every scripted study writes to `results.txt` |
+| `plotstyle.py` | the OPALX / G4BL colours, the shared matplotlib settings (`use`), `save_with_footer` |
 | `mue4.py` | where every element of the muE4 G4beamline input ends up (the centreline walk) |
 | `mue4_beam.py` | the muE4 reference muon (28 MeV/c) and the functions that assume it: G4beamline track files in beta*gamma, the six comparison coordinates, matching the two codes by particle id |
 

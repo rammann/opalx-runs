@@ -14,19 +14,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from opalxruns import plotstyle
 from opalxruns.opalx_diagnostics import parse_opal_stat
+from opalxruns.plotstyle import INK, MUTED
 
 HERE = Path(__file__).resolve().parent
 
-INK, MUTED = "#222222", "#777777"
 # One fixed colour per kind of magnet, from the palette checked earlier in this work.
 KIND = {"solenoid": "#2a78d6", "dipole": "#eb6834", "quadrupole": "#1baf7a"}
 PLANE = "#4a3aa7"
-plt.rcParams.update({"font.size": 8, "axes.titlesize": 10, "axes.labelsize": 8,
-                     "axes.edgecolor": MUTED, "text.color": INK, "xtick.color": MUTED,
-                     "ytick.color": MUTED, "axes.grid": True, "grid.color": "#e4e4e4",
-                     "grid.linewidth": 0.5, "axes.axisbelow": True,
-                     "legend.frameon": False, "figure.facecolor": "white"})
+plotstyle.use({"axes.titlesize": 10, "grid.color": "#e4e4e4"})
 
 
 def kind_of(fmapfn):

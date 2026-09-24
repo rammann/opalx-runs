@@ -9,6 +9,8 @@ import json, math, sys
 from pathlib import Path
 import numpy as np
 
+from opalxruns.g4bl import read_map_header
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import cmplib
@@ -20,22 +22,19 @@ MAPS = cmplib.MAPS
 
 
 def map_info(fname):
-    with open(MAPS / fname) as f:
-        for line in f:
-            t = line.split()
-            if t and t[0] in ("grid", "cylinder"):
-                kv = dict(p.split("=") for p in t[1:])
-                d = {k: float(v) for k, v in kv.items()}
-                if t[0] == "grid":
-                    return dict(kind="grid", file=fname,
-                                x=[d["X0"], d["X0"] + (d["nX"] - 1) * d["dX"]],
-                                y=[d["Y0"], d["Y0"] + (d["nY"] - 1) * d["dY"]],
-                                z=[d["Z0"], d["Z0"] + (d["nZ"] - 1) * d["dZ"]],
-                                step=[d["dX"], d["dY"], d["dZ"]],
-                                n=[int(d["nX"]), int(d["nY"]), int(d["nZ"])],
-                                size_mb=round((MAPS / fname).stat().st_size / 1e6, 1))
-                return dict(kind="cylinder", file=fname)
-    return dict(kind="unknown", file=fname)
+    header = read_map_header(MAPS / fname)
+    if header is None:
+        return dict(kind="unknown", file=fname)
+    kind, d = header
+    if kind == "grid":
+        return dict(kind="grid", file=fname,
+                    x=[d["X0"], d["X0"] + (d["nX"] - 1) * d["dX"]],
+                    y=[d["Y0"], d["Y0"] + (d["nY"] - 1) * d["dY"]],
+                    z=[d["Z0"], d["Z0"] + (d["nZ"] - 1) * d["dZ"]],
+                    step=[d["dX"], d["dY"], d["dZ"]],
+                    n=[int(d["nX"]), int(d["nY"]), int(d["nZ"])],
+                    size_mb=round((MAPS / fname).stat().st_size / 1e6, 1))
+    return dict(kind="cylinder", file=fname)
 
 
 def plane(d, sub, z):

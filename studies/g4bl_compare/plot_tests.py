@@ -20,6 +20,9 @@ import matplotlib.pyplot as plt          # noqa: E402
 import numpy as np                       # noqa: E402
 from matplotlib.colors import LogNorm    # noqa: E402
 
+from opalxruns import plotstyle          # noqa: E402
+from opalxruns.plotstyle import G4BL, INK, MUTED, OPALX  # noqa: E402
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import cmplib                            # noqa: E402
@@ -27,12 +30,6 @@ from cmplib import TOL                   # noqa: E402
 
 PLOTS = HERE / "plots"
 
-# Two series, so two categorical colours, assigned to the code and never cycled.
-# Checked with the palette validator: adjacent-pair separation dE 25.7 under
-# protanopia and 32.5 in normal vision, both well above the floor.
-OPALX = "#1f5fd1"
-G4BL = "#c1432d"
-INK, MUTED, GRIDC = "#222222", "#777777", "#dddddd"
 # Magnitude of a difference is a one-directional quantity, so one hue, light to
 # dark. Signed differences use a two-hue scale with a neutral middle.
 SEQ, DIV = "Blues", "RdBu_r"
@@ -45,21 +42,11 @@ CASE_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4",
                "#008300", "#4a3aa7"]
 CASE_MARKERS = ["o", "s", "^", "D", "v", "<", ">"]
 
-plt.rcParams.update({
-    "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
-    "axes.edgecolor": MUTED, "axes.labelcolor": INK, "text.color": INK,
-    "xtick.color": MUTED, "ytick.color": MUTED,
-    "axes.grid": True, "grid.color": GRIDC, "grid.linewidth": 0.5,
-    "axes.axisbelow": True, "legend.frameon": False, "figure.facecolor": "white",
-})
+plotstyle.use({"axes.labelcolor": INK})
 
 
 def _save(fig, name, footer):
-    PLOTS.mkdir(exist_ok=True)
-    fig.tight_layout(rect=(0.0, 0.045, 1.0, 1.0))
-    fig.text(0.01, 0.012, footer, fontsize=6, family="monospace", color="#555555")
-    fig.savefig(PLOTS / f"{name}.png", dpi=140)
-    plt.close(fig)
+    plotstyle.save_with_footer(fig, PLOTS / f"{name}.png", footer)
     print(f"  plots/{name}.png")
 
 

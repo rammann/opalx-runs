@@ -15,20 +15,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LogNorm
 
+from opalxruns import plotstyle
+from opalxruns.g4bl import read_map_header
+from opalxruns.plotstyle import G4BL, INK, MUTED, OPALX
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import cmplib
 
 FIGS = HERE / "report" / "figs"
 FIGS.mkdir(parents=True, exist_ok=True)
-OPALX, G4BL = "#1f5fd1", "#c1432d"
-INK, MUTED, GRIDC = "#222222", "#777777", "#dddddd"
-plt.rcParams.update({
-    "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
-    "axes.edgecolor": MUTED, "axes.labelcolor": INK, "text.color": INK,
-    "xtick.color": MUTED, "ytick.color": MUTED, "axes.grid": True,
-    "grid.color": GRIDC, "grid.linewidth": 0.5, "axes.axisbelow": True,
-    "legend.frameon": False, "figure.facecolor": "white"})
+plotstyle.use({"axes.labelcolor": INK})
 
 
 def save(fig, name):
@@ -52,20 +49,16 @@ def planes(d, c, sub):
 
 def _map_extent(fname):
     """How far the map reaches in x and z, in its own frame, from its header line."""
-    with open(cmplib.MAPS / fname) as f:
-        for line in f:
-            t = line.split()
-            if t and t[0] == "grid":
-                kv = dict(q.split("=") for q in t[1:])
-                d = {k: float(v) for k, v in kv.items()}
-                return ((d["X0"], d["X0"] + (d["nX"] - 1) * d["dX"]),
-                        (d["Z0"], d["Z0"] + (d["nZ"] - 1) * d["dZ"]))
-            if t and t[0] == "cylinder":
-                d = dict(q.split("=") for q in t[1:])
-                r = float(d["nR"]) * float(d["dR"]) - float(d["dR"])
-                z0 = float(d["Z0"])
-                return ((-r, r), (z0, z0 + (float(d["nZ"]) - 1) * float(d["dZ"])))
-    return None
+    header = read_map_header(cmplib.MAPS / fname)
+    if header is None:
+        return None
+    kind, d = header
+    if kind == "grid":
+        return ((d["X0"], d["X0"] + (d["nX"] - 1) * d["dX"]),
+                (d["Z0"], d["Z0"] + (d["nZ"] - 1) * d["dZ"]))
+    r = d["nR"] * d["dR"] - d["dR"]
+    z0 = d["Z0"]
+    return ((-r, r), (z0, z0 + (d["nZ"] - 1) * d["dZ"]))
 
 
 def _geometry(name, d):

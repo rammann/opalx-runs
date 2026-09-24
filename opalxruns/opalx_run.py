@@ -453,11 +453,7 @@ def build_transport_frames(dhat: np.ndarray) -> np.ndarray:
 
 def h5_steps(path: Path | str) -> list[str]:
     """Sorted ``Step#N`` group names of an H5Part file."""
-    import h5py
-
-    with h5py.File(path, "r") as f:
-        names = [k for k in f if re.match(r"^Step#\d+$", k)]
-    return sorted(names, key=lambda k: int(k[5:]))
+    return [f"Step#{n}" for n in list_h5_steps(path)]
 
 
 __all__ = [

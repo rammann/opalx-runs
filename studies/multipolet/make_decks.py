@@ -44,6 +44,8 @@ import json
 import math
 from pathlib import Path
 
+from opalxruns.particles import map_particles, write_parts
+
 HERE = Path(__file__).resolve().parent
 
 # ---- physics constants (match the OPALX parser) ---------------------------
@@ -89,40 +91,7 @@ def geom(angle: float) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Particle file for the map cases
-# ---------------------------------------------------------------------------
-
-def map_particles() -> list[tuple[str, list[float]]]:
-    """13 rows: reference + symmetric +/- step in each coordinate.
-    Each row is (label, [x, px, y, py, z, pz]) with momenta in beta*gamma."""
-    rows: list[tuple[str, list[float]]] = [("ref", [0, 0, 0, 0, 0, BG0])]
-
-    def add(label, x=0.0, xp=0.0, y=0.0, yp=0.0, z=0.0, delta=0.0):
-        pz = BG0 * (1.0 + delta)
-        px = pz * math.tan(xp)
-        py = pz * math.tan(yp)
-        norm = math.sqrt(px * px + py * py + pz * pz)
-        scale = BG0 * (1.0 + delta) / norm
-        rows.append((label, [x, px * scale, y, py * scale, z, pz * scale]))
-
-    add("x+", x=+EPS["x"]);       add("x-", x=-EPS["x"])
-    add("xp+", xp=+EPS["xp"]);    add("xp-", xp=-EPS["xp"])
-    add("y+", y=+EPS["y"]);       add("y-", y=-EPS["y"])
-    add("yp+", yp=+EPS["yp"]);    add("yp-", yp=-EPS["yp"])
-    add("z+", z=+EPS["z"]);       add("z-", z=-EPS["z"])
-    add("delta+", delta=+EPS["delta"]); add("delta-", delta=-EPS["delta"])
-    return rows
-
-
-def write_parts(path: Path, rows) -> None:
-    lines = [str(len(rows)), "x px y py z pz"]
-    for _label, v in rows:
-        lines.append(" ".join(f"{c:.12e}" for c in v))
-    path.write_text("\n".join(lines) + "\n")
-
-
-# ---------------------------------------------------------------------------
-# Deck templates
+# Deck templates (the particle file for the map cases comes from opalxruns.particles)
 # ---------------------------------------------------------------------------
 
 _HEADER = """\
@@ -360,7 +329,7 @@ def build_case(cfg: dict) -> dict:
         angle=angle, Lbody=g["L_body"], zin=Z_IN, zout=zout, dout=D_OUT_LEN, bend=bend)
 
     if mode == "map":
-        rows = map_particles()
+        rows = map_particles(BG0, EPS)
         write_parts(case_dir / "parts.txt", rows)
         beam = _MAP_BEAM.format(npart=len(rows))
         part_labels = [r[0] for r in rows]

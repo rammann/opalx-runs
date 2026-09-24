@@ -34,6 +34,8 @@ from pathlib import Path
 import h5py
 import numpy as np
 
+from opalxruns.g4bl import track_on_plane
+
 HERE = Path(__file__).resolve().parent
 POSES = json.loads((HERE.parent / "poses.json").read_text())
 
@@ -72,15 +74,7 @@ def opalx(name: str) -> dict[int, np.ndarray]:
 
 def g4bl(name: str, plane_z: float) -> dict[int, np.ndarray]:
     """#BLTrackFile rows in centreline coordinates, drifted onto the plane."""
-    out = {}
-    for line in (HERE / f"{name}.txt").read_text().splitlines():
-        if line.startswith("#") or not line.strip():
-            continue
-        c = line.split()
-        x, y, z, px, py, pz = (float(v) for v in c[:6])
-        dz = plane_z - z  # the detector is 1 mm thick and records on entry
-        out[int(c[8]) - 1] = np.array([x + px / pz * dz, y + py / pz * dz, px, py, pz])
-    return out
+    return track_on_plane(HERE / f"{name}.txt", plane_z)
 
 
 def main() -> int:

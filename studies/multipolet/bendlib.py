@@ -34,20 +34,18 @@ import json
 import math
 from pathlib import Path
 
-import h5py
 import numpy as np
 
-from opalxruns.opalx_diagnostics import parse_opal_stat, list_h5_steps
+from opalxruns import results
+from opalxruns.case import Case as CaseBase
+from opalxruns.matrices import (  # noqa: F401  (used as bl.<name>)
+    centred_differences, drift_matrix, symplectic_residual, transfer_matrix,
+)
 
 HERE = Path(__file__).resolve().parent
 
 COORDS = ["x", "x'", "y", "y'", "z", "delta"]
 PAIRS = [(1, 2), (3, 4), (5, 6), (7, 8), (9, 10), (11, 12)]  # (plus_idx, minus_idx)
-
-J6 = np.zeros((6, 6))
-for _i in range(0, 6, 2):
-    J6[_i, _i + 1] = 1.0
-    J6[_i + 1, _i] = -1.0
 
 C_LIGHT = 0.299792458  # GeV/c per T m
 
@@ -64,14 +62,6 @@ def brho(P0_GeV: float) -> float:
 # ---------------------------------------------------------------------------
 # Analytic matrices
 # ---------------------------------------------------------------------------
-
-def drift_matrix(L: float, gamma: float) -> np.ndarray:
-    M = np.eye(6)
-    M[0, 1] = L
-    M[2, 3] = L
-    M[4, 5] = L / gamma**2
-    return M
-
 
 def _cs(k: float, L: float) -> tuple[float, float]:
     """(C, S) of the focusing block for constant k: cos/sin, cosh/sinh, or drift."""
@@ -134,10 +124,6 @@ def analytic_map(m: dict) -> np.ndarray:
 # Symplecticity helpers
 # ---------------------------------------------------------------------------
 
-def symplectic_residual(M: np.ndarray) -> float:
-    return float(np.max(np.abs(M.T @ J6 @ M - J6)))
-
-
 def block_dets(M: np.ndarray) -> list[float]:
     return [float(np.linalg.det(M[i:i + 2, i:i + 2])) for i in (0, 2, 4)]
 
@@ -146,24 +132,13 @@ def block_dets(M: np.ndarray) -> list[float]:
 # One tracked case
 # ---------------------------------------------------------------------------
 
-class Case:
-    """One case directory: manifest metadata + output files."""
+class Case(CaseBase):
+    """One case directory: manifest metadata + output files. The shared reading
+    (stat table, dumps, read_plane, trajectory) is in opalxruns.case.Case."""
 
     def __init__(self, name: str, manifest: dict):
-        self.name = name
-        self.m = manifest[name]
-        self.dir = HERE / name
-        self.h5 = self.dir / self.m["h5"]
-        self.stat = self.dir / self.m["stat"]
-        self.bg0 = self.m["bg0"]
+        super().__init__(HERE / name, manifest[name], manifest[name]["bg0"])
         self.gamma = self.m["gamma"]
-        self._stat = None
-
-    @property
-    def stat_df(self):
-        if self._stat is None:
-            _, self._stat = parse_opal_stat(self.stat)
-        return self._stat
 
     def field_extent(self, frac: float = 0.01) -> tuple[float, float]:
         """(s_start, s_end) where |By_ref| exceeds ``frac`` of its peak."""
@@ -190,32 +165,6 @@ class Case:
         df = self.stat_df
         return df["s"].to_numpy(), df["By_ref"].to_numpy() / self.m["B0"]
 
-    def _steps_spos(self):
-        steps = sorted(list_h5_steps(self.h5))
-        with h5py.File(self.h5, "r") as f:
-            sp = np.array([float(np.ravel(f[f"Step#{n}"].attrs["SPOS"])[0]) for n in steps])
-        return steps, sp
-
-    def read_plane(self, step: int, project: bool = True) -> np.ndarray:
-        """6 x Npart phase space at Step#step, particles sorted by id."""
-        with h5py.File(self.h5, "r") as f:
-            g = f[f"Step#{step}"]
-            ids = np.asarray(g["id"])
-            o = np.argsort(ids)
-            x = np.asarray(g["x"])[o]; y = np.asarray(g["y"])[o]; z = np.asarray(g["z"])[o]
-            px = np.asarray(g["px"])[o]; py = np.asarray(g["py"])[o]; pz = np.asarray(g["pz"])[o]
-        xp, yp = px / pz, py / pz
-        if project:
-            x = x - xp * z
-            y = y - yp * z
-        delta = np.sqrt(px**2 + py**2 + pz**2) / self.bg0 - 1.0
-        return np.vstack([x, xp, y, yp, z, delta])
-
-    def ref_orbit(self):
-        df = self.stat_df
-        return (df["s"].to_numpy(), df["ref_x"].to_numpy(), df["ref_z"].to_numpy(),
-                df["ref_px"].to_numpy(), df["ref_pz"].to_numpy())
-
     def planes(self, margin: float):
         steps, sp = self._steps_spos()
         s0, s1 = self.field_extent()
@@ -233,29 +182,13 @@ class Case:
         face_in, face_out = self.m["face_in_s"], self.m["face_out_s"]
         Xin = self.read_plane(steps[ie])
         Xout = self.read_plane(steps[ix])
-        din = np.zeros((6, 6)); dout = np.zeros((6, 6))
-        for j, (ip, im) in enumerate(PAIRS):
-            din[:, j] = (Xin[:, ip] - Xin[:, im]) / 2.0
-            dout[:, j] = (Xout[:, ip] - Xout[:, im]) / 2.0
-        Mplanes = dout @ np.linalg.inv(din)
+        Mplanes = transfer_matrix(Xin, Xout, PAIRS)
         Din = drift_matrix(face_in - sp[ie], self.gamma)
         Dout = drift_matrix(sp[ix] - face_out, self.gamma)
         M = np.linalg.inv(Dout) @ Mplanes @ np.linalg.inv(Din)
         info = {"s_in": float(sp[ie]), "s_out": float(sp[ix]), "field": field,
-                "eps_in": np.diag(din).copy()}
+                "eps_in": np.diag(centred_differences(Xin, PAIRS)).copy()}
         return M, info
-
-    def particle_trajectory(self, part_index: int):
-        """(s, x, y) of one particle vs path length, from every h5 dump."""
-        steps, sp = self._steps_spos()
-        xs, ys = [], []
-        with h5py.File(self.h5, "r") as f:
-            for n in steps:
-                g = f[f"Step#{n}"]
-                o = np.argsort(np.asarray(g["id"]))
-                xs.append(float(np.asarray(g["x"])[o][part_index]))
-                ys.append(float(np.asarray(g["y"])[o][part_index]))
-        return sp, np.array(xs), np.array(ys)
 
     def sigma_at_faces(self, margin: float = 0.05):
         """(Sigma_in, Sigma_out, mean_in, mean_out) at the design faces."""
@@ -271,13 +204,6 @@ class Case:
         pN = self._pmag(steps[-1])
         rel = np.abs(pN - p0) / self.bg0
         return {"max_rel": float(rel.max()), "per_particle": rel}
-
-    def _pmag(self, step):
-        with h5py.File(self.h5, "r") as f:
-            g = f[f"Step#{step}"]
-            o = np.argsort(np.asarray(g["id"]))
-            px = np.asarray(g["px"])[o]; py = np.asarray(g["py"])[o]; pz = np.asarray(g["pz"])[o]
-        return np.sqrt(px**2 + py**2 + pz**2)
 
     def survived(self) -> tuple[int, int]:
         """(particles at the first dump, particles at the last dump)."""
@@ -329,46 +255,8 @@ def centroid_orbit_shift(off: Case, design: Case, s_target: float) -> float:
 # Result table / tolerance checking
 # ---------------------------------------------------------------------------
 
-class Results:
-    """Rows of (test, quantity, measured, analytic, tol) printed with PASS/FAIL.
-    A row with tol None is a diagnostic and never fails the suite."""
+class Results(results.Results):
+    """The shared result table, with the "analytic" column this study has always printed."""
 
     def __init__(self):
-        self.rows = []
-
-    def check(self, test, name, measured, analytic, tol, rel=False, note=""):
-        if tol is None:
-            ok = None
-        elif rel:
-            ok = bool(abs(measured - analytic) / max(abs(analytic), 1e-30) <= tol)
-        else:
-            ok = bool(abs(measured - analytic) <= tol)  # bool(): numpy bools fail `is False`
-        self.rows.append(dict(test=test, name=name, measured=measured, analytic=analytic,
-                              tol=tol, rel=rel, ok=ok, note=note))
-        return ok
-
-    def note(self, test, name, text):
-        self.rows.append(dict(test=test, name=name, measured=None, analytic=None,
-                              tol=None, rel=False, ok=None, note=text))
-
-    @property
-    def failed(self) -> int:
-        return sum(1 for r in self.rows if r["ok"] is False)
-
-    def print_table(self, title=""):
-        if title:
-            print(f"\n{'='*100}\n{title}\n{'='*100}")
-        hdr = (f"{'test':4s} {'quantity':30s} {'measured':>13s} {'analytic':>13s} "
-               f"{'|diff|':>10s} {'tol':>9s}  result")
-        print(hdr)
-        print("-" * len(hdr))
-        for r in self.rows:
-            if r["measured"] is None:
-                print(f"{r['test']:>4} {r['name']:30s} {r['note']}")
-                continue
-            diff = abs(r["measured"] - r["analytic"])
-            res = "diag" if r["ok"] is None else ("PASS" if r["ok"] else "**FAIL**")
-            tolstr = "-" if r["tol"] is None else f"{r['tol']:.1e}{'r' if r['rel'] else ''}"
-            note = f"  {r['note']}" if r["note"] else ""
-            print(f"{r['test']:>4} {r['name']:30s} {r['measured']:>13.6g} "
-                  f"{r['analytic']:>13.6g} {diff:>10.3g} {tolstr:>9s}  {res}{note}")
+        super().__init__(name_width=30, expected="analytic", rule=100)

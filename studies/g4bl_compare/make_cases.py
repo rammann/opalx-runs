@@ -31,6 +31,7 @@ from pathlib import Path
 
 import numpy as np
 
+from opalxruns.g4bl import read_map_header
 from opalxruns.mue4 import (CornerArc, Placement, matmul, parse_rotation,
                             rot_y, to_tait_bryan, walk)
 from opalxruns.paths import G4BL_FILES
@@ -149,16 +150,13 @@ def write_particles(d: Path, arr: np.ndarray, stem: str) -> None:
 def map_header(name: str) -> dict:
     """The grid line of a G4beamline `grid` map: where it starts, how many
     points and how far apart, per axis, in mm."""
-    with open(MAPS / name) as f:
-        for line in f:
-            t = line.split()
-            if t and t[0] == "grid":
-                kv = dict(p.split("=") for p in t[1:])
-                return {k: float(v) if k[0] in "XYZd" and not k.startswith("n") else int(float(v))
-                        for k, v in kv.items()}
-            if t and t[0] == "cylinder":
-                raise ValueError(f"{name}: cylinder maps are covered by wsx_solenoid/")
-    raise ValueError(f"{name}: no grid header")
+    header = read_map_header(MAPS / name)
+    if header is None:
+        raise ValueError(f"{name}: no grid header")
+    kind, h = header
+    if kind == "cylinder":
+        raise ValueError(f"{name}: cylinder maps are covered by wsx_solenoid/")
+    return {k: v if k[0] in "XYZd" and not k.startswith("n") else int(v) for k, v in h.items()}
 
 
 SIGNS = {"": (1, 1, 1), "Y180": (-1, 1, -1), "Z180": (-1, -1, 1), "Y180,Z180": (1, -1, -1)}

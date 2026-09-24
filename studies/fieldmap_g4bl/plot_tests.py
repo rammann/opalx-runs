@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 import fmlib as F  # noqa: E402
+from opalxruns import plotstyle  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 PLOTS = HERE / "plots"
@@ -27,11 +28,7 @@ COL = {"grid": "#1f77b4", "cylinder": "#d62728", "analytic": "#333333"}
 
 
 def _save(fig, name, footer):
-    PLOTS.mkdir(exist_ok=True)
-    fig.tight_layout(rect=(0.0, 0.045, 1.0, 1.0))
-    fig.text(0.01, 0.012, footer, fontsize=6, family="monospace", color="#555555")
-    fig.savefig(PLOTS / f"{name}.png", dpi=140)
-    plt.close(fig)
+    plotstyle.save_with_footer(fig, PLOTS / f"{name}.png", footer)
 
 
 def _shade(ax, case):

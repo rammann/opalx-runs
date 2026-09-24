@@ -139,9 +139,7 @@ def list_h5_steps(path: Path | str) -> list[int]:
     import h5py  # local import: keeps top-level imports cheap
 
     with h5py.File(path, "r") as f:
-        return sorted(
-            int(name.split("#")[1]) for name in f.keys() if name.startswith("Step#")
-        )
+        return sorted(int(name[5:]) for name in f.keys() if re.fullmatch(r"Step#\d+", name))
 
 
 def list_h5_datasets(path: Path | str, step: int) -> list[str]:
