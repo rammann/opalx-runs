@@ -1,4 +1,4 @@
-# g4bl_compare — checking OPALX field maps against G4beamline
+# g4bl/elements (was g4bl_compare) — checking OPALX field maps against G4beamline
 
 One folder per element. Each holds a G4beamline input, an OPALX input describing the
 same element, and the same particles going through both. The two codes read the **same
@@ -16,15 +16,16 @@ off-axis `Br` has never been compared with anything. Read every statement below 
 about the five grid maps.
 
 ```
-g4bl_compare/
+g4bl/elements/     (was g4bl_compare)
   cmplib.py        readers for both codes, the six coordinates, tolerances, the result table
   make_cases.py    writes every case's decks and particle files from one description
   cases.json       generated; one record per case
   run_all.sh       generate, run both codes, test, plot
   run_tests.py     every check -> results.txt
-  plot_tests.py    -> plots/
+  plot_tests.py    -> output/g4bl/elements/plots/, nine figures
   results.txt      generated; ends with an N/N count
-  plots/           generated; nine figures
+  report_data.py   -> output/g4bl/report/data.json    (for ../report/build_report.py)
+  report_plots.py  -> output/g4bl/report/figs/
 
   asr61_dipole/    ASR61_300d, the first bend's main map
   asr61_300sm/     ASR61_300sm, moved onto the axis so a beam can reach it
@@ -34,8 +35,8 @@ g4bl_compare/
   asr62_d2_group/  ASR62 + both ASR62_sm placements of the bend at 7504 mm
   asr62_d3_group/  the same for the bend at 12032 mm
 
-  wsx_solenoid/          WSX, 13 particles, notebook      (older, still valid)
-  wsx_solenoid_gauss/    WSX, 15000 particles, notebook   (older, still valid)
+  wsx_solenoid/          WSX, 13 particles, notebook      (older, still valid;
+  wsx_solenoid_gauss/    WSX, 15000 particles, notebook    they run inside their own folder)
 ```
 
 ## Running it
@@ -45,18 +46,25 @@ g4bl_compare/
 # leaves whatever executable was there before.
 cd /Users/rammann/Code/OPALX/build && make -j8 opalx_exe
 
-cd /Users/rammann/Code/OPALX/opalx-runs/studies/g4bl_compare
+export OPALX=/Users/rammann/Code/OPALX/build/src/opalx      # a build with the FIELDMAP element
+# (today that is opalx/build_serial/src/opalx; run_all.sh checks and refuses one without it)
+cd /Users/rammann/Code/OPALX/opalx-runs/studies/g4bl/elements
 ./run_all.sh                  # everything
 ./run_all.sh --pair-only      # skip the 20000-particle stage
 ./run_all.sh --test-only      # re-run the analysis without re-tracking
 ./run_all.sh asr61_dipole     # one case
 cat results.txt
+
+# the report: output/g4bl/report/index.html, with the full-line and spin studies
+PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
+$PY report_data.py && $PY report_plots.py && $PY ../report/build_report.py
 ```
 
 Python is the conda base environment, `/opt/homebrew/Caskroom/miniconda/base/bin/python`;
 the system `python3` has no h5py or numpy. One MPI rank only — which row a particle lands
 on across ranks is not guaranteed. Both codes resolve relative paths from the working
-directory, so each case runs from inside its own folder.
+directory; each stage runs in its own folder, `output/g4bl/elements/<case>/{pair,fine,gauss}/`,
+with links to the files it reads.
 
 ## What the study measures
 
@@ -145,7 +153,7 @@ state comes out identical — exactly in G4beamline, to 1.5e-11 m in OPALX.
 `asr61_bisector` and `asr61_group_bisector` place the ASR61 magnet the way muE4 does:
 between two `cornerarc` commands that turn the centreline 20 degrees before it and 20
 degrees after, so the beam enters the map at 20 degrees to the map's own axis instead of
-straight down it. The positions and rotations come from `mue4lib.walk()`, the same code
+straight down it. The positions and rotations come from `opalxruns.mue4.walk()`, the same code
 the whole-line study uses, and they reproduce that study's numbers exactly --
 `X = 0.069900004`, `Z = 2.974500020`, `THETA = 0.349065850`.
 
@@ -267,7 +275,7 @@ elements at least a hundred times the floor.
 
 - **OPALX writes `DUMPEMFIELDS` output into `data/`**, not the working directory.
 - `DUMPEMFIELDS` does see a `FIELDMAP` element. It runs from `ParallelTracker.cpp` just
-  before the tracking loop, after the maps are read, and `studies/mue4_g4bl/README.md`
+  before the tracking loop, after the maps are read, and `studies/g4bl/mue4/README.md`
   listed this as untried.
 - **A `FIELDMAP` element takes neither `ELEMEDGE` nor `L`**, and OPALX allows one placement
   convention per beamline, so every element in these decks is placed by absolute position

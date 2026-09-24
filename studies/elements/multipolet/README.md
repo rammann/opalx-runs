@@ -39,14 +39,16 @@ position output treat it as the bend it is.
 ## Run it
 
 ```bash
-./run_all.sh              # generate decks, track all cases (~2 min), run the tests
-./run_all.sh --test-only  # re-run only the analysis on existing output
+OPALX=/path/to/opalx ./run_all.sh   # write the inputs, track all cases, run the tests
+./run_all.sh --test-only            # re-run only the analysis on existing output
 ```
 
-`run_all.sh` uses `build/src/opalx` (override with `OPALX=...`) and the conda `python`
-(`/opt/homebrew/Caskroom/miniconda/base/bin/python`, has h5py/numpy/scipy/matplotlib;
-override with `PY=...`). The table goes to stdout and `results.txt`; figures to `plots/30deg/`
-and `plots/60deg/`, one per test.
+Tracking takes about 2 min with a Release build; with a Debug build each 8000-particle
+case alone takes about 11 min. `run_all.sh` takes the binary from `$OPALX` (required)
+and the conda `python` (`/opt/homebrew/Caskroom/miniconda/base/bin/python`, has
+h5py/numpy/scipy/matplotlib; override with `PY=...`). The tracking output goes to
+`output/elements/multipolet/<case>/`. The table goes to stdout and `results.txt`; figures
+to `output/elements/multipolet/plots/30deg/` and `.../60deg/`, one per test.
 
 ## Files
 
@@ -54,10 +56,10 @@ and `plots/60deg/`, one per test.
 |------|--------------|
 | `make_decks.py` | writes every `<case>/<case>.in` (+ `parts.txt`, per-case `README.md`) and the `cases.json` manifest |
 | `bendlib.py` | readers, finite-difference map builder, analytic (combined-function) sector matrix, symplecticity, covariance transport |
-| `run_tests.py` | the 11 tests, prints the table, writes `results.txt` and `plots/` |
+| `run_tests.py` | the 11 tests, prints the table, writes `results.txt`, calls `plot_tests.py` |
 | `plot_tests.py` | one figure per test per angle |
 | `run_all.sh` | one-command driver |
-| `<case>/` | deck, `parts.txt` (map cases), `README.md` (physics, setup, how the output is checked), tracking output (gitignored) |
+| `<case>/` | input, `parts.txt` (map cases), `README.md` (physics, setup, how the output is checked); the tracking output is in `output/elements/multipolet/<case>/` |
 
 ## Cases
 

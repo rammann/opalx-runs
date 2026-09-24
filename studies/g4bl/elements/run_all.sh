@@ -7,8 +7,8 @@
 #   ./run_all.sh --pair-only     skip the 20000-particle stage
 #   ./run_all.sh asr61_dipole    one case (repeatable)
 #
-# Both codes resolve relative paths from the working directory, so every run
-# happens inside the case's own folder.
+# Both codes resolve relative paths from the working directory, so every stage
+# runs in its own folder under output/, with links to the files it reads.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

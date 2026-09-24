@@ -123,19 +123,7 @@ falling to 9k) writes ~635 MB per frame, ~1.3 GB for both.
 
 ## Notebooks
 
-Interactive and left as they are. They import `opalx_diagnostics`, so run Jupyter
-from this directory.
-
-| notebook | what |
-|---|---|
-| `PlotPolarization.ipynb` | polarization columns from `.stat` / `.h5`, via the `StatSelector` / `H5Selector` dropdowns |
-| `SpinBenchmark.ipynb` | the spin pusher against analytic Thomas–BMT precession: longitudinal **B**, transverse initial spin |
-| `PlotDecay.ipynb` | `numParticles` against the analytic exponential muon decay |
-| `PlotDecayDaughters.ipynb` | multi-container viewer: `numParticles(t)` per `*_cN.stat`, plus their sum as a conservation check |
-| `PlotFM.ipynb` | field maps from `.T7` files |
-
-All five still point at an **older directory layout** — `../output`,
-`inputfiles/`, `opalx_runs/fieldmaps` — none of which exist under `runs/` any
-more. Each has its input directory in a constant near the top (`STAT_DIR`,
-`GLOB_PATTERN`, or an `output_root` argument); repoint that at the run directory
-you want before running one.
+`opalx_diagnostics` has the dropdown widgets (`StatSelector`, `H5Selector`) for
+browsing runs in a notebook; point them at a topic's folder under `output/`. The
+notebooks that used them (PlotPolarization, SpinBenchmark, PlotDecay,
+PlotDecayDaughters, PlotFM) were never committed to this repo.

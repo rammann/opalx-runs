@@ -7,13 +7,14 @@ drifts, circumference 8 m. 0.1 GeV electron pencil bunch, no space charge.
 `ZSTOP = 1000` is far beyond the tracked path, so `MAXSTEPS = 80000` alone sets the
 number of turns (~3 at ~0.3 mm per step).
 
-Run:
+Run, from the repo root (output in `output/features/ring/square_ring/`):
 ```bash
-opalx square_ring.in --info 3
-python3 plot_trajectory.py   # x-z path plot + closure offset per turn
+PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
+$PY -m opalxruns.run studies/features/ring/square_ring/square_ring.in
+$PY studies/features/ring/square_ring/plot_trajectory.py   # x-z path + closure offset per turn
 ```
 
-ParaView (particles + element tubes, via the shared `runs/processing/` scripts):
+ParaView (particles + element tubes, via `opalxruns`):
 see [square_ring/VISUALIZE.md](square_ring/VISUALIZE.md).
 
 ### Verified results (2026-09-02, serial Release build)
@@ -40,7 +41,19 @@ detection fires half a turn early and the element position file is cut there.
 `APERTURE = "ELLIPSE(0.1, 0.1)"` on the drifts removes the overlap. Any ring input
 should bound its drifts this way.
 
-### Follow-up work (not part of the multi-pass change)
+## isis_ring
+
+The ISIS synchrotron: 10 superperiods, circumference 163.363 m, elements placed by
+`ELEMEDGE`, a coasting 70 MeV proton pencil bunch, no space charge, about 3 turns
+(`MAXSTEPS = 45000` at `DT = 1e-10`). Adapted from a legacy OPAL-cycl input, which is
+kept as `isis_ring.in.orig`; the header of `isis_ring.in` lists every substitution
+(main dipoles as SBEND, RF cavities as drifts, scaling models removed, drift apertures).
+
+```bash
+$PY -m opalxruns.run studies/features/ring/isis_ring/isis_ring.in   # output in output/features/ring/isis_ring/
+```
+
+## Follow-up work (not part of the multi-pass change)
 
 - Closed-orbit finding / closure correction for rings.
 - `data/*_ElementPositions.py` (3D element mesh from `MeshGenerator::write`) is not

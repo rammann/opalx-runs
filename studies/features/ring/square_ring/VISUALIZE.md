@@ -1,21 +1,20 @@
 # square_ring ParaView visualization
 
-Uses the post-processing in `opalx-runs/processing/`; run it with the Python
-that has `h5py`/`numpy`/`vtk` (miniconda base).
+Uses `opalxruns` (see the repo README); run it with the Python that has
+`h5py`/`numpy`/`vtk` (miniconda base), from the repo root, after the run.
 
 ```bash
-cd opalx-runs/processing
 PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
+RUN=output/features/ring/square_ring
 
 # particles (electron mass, both frames)
-$PY particles_to_vtk.py ../studies/ring/square_ring \
-    --frame both --mass 0.00051099895
+$PY -m opalxruns.particles_to_vtk $RUN --frame both --mass 0.00051099895
 
 # element bodies + reference orbit
-$PY elements_to_vtk.py ../studies/ring/square_ring
+$PY -m opalxruns.elements_to_vtk $RUN
 ```
 
-Outputs land in `square_ring/paraview/`:
+Outputs land in `output/features/ring/square_ring/paraview/`:
 
 | file | what |
 |---|---|

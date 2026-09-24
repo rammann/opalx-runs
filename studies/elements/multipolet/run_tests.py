@@ -4,7 +4,7 @@
 Adapted from runs/bendtest/validation/run_tests.py. Reads the tracked output of
 the generated cases (see make_decks.py), prints every measured quantity next to
 its analytic value with the difference, and PASSES/FAILS against a tolerance.
-Writes diagnostic plots to plots/. Exit code is non-zero if any test fails.
+Writes diagnostic plots to output/elements/multipolet/plots/. Exit code is non-zero if any test fails.
 
 Cases
   mt_fringe_{30,60,90}   MULTIPOLET, tanh fringe 0.02 m      -- primary

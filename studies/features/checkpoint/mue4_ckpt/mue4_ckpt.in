@@ -1,6 +1,6 @@
 /*  mue4_ckpt.in -- muE4 beamline, used as an end-to-end checkpoint/restart test.
 
-    Physics is a verbatim copy of studies/mue4/mue4_WsxOn/mue4_WsxOn.in (see that deck
+    Physics is a verbatim copy of studies/beamlines/mue4/mue4_WsxOn/mue4_WsxOn.in (see that deck
     for the G4beamline translation notes). Only three things differ:
       * 5000 muons from beam_WsxOn_5k.dat instead of 14462 from beam_WsxOn.dat, to keep
         a run at ~15 s so the kill/restart cycle can be repeated.
@@ -24,11 +24,13 @@
     was commented out), so dropping it changes nothing -- the bend field still comes
     from the P0 deck variable and ANGLE.
 
-    Usage (see ../README.md and ../run_checkpoint_test.sh):
-      mpirun -n 1 opalx mue4_ckpt.in --info 2
-      mpirun -n 1 opalx mue4_ckpt.in --restart mue4_ckpt_checkpoint.h5 --info 2
+    Usage, from the repo root (see ../README.md); output goes to
+    output/features/checkpoint/mue4_ckpt/:
+      python -m opalxruns.run studies/features/checkpoint/mue4_ckpt/mue4_ckpt.in
+      python -m opalxruns.run studies/features/checkpoint/mue4_ckpt/mue4_ckpt.in \
+          --keep -- --restart mue4_ckpt_checkpoint.h5
     NOTE the argument order: the input file must be the first argument or the last one,
-    otherwise Main.cpp rejects it as "Unknown argument".
+    otherwise Main.cpp rejects it as "Unknown argument". The runner puts it first.
 */
 
 OPTION, PSDUMPFREQ     = 100;   // phase-space .h5 dump every 100 steps

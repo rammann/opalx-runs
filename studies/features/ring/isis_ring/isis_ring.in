@@ -1,4 +1,4 @@
-/*  isisring_with_elemedge.in  --  ISIS ring, ELEMEDGE placement, OPALX
+/*  isis_ring.in  --  ISIS ring, ELEMEDGE placement, OPALX
     10 superperiods, circumference 163.363 m. 70 MeV kinetic proton pencil bunch
     (total energy 1008.272 MeV, as in the original deck), simple GAUSS
     distribution, no space charge. Turns are set by MAXSTEPS (ZSTOP far beyond

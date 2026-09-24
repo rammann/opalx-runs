@@ -1,6 +1,6 @@
 # asr61_dipole — the ASR61_300d map on its own
 
-The first case in `g4bl_compare/` to test a bend, and the first to use a G4beamline 3D
+The first case in `g4bl/elements/` (then `g4bl_compare/`) to test a bend, and the first to use a G4beamline 3D
 `grid` map. `asr61_300d_track.g4blmap` is 60 × 25 × 553 points on a 10 × 10 × 5 mm grid,
 x = −200…390 mm, y = −120…120 mm, z = −1380…1380 mm, absolute Tesla, 56 MB. OPALX reads
 it natively through `G4BL3DGrid`. `SCALE` on the `FIELDMAP` element is G4beamline's

@@ -69,8 +69,8 @@ REAL gamma_initial = 1.10;
 //                              run (it reaches z ~ 12.5 m at the end).
 //   D1  z range: [20, 50] m -- gives the reference particle room.
 //
-// Path is relative to the run output directory (run_sim.sh cd's into
-// runs/output/<basename>/ before invoking OPALX).
+// OPALX opens this from its working folder: the case's run folder under output/
+// (python -m opalxruns.run), which sits as deep as this folder does in studies/.
 // ----------------------------------------------------------------------------
 
 SOL: SOLENOID,

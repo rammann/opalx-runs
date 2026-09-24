@@ -11,7 +11,8 @@ G4beamline writes into the working directory too.
     python -m opalxruns.run <input> --keep -- --restart <stem>_checkpoint.h5
     python -m opalxruns.run <case>.g4bl <case>.in       # both codes, one run folder
 
-A run started this way empties its run folder first, because a stale .h5 left by a
+A run started this way clears its run folder first (its files, data/, plots/ and
+paraview/; folders of other runs inside it stay), because a stale .h5 left by a
 failed run would otherwise read as a fresh result. --keep leaves it as it is.
 """
 
@@ -26,6 +27,11 @@ import time
 from pathlib import Path
 
 from opalxruns import paths, refs
+
+# Folders a run writes itself (OPALX's data/, process_run's plots/ and paraview/).
+# Emptying a run folder clears these; any other folder inside it belongs to another
+# run (a g4bl/elements stage, a spin dt_* run) and is left alone.
+RUN_FOLDERS = {"data", "plots", "paraview", "monitor_plots"}
 
 
 def _inside(path: Path, root: Path) -> bool:
@@ -44,7 +50,8 @@ def _link(link: Path, target: Path) -> None:
 def prepare(run_dir, inputs, ref_dir=None, keep=False, root=None) -> Path:
     """Make ``run_dir`` ready for a run of ``inputs`` and return it.
 
-    The folder is emptied first unless ``keep``. Each input is linked into it under
+    The folder is emptied first unless ``keep``: its files and the folders in
+    RUN_FOLDERS go, other folders (other runs) stay. Each input is linked into it under
     its file name, and so is every file the inputs name (see opalxruns.refs), at the
     same relative path, looked up from ``ref_dir`` (default: the input's own folder).
     A path that already reaches the file from the run folder is not linked; since
@@ -81,7 +88,8 @@ def prepare(run_dir, inputs, ref_dir=None, keep=False, root=None) -> Path:
     if run_dir.exists() and not keep:
         for entry in run_dir.iterdir():
             if entry.is_dir() and not entry.is_symlink():
-                shutil.rmtree(entry)
+                if entry.name in RUN_FOLDERS:
+                    shutil.rmtree(entry)
             else:
                 entry.unlink()
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -126,6 +134,12 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     inputs = [p.resolve() for p in a.inputs]
+    # Find both codes before anything is emptied: a missing binary must not cost the
+    # last good output, or an hour of G4beamline before OPALX is found missing.
+    if any(i.suffix != ".g4bl" for i in inputs):
+        paths.opalx()
+    if any(i.suffix == ".g4bl" for i in inputs) and not paths.g4bl().is_file():
+        raise RuntimeError(f"no G4beamline at {paths.g4bl()}; set G4BL_APP")
     run_dir = a.run_dir or paths.output_dir(inputs[0].parent)
     prepare(run_dir, inputs, ref_dir=a.ref_dir, keep=a.keep)
     print(f"output: {run_dir}")

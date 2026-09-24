@@ -1,8 +1,9 @@
 """Helpers for interactively browsing OPALX `.stat` and `.h5` outputs.
 
-Filesystem convention (relative to ``runs/``)::
+Filesystem convention: a root folder -- for example a topic's folder under the
+repo's ``output/``, such as ``output/elements/aperture`` -- holds one folder per run::
 
-    output/
+    <root>/
         <run-name>/
             <run-name>[_cN].stat   # per-container SDDS-like statistics
             <run-name>[_cN].h5     # per-container H5Part phase-space dumps

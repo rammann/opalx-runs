@@ -26,7 +26,7 @@
       - The .g4blmap field maps named in the comments below are not converted
         either, so every magnet is still analytic or a placeholder.
     Kept here as the starting point for the muE4 decay-channel study. The
-    finished beamline models live under studies/mue4/.
+    finished beamline models live under studies/beamlines/mue4/.
 */
 
 OPTION, PSDUMPFREQ   = 100;

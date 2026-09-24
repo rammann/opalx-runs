@@ -27,7 +27,7 @@ comparison becomes one to one.
 
 | path | what it is |
 |---|---|
-| `tools/mue4lib.py` | parses a G4beamline deck and replays its centreline walk into lab poses |
+| `opalxruns/mue4.py` (was `tools/mue4lib.py`) | parses a G4beamline input and replays its centreline walk into lab poses |
 | `tools/make_lattice.py` | emits `poses.json` and `lattice.in` from `mue4_WsxOn.g4bl` |
 | `tools/test_geometry.py` | gate 0: checks the walk against G4beamline's own `g4bl.out` |
 | `lattice.in` | generated — 42 posed elements plus the `MUE4` line |
@@ -37,8 +37,14 @@ comparison becomes one to one.
 | `cmp/compare.py` | 11 hand-picked muons, per particle |
 | `gauss/make_gauss.py` | samples one Gaussian beam, writes it in both codes' formats |
 | `gauss/compare.py` | 2000-muon Gaussian: tracking and transmission, separately |
+| `full/make_full.py` | the whole line in both codes with 22 recording planes and nothing scraping (iron becomes vacuum, collimators left out) |
+| `full/run_full.sh` | runs both codes, about an hour; output in `output/g4bl/mue4/full/` |
+| `full/compare_full.py`, `plot_phase.py`, `plot_layout.py` | plane-by-plane comparison: `full_results.txt`, `full_data.json`, figures in `output/g4bl/mue4/full/plots/` |
+| `full/g4bl_reference/` | the G4beamline planes of the last full run, tracked because they take an hour to redo; `run_full.sh --update-reference` refreshes them |
+| `full_spin/` | the same line with spin: `make_full_spin.py`, `run.sh`, `compare_spin.py` → `spin_results.txt`, `spin_data.json`; its own `g4bl_reference/` |
 
-Regenerate with `python3 tools/make_lattice.py`; check with `python3 tools/test_geometry.py`.
+Regenerate with `$PY tools/make_lattice.py`; check with `$PY tools/test_geometry.py`. The run
+output of every setup here goes to `output/g4bl/mue4/<setup>/`.
 
 ## Two things that make this exact rather than approximate
 

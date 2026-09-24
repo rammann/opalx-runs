@@ -74,8 +74,8 @@ Value, {gamma_initial, beta_initial, bg_x};
 
 // Custom uniform-B fieldmap: r in [0, 20] m, z in [0, 20] m, Bz/max=1 with
 // normalize_m=true (the Fieldmap default), KS=1 -> Bz = 1 T everywhere.
-// Path is relative to the run output directory (run_sim.sh cd's into
-// runs/output/<basename>/ before invoking OPALX).
+// OPALX opens this from its working folder: the case's run folder under output/
+// (python -m opalxruns.run), which sits as deep as this folder does in studies/.
 //
 // SOL is short (L=1 m) because the test particle stays at z = R0Z = 0.5 m
 // throughout the run (cyclotron orbit lives in (x,y), z is locked).

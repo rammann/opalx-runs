@@ -28,14 +28,16 @@ The sharp results:
 ## Run it
 
 ```bash
-./run_all.sh              # write the maps and inputs, track all 14, test
+export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx
+./run_all.sh              # write the maps and inputs, track every case, test
 ./run_all.sh --test-only  # just re-run the analysis
 ```
 
-Takes about five minutes: 18 runs at roughly 17 s each, one rank, no space
-charge. `run_all.sh` finds the binary itself and refuses to run if it has no
-`FIELDMAP` element, because a stale one gives 14 identical parse errors and no
-hint why.
+Takes about five minutes with a Release build (a Debug build is several times
+slower): 18 runs at roughly 17 s each, one rank, no space charge. The output goes
+to `output/elements/fieldmap/<case>/`. `run_all.sh` takes the binary from `$OPALX`
+and refuses to run if it has no `FIELDMAP` element, because a stale one gives 14
+identical parse errors and no hint why.
 
 **The executable target is `opalx_exe`, not `opalx`.** `make opalx` builds only
 the static library and leaves whatever executable was there before, which is
@@ -48,10 +50,10 @@ how this study first ran against a binary three days older than its sources.
 | `make_inputs.py` | writes every map, `<case>/<case>.in`, `parts.txt`, the per-case README, and `cases.json`. The only place the geometry and field strengths are chosen |
 | `fmlib.py` | writes the two map formats, holds the closed-form matrices, and reads the tracking output back |
 | `run_tests.py` | the 14 tests, the tolerance table, `results.txt` |
-| `plot_tests.py` | the six figures in `plots/` (not tracked; the repo ignores `plots/`) |
+| `plot_tests.py` | the six figures, in `output/elements/fieldmap/plots/` |
 | `run_all.sh` | one command for the lot |
 | `maps/` | the generated maps (not tracked; `run_all.sh` rewrites them) |
-| `<case>/` | input, particles, per-case README, and the tracking output (not tracked) |
+| `<case>/` | input, particles and per-case README; the tracking output is in `output/elements/fieldmap/<case>/` |
 
 ## The two formats
 
@@ -234,7 +236,7 @@ arithmetic and in most cases do it bit for bit.
   gives an answer 0.9 mm out. Read it against `ref_z`. Along path length the
   straight section after a bend rises as sin(theta), not tan(theta).
 - **`FMAPSCALE` does not exist.** The attribute is `SCALE` on `FIELDMAP` and
-  `KS` on `SOLENOID`. `studies/g4bl_compare/asr61_dipole/asr61_dipole.in` still
+  `KS` on `SOLENOID`. `studies/g4bl/elements/asr61_dipole/asr61_dipole.in` still
   uses `FMAPSCALE` on an `SBEND`, and `SBEND` never reads `FMAPFN` on this
   branch either, so that input no longer works. Not touched here.
 - **A quadrupole's field on the axis is zero**, so the reference particle sees

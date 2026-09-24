@@ -74,6 +74,18 @@ class PrepareTest(unittest.TestCase):
         self.assertFalse((self.run_dir / "case.h5").exists())
         self.assertFalse((self.run_dir / "data").exists())
 
+    def test_other_run_folders_inside_are_kept(self):
+        # a stage or per-input run folder inside this one (pair/, dt_1e-12/) belongs to
+        # another run; only the folders a run itself writes are cleared
+        (self.run_dir / "pair").mkdir(parents=True)
+        (self.run_dir / "pair" / "Z100.txt").write_text("other run")
+        (self.run_dir / "plots").mkdir()
+        (self.run_dir / "paraview").mkdir()
+        run.prepare(self.run_dir, [self.input], root=self.output)
+        self.assertTrue((self.run_dir / "pair" / "Z100.txt").exists())
+        self.assertFalse((self.run_dir / "plots").exists())
+        self.assertFalse((self.run_dir / "paraview").exists())
+
     def test_run_folder_outside_output_is_refused(self):
         with self.assertRaisesRegex(ValueError, "outside"):
             run.prepare(self.case / "elsewhere", [self.input], root=self.output)
@@ -173,6 +185,22 @@ class MainTest(unittest.TestCase):
         self.assertEqual((self.run_dir / "order.txt").read_text().splitlines(),
                          ["g4bl case.g4bl", "opalx case.in"])
         self.assertTrue((self.run_dir / "beam.txt").is_symlink())
+
+    def test_missing_opalx_is_an_error_before_anything_is_emptied(self):
+        self.run_dir.mkdir(parents=True)
+        (self.run_dir / "case.h5").write_text("last good output")
+        with mock.patch.dict(os.environ, {"OPALX": ""}):
+            with self.assertRaisesRegex(RuntimeError, "OPALX"):
+                run.main([str(self.case / "case.in")])
+        self.assertTrue((self.run_dir / "case.h5").exists())
+
+    def test_missing_g4bl_is_an_error_before_anything_is_emptied(self):
+        self.run_dir.mkdir(parents=True)
+        (self.run_dir / "Z100.txt").write_text("last good output")
+        with mock.patch.object(paths, "G4BL_APP", self.app.parent / "missing.app"):
+            with self.assertRaisesRegex(RuntimeError, "G4beamline"):
+                run.main([str(self.case / "case.g4bl"), str(self.case / "case.in")])
+        self.assertTrue((self.run_dir / "Z100.txt").exists())
 
     def test_stops_at_the_first_failure(self):
         self.opalx.write_text("#!/bin/sh\nexit 3\n")
