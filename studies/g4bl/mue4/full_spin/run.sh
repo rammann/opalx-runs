@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
+# Run the whole muE4 line in both codes, with spin (G4beamline integrates 12 components). About an hour, G4beamline being the slow one.
+# Output goes to output/g4bl/mue4/full_spin/. The comparison reads the G4beamline planes
+# from g4bl_reference/, which is tracked because this run is slow:
+#   ./run.sh                      run both codes
+#   ./run.sh --update-reference   also copy the new G4beamline planes there
 set -euo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")"
-G4BL_APP="${G4BL_APP:-/Users/rammann/Code/G4BL/G4beamline-3.08.app}"
-export PATH="$G4BL_APP/Contents/MacOS:$PATH"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="${PY:-/opt/homebrew/Caskroom/miniconda/base/bin/python}"
 : "${OPALX:?set OPALX to the opalx executable}"
-rm -f Z*.txt E*.h5 full_spin.h5 full_spin.stat full_spin.lbal timing.dat
-rm -rf data
-echo "== G4beamline (spin tracking, 12-component integration)"
-S=$(date +%s); g4bl full_spin.g4bl > g4bl.log 2>&1
-echo "   $(( $(date +%s) - S )) s, $(ls Z*.txt 2>/dev/null | wc -l | tr -d ' ') planes"
-echo "== OPALX"
-S=$(date +%s); mpirun -n 1 "$OPALX" full_spin.in --info 1 > run.log 2>&1
-echo "   $(( $(date +%s) - S )) s, $(ls E*_PL*.h5 2>/dev/null | wc -l | tr -d ' ') planes"
+OUT="$("$PY" -m opalxruns.paths "$HERE")"
+"$PY" -m opalxruns.run "$HERE/full_spin.g4bl" "$HERE/full_spin.in"
+echo "   $(ls "$OUT"/Z*.txt 2>/dev/null | wc -l | tr -d ' ') G4beamline planes, $(ls "$OUT"/E*_PL*.h5 2>/dev/null | wc -l | tr -d ' ') OPALX planes"
+if [[ "${1:-}" == "--update-reference" ]]; then
+    rm -f "$HERE"/g4bl_reference/Z*.txt
+    cp "$OUT"/Z*.txt "$HERE"/g4bl_reference/
+    echo "   copied the G4beamline planes into g4bl_reference/"
+fi

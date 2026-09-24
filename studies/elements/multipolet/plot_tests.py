@@ -22,8 +22,9 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import bendlib as bl  # noqa: E402
+from opalxruns.paths import output_dir  # noqa: E402
 
-PLOTS = HERE / "plots"
+PLOTS = output_dir(HERE) / "plots"
 ANGLES = (30, 60)
 TAGS = {"mt_fringe": "MULTIPOLET (tanh 0.02 m)", "sbend_enge": "SBEND (Enge)"}
 COL = {"mt_fringe": "#d62728", "mt_sharp": "#ff7f0e", "sbend_enge": "#1f77b4"}

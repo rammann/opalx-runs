@@ -13,12 +13,36 @@ import os
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+STUDIES = REPO / "studies"
+SHARED = REPO / "shared"
+# Run output, in the same folder tree as studies/. It must be a real folder, not a
+# link: inputs reach shared/ through ../, which only works at the same depth.
+OUTPUT = REPO / "output"
 
 # Generators write this path into tracked input files, so resolve() keeps the
 # spelling they have always used.
 G4BL_FILES = Path(os.environ.get("G4BL_FILES", REPO.parent / "g4bl-files")).expanduser().resolve()
 
 G4BL_APP = Path(os.environ.get("G4BL_APP", "/Users/rammann/Code/G4BL/G4beamline-3.08.app")).expanduser()
+
+
+def output_dir(folder) -> Path:
+    """The folder under output/ that belongs to a folder under studies/."""
+    return OUTPUT / Path(folder).resolve().relative_to(STUDIES)
+
+
+def g4bl() -> Path:
+    """The g4bl executable inside the G4beamline app."""
+    return G4BL_APP / "Contents" / "MacOS" / "g4bl"
+
+
+def main(argv=None) -> int:
+    """python -m opalxruns.paths <folder> ...: print the output/ folder of each."""
+    import sys
+
+    for folder in (argv if argv is not None else sys.argv[1:]):
+        print(output_dir(folder))
+    return 0
 
 
 def opalx() -> Path:
@@ -35,3 +59,7 @@ def opalx() -> Path:
     if not (path.is_file() and os.access(path, os.X_OK)):
         raise RuntimeError(f"OPALX={value} is not an executable file")
     return path
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

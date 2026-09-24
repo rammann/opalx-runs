@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """Plot the reference-orbit path of the square ring and print the closure offset per turn.
 
-Reads data/square_ring_DesignPath.dat (written by the OrbitThreader). Columns:
+Reads data/square_ring_DesignPath.dat (written by the OrbitThreader) from the run
+folder in output/. Columns:
 s, Rx, Ry, Rz, Px, Py, Pz, Efx, Efy, Efz, Bfx, Bfy, Bfz, Ekin, t, element names.
 The lab-frame x-z path should trace the square ring once per turn (circumference 8 m).
 """
 
-import os
 import sys
+from pathlib import Path
 
 import numpy as np
+
+from opalxruns.paths import output_dir
+
+OUT = output_dir(Path(__file__).resolve().parent)     # the run, in output/
 
 CIRCUMFERENCE = 8.0
 
@@ -33,9 +38,9 @@ def load_design_path(fname):
 
 
 def main():
-    fname = os.path.join(os.path.dirname(__file__), "data", "square_ring_DesignPath.dat")
-    if not os.path.exists(fname):
-        sys.exit(f"not found: {fname} (run square_ring.in first)")
+    fname = OUT / "data" / "square_ring_DesignPath.dat"
+    if not fname.exists():
+        sys.exit(f"not found: {fname} (run it first: python -m opalxruns.run square_ring.in)")
 
     data = load_design_path(fname)
     s, x, y, z = data[:, 0], data[:, 1], data[:, 2], data[:, 3]
@@ -71,7 +76,7 @@ def main():
     ax.set_title("square ring, reference-orbit path (lab frame)")
     ax.set_aspect("equal")
     ax.legend()
-    out = os.path.join(os.path.dirname(__file__), "trajectory.png")
+    out = OUT / "trajectory.png"
     fig.savefig(out, dpi=150, bbox_inches="tight")
     print(f"wrote {out}")
 

@@ -27,9 +27,12 @@ import matplotlib.pyplot as plt
 
 from opalxruns import plotstyle
 from opalxruns.g4bl import read_track_file
+from opalxruns.paths import output_dir
 from opalxruns.plotstyle import G4BL as G4_C, OPALX as OPALX_C
 
 HERE = Path(__file__).resolve().parent
+OUT = output_dir(HERE)                 # the OPALX run, in output/
+REFERENCE = HERE / "g4bl_reference"    # the G4beamline planes, tracked (about an hour to redo)
 G = 1.16592061e-03
 plotstyle.use()
 
@@ -81,8 +84,8 @@ def main():
     poses = monitor_poses()
     rows, hist = [], {}
     for z in sorted(poses):
-        g4f, opf = HERE / f"Z{z}.txt", None
-        for c in HERE.glob(f"E*_PL{z:05d}.h5"):
+        g4f, opf = REFERENCE / f"Z{z}.txt", None
+        for c in OUT.glob(f"E*_PL{z:05d}.h5"):
             opf = c
         if not (g4f.exists() and opf and opf.exists()):
             continue
@@ -215,7 +218,7 @@ def main():
     (HERE / "spin_data.json").write_text(json.dumps(rows, indent=1))
     print("\n" + txt)
 
-    (HERE / "plots").mkdir(exist_ok=True)
+    (OUT / "plots").mkdir(parents=True, exist_ok=True)
     z = np.array([r["z"] for r in rows]) / 1000.0
     fig, ax = plt.subplots(1, 3, figsize=(12.4, 3.4))
     ax[0].plot(z, [r["raw"] for r in rows], "o-", color=G4_C, ms=4,
@@ -240,7 +243,7 @@ def main():
               title="the anomalous precession accumulating")
     ax[2].legend(fontsize=7)
     fig.tight_layout()
-    fig.savefig(HERE / "plots" / "spin_full_line.png", dpi=140)
+    fig.savefig(OUT / "plots" / "spin_full_line.png", dpi=140)
     pick = [z for z in (300, 2300, 5900, 8900, 12500, 15100, 17700, 19250) if z in hist]
     fig, axes = plt.subplots(2, 4, figsize=(12.4, 5.4))
     bins = np.logspace(-8, 0, 45)
@@ -258,7 +261,7 @@ def main():
     fig.suptitle("Spin difference across the 10 000 particles, after turning OPALX into "
                  "each plane's own frame", fontsize=10)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
-    fig.savefig(HERE / "plots" / "hist_spin.png", dpi=130)
+    fig.savefig(OUT / "plots" / "hist_spin.png", dpi=130)
     plt.close(fig)
     print("\nwrote spin_results.txt, spin_data.json, plots/spin_full_line.png, "
           "plots/hist_spin.png")

@@ -17,24 +17,27 @@ import numpy as np
 
 from opalxruns import mue4_beam, plotstyle
 from opalxruns.h5 import read_monitor
+from opalxruns.paths import output_dir
 from opalxruns.plotstyle import G4BL, INK, MUTED, OPALX
 
 HERE = Path(__file__).resolve().parent
 
-PLOTS = HERE / "plots"
-PLOTS.mkdir(exist_ok=True)
+OUT = output_dir(HERE)                 # the OPALX run, in output/
+REFERENCE = HERE / "g4bl_reference"    # the G4beamline planes, tracked (about an hour to redo)
+PLOTS = OUT / "plots"
+PLOTS.mkdir(parents=True, exist_ok=True)
 plotstyle.use({"axes.labelcolor": INK})
 
 
 def planes():
     """{centreline z: (g4bl file, opalx file)} for every plane both codes wrote."""
     out = {}
-    for h5 in HERE.glob("E*_PL*.h5"):
+    for h5 in OUT.glob("E*_PL*.h5"):
         m = re.search(r"PL(\d+)", h5.name)
         if not m:
             continue
         z = int(m.group(1))
-        txt = HERE / f"Z{z}.txt"
+        txt = REFERENCE / f"Z{z}.txt"
         if txt.exists():
             out[z] = (txt, h5)
     return dict(sorted(out.items()))

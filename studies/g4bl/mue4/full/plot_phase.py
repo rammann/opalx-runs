@@ -27,12 +27,15 @@ from matplotlib.colors import LogNorm, TwoSlopeNorm
 
 from opalxruns import mue4_beam
 from opalxruns.h5 import read_monitor
+from opalxruns.paths import output_dir
 from opalxruns.plotstyle import G4BL, INK, MUTED, OPALX
 
 HERE = Path(__file__).resolve().parent
 
-PLOTS = HERE / "plots"
-PLOTS.mkdir(exist_ok=True)
+OUT = output_dir(HERE)                 # the OPALX run, in output/
+REFERENCE = HERE / "g4bl_reference"    # the G4beamline planes, tracked
+PLOTS = OUT / "plots"
+PLOTS.mkdir(parents=True, exist_ok=True)
 NBIN = 48
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
                      "axes.edgecolor": MUTED, "text.color": INK, "xtick.color": MUTED,
@@ -47,10 +50,10 @@ PROJ = [(0, "x [mm]"), (1, "x' [mrad]"), (2, "y [mm]"), (3, "y' [mrad]")]
 
 def planes():
     out = {}
-    for h5 in HERE.glob("E*_PL*.h5"):
+    for h5 in OUT.glob("E*_PL*.h5"):
         m = re.search(r"PL(\d+)", h5.name)
         z = int(m.group(1))
-        t = HERE / f"Z{z}.txt"
+        t = REFERENCE / f"Z{z}.txt"
         if t.exists():
             out[z] = (t, h5)
     return dict(sorted(out.items()))

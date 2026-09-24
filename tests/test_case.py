@@ -10,6 +10,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
+from opalxruns import paths
 from opalxruns.case import Case
 
 BG0 = 2.0
@@ -36,10 +37,17 @@ class CaseTest(unittest.TestCase):
         folder = Path(self.tmp.name) / "one_case"
         folder.mkdir()
         write_h5(folder / "one_case.h5")
-        self.case = Case(folder, {"h5": "one_case.h5", "stat": "one_case.stat"}, BG0)
+        self.case = Case(folder, {"h5": "one_case.h5", "stat": "one_case.stat"}, BG0, out=folder)
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_output_is_looked_for_under_output_by_default(self):
+        folder = paths.STUDIES / "elements" / "fieldmap" / "grid_quad"
+        c = Case(folder, {"h5": "grid_quad.h5", "stat": "grid_quad.stat"}, 1.0)
+        self.assertEqual(c.dir, folder)
+        self.assertEqual(c.h5, paths.output_dir(folder) / "grid_quad.h5")
+        self.assertEqual(c.stat, paths.output_dir(folder) / "grid_quad.stat")
 
     def test_name_and_files_come_from_the_folder_and_entry(self):
         self.assertEqual(self.case.name, "one_case")

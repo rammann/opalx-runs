@@ -33,8 +33,10 @@ import h5py
 import numpy as np
 
 from opalxruns.g4bl import track_on_plane
+from opalxruns.paths import output_dir
 
 HERE = Path(__file__).resolve().parent
+OUT = output_dir(HERE)                 # the run, in output/
 
 # A statistical criterion, not a worst-case one, because this is a 2000-particle beam with a
 # 185 mrad angular spread. A handful of large-amplitude particles sample the nonlinear fringes
@@ -69,7 +71,7 @@ MUON = 105.6583755
 
 def opalx(name: str, radius: float) -> dict[int, np.ndarray]:
     """Monitor records, cut to the matching G4beamline detector's disc: x, y [mm], p [MeV/c]."""
-    with h5py.File(HERE / f"{name}.h5", "r") as h:
+    with h5py.File(OUT / f"{name}.h5", "r") as h:
         s = h["Step#0"]
         x, y = np.array(s["x"]) * 1000.0, np.array(s["y"]) * 1000.0
         px, py, pz = (np.array(s[k]) * MUON for k in ("px", "py", "pz"))
@@ -84,7 +86,7 @@ def opalx(name: str, radius: float) -> dict[int, np.ndarray]:
 
 def g4bl(name: str, plane_z: float) -> dict[int, np.ndarray]:
     """#BLTrackFile rows in centreline coordinates, drifted onto the plane."""
-    return track_on_plane(HERE / f"{name}.txt", plane_z)
+    return track_on_plane(OUT / f"{name}.txt", plane_z)
 
 
 def main() -> int:

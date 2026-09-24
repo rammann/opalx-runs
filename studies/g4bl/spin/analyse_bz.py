@@ -24,10 +24,12 @@ import matplotlib.pyplot as plt
 
 from opalxruns import plotstyle
 from opalxruns.g4bl import read_track_file
+from opalxruns.paths import output_dir
 from opalxruns.plotstyle import G4BL as G4_C, INK, OPALX as OPALX_C
 
 HERE = Path(__file__).resolve().parent
-D = HERE / "uniform_bz"
+OUT = output_dir(HERE)                 # the runs, in output/
+U = OUT / "uniform_bz"                 # one run folder per input of uniform_bz/
 G_OPALX, G_G4 = 1.16592061e-03, 0.0011659208
 THETA_1M, THETA_2M = 1.0, 2.0
 BETA = 0.2561627
@@ -50,8 +52,8 @@ def g4_angle(path):
 
 def main():
     exp1 = -(1.0 + G_OPALX) * THETA_1M
-    ao, opx, opy, opm = op_angle(D / "scan" / "out_1e-12.h5")   # the base step
-    ag, gpx, gpy, gpm = g4_angle(D / "Z1200.txt")
+    ao, opx, opy, opm = op_angle(U / "dt_1e-12" / "MON_OUT.h5")   # the base step
+    ag, gpx, gpy, gpm = g4_angle(U / "uniform_bz" / "Z1200.txt")
     L = ["Spin in a uniform Bz: the one case with no orbit at all",
          "",
          "1.000 m of uniform Bz = 0.0933979467 T, a mu+ at 28 MeV/c travelling along the",
@@ -83,7 +85,7 @@ def main():
          "-" * 68]
     steps = []
     for dt in ("1e-12", "5e-13", "2.5e-13", "1.25e-13"):
-        a, _, _, _ = op_angle(D / "scan" / f"out_{dt}.h5")
+        a, _, _, _ = op_angle(U / f"dt_{dt}" / "MON_OUT.h5")
         mm = BETA * 2.99792458e8 * float(dt) * 1e3
         bound = 0.5 * mm / 1000.0 * abs(exp1)       # rotation in half a step
         L.append(f"{dt:>10} {mm:12.5f} {a:15.9f} {a-exp1:+13.3e} {bound:13.3e}")
@@ -94,7 +96,7 @@ def main():
           "smoothly. That is what an error made at the field edge looks like: it depends on",
           "where the boundary happens to fall between two steps."]
 
-    a2, _, _, _ = op_angle(D / "scan" / "out_2m.h5")
+    a2, _, _, _ = op_angle(U / "bz2m" / "MON_OUT.h5")
     exp2 = -(1.0 + G_OPALX) * THETA_2M
     L += ["",
           "Is the error made at the boundary, or does it build up along the field?",
@@ -120,7 +122,7 @@ def main():
         indent=1))
     print(txt)
 
-    (HERE / "plots").mkdir(exist_ok=True)
+    (OUT / "plots").mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(1, 2, figsize=(9.2, 3.4))
     mm = np.array([s["mm"] for s in steps])
     er = np.array([abs(s["err"]) for s in steps])
@@ -141,7 +143,7 @@ def main():
         ax[1].text(i, v, f"  {v:.2e}", ha="center", va="bottom", fontsize=7)
     ax[1].set_ylim(0, max(abs(steps[0]["err"]), abs(a2 - exp2)) * 1.35)
     fig.tight_layout()
-    fig.savefig(HERE / "plots" / "bz_step.png", dpi=140)
+    fig.savefig(OUT / "plots" / "bz_step.png", dpi=140)
     print("\nwrote bz_results.txt, bz_data.json, plots/bz_step.png")
 
 

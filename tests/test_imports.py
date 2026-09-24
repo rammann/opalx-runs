@@ -12,7 +12,7 @@ MODULES = [
     "opalx_diagnostics", "opalx_run", "plot_stat", "plot_timing", "plot_monitors",
     "process_run", "particles_to_vtk", "elements_to_vtk",
     "g4bl", "h5", "mue4", "mue4_beam",
-    "case", "matrices", "particles", "plotstyle", "refs", "results",
+    "case", "matrices", "particles", "plotstyle", "refs", "results", "run",
 ]
 
 

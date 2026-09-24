@@ -35,7 +35,7 @@ def save_with_footer(fig, path, footer: str, dpi: int = 140) -> None:
     import matplotlib.pyplot as plt
 
     path = Path(path)
-    path.parent.mkdir(exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout(rect=(0.0, 0.045, 1.0, 1.0))
     fig.text(0.01, 0.012, footer, fontsize=6, family="monospace", color="#555555")
     fig.savefig(path, dpi=dpi)

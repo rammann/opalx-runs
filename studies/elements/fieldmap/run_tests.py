@@ -34,6 +34,7 @@ from pathlib import Path
 import numpy as np
 
 import fmlib as F
+from opalxruns.paths import output_dir
 
 HERE = Path(__file__).resolve().parent
 
@@ -300,7 +301,7 @@ TESTS = [test1_momentum, test2_window, test3_dipole, test4_placement, test5_quad
 
 def main() -> int:
     man = F.load_manifest()
-    missing = [n for n in man if not (HERE / n / man[n]["h5"]).exists()]
+    missing = [n for n in man if not (output_dir(HERE / n) / man[n]["h5"]).exists()]
     if missing:
         print("ERROR: no tracking output for: " + ", ".join(missing), file=sys.stderr)
         print("Run ./run_all.sh first.", file=sys.stderr)

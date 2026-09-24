@@ -1,16 +1,44 @@
 #!/usr/bin/env python3
-"""Build report/index.html from report/data.json and report/figs/."""
+"""Build output/g4bl/report/index.html.
+
+Reads data.json and figs/ that report_data.py and report_plots.py (in g4bl/elements)
+write into output/g4bl/report/, the result tables the full-line and spin studies
+keep in studies/, and copies in the figures those studies draw, so that index.html
+and figs/ sit together.
+"""
 from __future__ import annotations
-import json, html
+import json, html, shutil
 import numpy as np
 from pathlib import Path
 
+from opalxruns.paths import STUDIES, output_dir
+
 HERE = Path(__file__).resolve().parent
-D = json.loads((HERE / "data.json").read_text())
-FULL = json.loads((HERE / "full_data.json").read_text()) if (HERE / "full_data.json").exists() else []
-BZ = json.loads((HERE / "bz_data.json").read_text()) if (HERE / "bz_data.json").exists() else None
-SCAN = json.loads((HERE / "scan_data.json").read_text()) if (HERE / "scan_data.json").exists() else None
-SPIN = json.loads((HERE / "spin_data.json").read_text()) if (HERE / "spin_data.json").exists() else []
+OUT = output_dir(HERE)                         # output/g4bl/report
+MUE4 = STUDIES / "g4bl" / "mue4"
+SPIN_STUDY = STUDIES / "g4bl" / "spin"
+
+
+def _json(path, default):
+    return json.loads(path.read_text()) if path.exists() else default
+
+
+def copy_figures():
+    """The full-line and spin figures, from the output of the studies that draw them."""
+    for src, dst in ((output_dir(MUE4 / "full") / "plots", OUT / "figs" / "full"),
+                     (output_dir(MUE4 / "full_spin") / "plots", OUT / "figs" / "spin"),
+                     (output_dir(SPIN_STUDY) / "plots", OUT / "figs" / "spin")):
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in sorted(src.glob("*.png")):
+            shutil.copy2(f, dst / f.name)
+
+
+copy_figures()
+D = json.loads((OUT / "data.json").read_text())
+FULL = _json(MUE4 / "full" / "full_data.json", [])
+BZ = _json(SPIN_STUDY / "bz_data.json", None)
+SCAN = _json(SPIN_STUDY / "scan_data.json", None)
+SPIN = _json(MUE4 / "full_spin" / "spin_data.json", [])
 
 ORDER = ["asr61_dipole", "asr61_300sm", "asr62_dipole", "qsm600_quad",
          "asr61_group", "asr62_d2_group", "asr62_d3_group",
@@ -220,7 +248,7 @@ def section(name):
             (f"figs/{name}_pair.png", "Nineteen particles, one by one, and the transfer matrix"),
             (f"figs/{name}_gauss.png", "Twenty thousand particles: beam size, beam centre, "
                                        "and how the difference depends on amplitude")]
-    figs = [(p, cap) for p, cap in figs if (HERE / p).exists()]
+    figs = [(p, cap) for p, cap in figs if (OUT / p).exists()]
     run = (f'Step size: {c["dt_pair"]} s in OPALX and {c["maxstep_pair"]} mm in G4beamline '
            f'for the 19 particles; {c["dt_gauss"]} s and {c["maxstep_gauss"]} mm for the '
            f'20 000. Tracking stops at {c["zstop"]:.2f} m of path length. '
@@ -754,5 +782,5 @@ ASR61 magnet. Planes outside the field do not have this problem.</p>
 </main>
 </div>
 """
-(HERE / "index.html").write_text(HTML)
+(OUT / "index.html").write_text(HTML)
 print(f"wrote index.html  {len(HTML)/1024:.0f} KB")

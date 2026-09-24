@@ -45,17 +45,18 @@ if [[ $TEST_ONLY -eq 0 ]]; then
     "$PY" make_inputs.py
 
     echo "== tracking every case through OPALX (one rank, no space charge) =="
+    OUT="$("$PY" -m opalxruns.paths "$HERE")"
     for d in */; do
         name="$(basename "$d")"
         [[ -f "$d/$name.in" ]] || continue
-        # Clear the previous output first: a stale .h5 left by a failed run
-        # reads as a fresh result and passes.
-        rm -f "$d/$name.h5" "$d/$name.stat" "$d"/*.h5 "$d"/*.stat
         printf "  %-20s ... " "$name"
-        if ( cd "$d" && mpirun -n 1 "$OPALX_BIN" "$name.in" --info 1 > run.log 2>&1 ); then
+        # Output goes to output/, same folders as here. The runner empties the
+        # case's run folder first: a stale .h5 left by a failed run would read as
+        # a fresh result and pass.
+        if "$PY" -m opalxruns.run "$d/$name.in" > /dev/null; then
             echo "done"
         else
-            echo "FAILED (see $d/run.log)"
+            echo "FAILED (see $OUT/$name/run.log)"
         fi
     done
 fi

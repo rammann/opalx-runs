@@ -1,3 +1,0 @@
-#BLTrackFile2 Z50
-#x y z Px Py Pz t PDGid EventID TrackID ParentID Weight Bx By Bz Ex Ey Ez ProperTime PathLength PolX PolY PolZ InitX InitY InitZ InitT InitKE
-0 0 50 0 0 3094 0.166879 -13 1 1 0 1 0 0 0 0 0 0 0.00569551 50 0 0 1 0 0 0 0 2990.15 

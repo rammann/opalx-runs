@@ -17,13 +17,15 @@ from matplotlib.colors import LogNorm
 
 from opalxruns import plotstyle
 from opalxruns.g4bl import read_map_header
+from opalxruns.paths import output_dir
 from opalxruns.plotstyle import G4BL, INK, MUTED, OPALX
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import cmplib
 
-FIGS = HERE.parent / "report" / "figs"   # studies/g4bl/report/figs
+OUT = output_dir(HERE)                                   # the runs, in output/
+FIGS = output_dir(HERE.parent / "report") / "figs"       # output/g4bl/report/figs
 FIGS.mkdir(parents=True, exist_ok=True)
 plotstyle.use({"axes.labelcolor": INK})
 
@@ -64,7 +66,7 @@ def _map_extent(fname):
 def _geometry(name, d):
     """Where each field map and each recording plane sits, read from the input OPALX
     was actually given rather than from a description of it."""
-    txt = (d / f"{name}.in").read_text().splitlines()
+    txt = (HERE / d.name / f"{name}.in").read_text().splitlines()   # the input, in studies/
     maps, mons = [], []
     for i, ln in enumerate(txt):
         m = re.match(r"E\d+_\S*\s*: (FIELDMAP|MONITOR), X = ([-\d.]+), Y = ([-\d.]+), "
@@ -309,7 +311,7 @@ def fig_convergence(man):
 def main():
     man = cmplib.load_manifest()
     for name, c in man.items():
-        d = HERE / c["dir"]
+        d = OUT / c["dir"]
         print(name)
         for fn in (fig_layout, fig_field, fig_pair, fig_gauss):
             try:

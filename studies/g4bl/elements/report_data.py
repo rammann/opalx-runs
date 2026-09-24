@@ -10,14 +10,16 @@ from pathlib import Path
 import numpy as np
 
 from opalxruns.g4bl import read_map_header
+from opalxruns.paths import output_dir
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import cmplib
 from cmplib import MUON_MASS, BG0
 
-OUT = HERE.parent / "report"             # studies/g4bl/report
-OUT.mkdir(exist_ok=True)
+OUT = output_dir(HERE)                                 # the runs, in output/
+REPORT = output_dir(HERE.parent / "report")            # output/g4bl/report
+REPORT.mkdir(parents=True, exist_ok=True)
 MAPS = cmplib.MAPS
 
 
@@ -48,7 +50,7 @@ def main():
     man = cmplib.load_manifest()
     out = {}
     for name, c in man.items():
-        d = HERE / c["dir"]
+        d = OUT / c["dir"]
         rec = dict(name=name, desc=c["desc"], bisector=bool(c.get("bisector")),
                    zstop=c["zstop"], monitors=c["monitors"],
                    dt_pair=c["dt_finer"] if c.get("converge") else c["dt_fine"],
@@ -159,7 +161,7 @@ def main():
             rec["gauss"] = dict(n=c["n_gauss"], planes=planes)
         out[name] = rec
         print(f"  {name}")
-    (OUT / "data.json").write_text(json.dumps(out, indent=1))
+    (REPORT / "data.json").write_text(json.dumps(out, indent=1))
     print(f"\nwrote {OUT/'data.json'}")
 
 

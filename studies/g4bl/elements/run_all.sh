@@ -69,44 +69,30 @@ import json
 print('\n'.join(c['name'] for c in json.load(open('$HERE/cases.json'))))")
 fi
 
-run_one() {   # <dir> <stem> <what>
-    local d="$1" stem="$2" what="$3"
+OUT="$("$PY" -m opalxruns.paths "$HERE")"
+
+run_one() {   # <case> <stem> <what>: both codes, in output/.../<case>/<what>/
+    local c="$1" stem="$2" what="$3"
     echo "  $what"
-    ( cd "$d"
-      rm -f Z*.txt g4bl_field_*.txt "$stem".h5 "$stem".stat MON_*.h5
-      rm -rf data
-      g4bl "$stem.g4bl" > "g4bl_$what.log" 2>&1 \
-        || { echo "    g4bl FAILED, see $d/g4bl_$what.log" >&2; return 1; }
-      mpirun -n 1 "$OPALX_BIN" "$stem.in" --info 1 > "run_$what.log" 2>&1 \
-        || { echo "    opalx FAILED, see $d/run_$what.log" >&2; return 1; }
-      # Both stages write the same plane and field filenames, so the pair stage's
-      # output is kept before the 20000-particle stage overwrites it.
-      if [[ "$what" == "fine" ]]; then
-          mkdir -p fine && mv -f Z*.txt fine/ 2>/dev/null || true
-          for f in MON_*.h5; do [[ -e "$f" ]] && mv -f "$f" fine/; done
-          [[ -f "$stem.stat" ]] && mv -f "$stem.stat" fine/
-      elif [[ "$what" == "pair" ]]; then
-          mkdir -p pair && mv -f Z*.txt pair/ 2>/dev/null || true
-          for f in g4bl_field_*.txt; do [[ -e "$f" ]] && mv -f "$f" pair/; done
-          for f in MON_*.h5; do [[ -e "$f" ]] && mv -f "$f" pair/; done
-          [[ -d data ]] && cp -f data/opalx_field_*.dat pair/ 2>/dev/null || true
-          [[ -f "$stem.stat" ]] && mv -f "$stem.stat" pair/
-      else
-          mkdir -p gauss && mv -f Z*.txt gauss/ 2>/dev/null || true
-          for f in MON_*.h5; do [[ -e "$f" ]] && mv -f "$f" gauss/; done
-          [[ -f "$stem.stat" ]] && mv -f "$stem.stat" gauss/
-      fi )
+    # Each stage has its own run folder, because the stages write the same plane
+    # and field file names. The runner empties it first.
+    "$PY" -m opalxruns.run "$HERE/$c/$stem.g4bl" "$HERE/$c/$stem.in" --run-dir "$OUT/$c/$what" \
+        > /dev/null || { echo "    FAILED, see the logs in $OUT/$c/$what" >&2; return 1; }
+    # OPALX writes its field dumps into data/; the tests read them next to the planes.
+    if [[ "$what" == "pair" ]]; then
+        cp -f "$OUT/$c/pair"/data/opalx_field_*.dat "$OUT/$c/pair"/ 2>/dev/null || true
+    fi
 }
 
 if [[ "$TEST_ONLY" -eq 0 ]]; then
     for c in "${CASES[@]}"; do
         echo "== $c"
-        run_one "$HERE/$c" "$c" pair
+        run_one "$c" "$c" pair
         # Cases sensitive enough to resolve below their own step error run the pair
         # stage again at half the step, so run_tests can extrapolate rather than
         # assume the step is fine.
-        [[ -f "$HERE/$c/${c}_fine.in" ]] && run_one "$HERE/$c" "${c}_fine" fine
-        [[ "$PAIR_ONLY" -eq 1 ]] || run_one "$HERE/$c" "${c}_gauss" gauss
+        [[ -f "$HERE/$c/${c}_fine.in" ]] && run_one "$c" "${c}_fine" fine
+        [[ "$PAIR_ONLY" -eq 1 ]] || run_one "$c" "${c}_gauss" gauss
     done
 fi
 

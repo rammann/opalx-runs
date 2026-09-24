@@ -17,7 +17,7 @@ TEST_ONLY=0
 cd "$HERE"
 
 if [[ $TEST_ONLY -eq 0 ]]; then
-    OPALX_BIN="${OPALX:?set OPALX to the opalx executable}"
+    : "${OPALX:?set OPALX to the opalx executable}"
 
     echo "== generating decks =="
     "$PY" make_decks.py
@@ -25,6 +25,7 @@ if [[ $TEST_ONLY -eq 0 ]]; then
     echo
     echo "== tracking all cases through OPALX (one rank, no space charge) =="
     SKIP="$("$PY" -c 'import json;print(" ".join(m["name"] for m in json.load(open("cases.json")) if m.get("skip")))')"
+    OUT="$("$PY" -m opalxruns.paths "$HERE")"
     for d in */; do
         name="$(basename "$d")"
         [[ -f "$d/$name.in" ]] || continue
@@ -33,8 +34,9 @@ if [[ $TEST_ONLY -eq 0 ]]; then
             continue
         fi
         printf "  %-20s ... " "$name"
-        ( cd "$d" && mpirun -n 1 "$OPALX_BIN" "$name.in" --info 1 > run.log 2>&1 ) \
-            && echo "done" || echo "FAILED (see $d/run.log)"
+        # output goes to output/, same folders as here
+        "$PY" -m opalxruns.run "$d/$name.in" > /dev/null \
+            && echo "done" || echo "FAILED (see $OUT/$name/run.log)"
     done
 fi
 

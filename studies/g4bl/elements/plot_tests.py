@@ -27,8 +27,10 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import cmplib                            # noqa: E402
 from cmplib import TOL                   # noqa: E402
+from opalxruns.paths import output_dir   # noqa: E402
 
-PLOTS = HERE / "plots"
+OUT = output_dir(HERE)                   # the runs, in output/
+PLOTS = OUT / "plots"
 
 # Magnitude of a difference is a one-directional quantity, so one hue, light to
 # dark. Signed differences use a two-hue scale with a neutral middle.
@@ -109,7 +111,7 @@ def plot_field_on_axis(man, names):
     """
     fig, axes, slots = _grid_axes(len(names) * 2, ncol=2, w=4.6, h=2.2)
     for k, n in enumerate(names):
-        c, d = man[n], HERE / man[n]["dir"]
+        c, d = man[n], OUT / man[n]["dir"]
         m = _field(d, "grid", c["boxes"])
         a, b = axes[2 * k], axes[2 * k + 1]
         if m is None:
@@ -149,7 +151,7 @@ def plot_field_diff_plane(man, names):
     """
     fig, axes, slots = _grid_axes(len(names) * 2, ncol=2, w=4.6, h=2.4)
     for k, n in enumerate(names):
-        d = HERE / man[n]["dir"]
+        d = OUT / man[n]["dir"]
         for j, kind in enumerate(("grid", "half")):
             ax = axes[2 * k + j]
             m = _field(d, kind, man[n]["boxes"])
@@ -189,7 +191,7 @@ def plot_field_diff_hist(man, names):
     fig, axes, slots = _grid_axes(len(names), ncol=3)
     bins = np.logspace(-12, -4, 40)
     for k, n in enumerate(names):
-        ax, d = axes[k], HERE / man[n]["dir"]
+        ax, d = axes[k], OUT / man[n]["dir"]
         drew, tol = False, None
         for kind, col, ls in (("grid", G4BL, "-"), ("half", OPALX, "--")):
             m = _field(d, kind, man[n]["boxes"])
@@ -230,7 +232,7 @@ def plot_exit_diff(man, names):
     fig, axes, slots = _grid_axes(len(names), ncol=3, h=2.8)
     for k, n in enumerate(names):
         ax, c = axes[k], man[n]
-        p = _planes(HERE / c["dir"], c, "pair")
+        p = _planes(OUT / c["dir"], c, "pair")
         if not p:
             ax.axis("off")
             continue
@@ -270,7 +272,7 @@ def plot_matrix_diff(man, names):
     lab = cmplib.COORD_NAMES
     for k, n in enumerate(names):
         c = man[n]
-        p = _planes(HERE / c["dir"], c, "pair")
+        p = _planes(OUT / c["dir"], c, "pair")
         a, b = axes[2 * k], axes[2 * k + 1]
         if len(p) < 2 or len(p[min(p)][2]) != c["n_pair"]:
             a.axis("off"); b.axis("off")
@@ -284,7 +286,7 @@ def plot_matrix_diff(man, names):
         im = a.imshow(diff, cmap=DIV, vmin=-v, vmax=v)
         a.set_title(f"{n}\nOPALX - G4BL, worst {v:.1e}")
         fig.colorbar(im, ax=a)
-        floor = float(cmplib.row_floors(_raw_g4bl(HERE / c['dir'], max(p)),
+        floor = float(cmplib.row_floors(_raw_g4bl(OUT / c['dir'], max(p)),
                                         cmplib.STEP_SMALL).max())
         sig = cmplib.significant(Mg, floor, TOL["matrix_big"])
         rel = np.where(sig, np.abs(diff) / np.where(sig, np.abs(Mg), 1), np.nan)
@@ -314,7 +316,7 @@ def plot_orbit_vs_s(man, names):
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
     for k, n in enumerate(names):
         c = man[n]
-        p = _planes(HERE / c["dir"], c, "pair")
+        p = _planes(OUT / c["dir"], c, "pair")
         if not p:
             continue
         zs = sorted(p)
@@ -344,7 +346,7 @@ def plot_gauss_per_particle(man, names):
     fig, axes, slots = _grid_axes(len(names), ncol=3, h=2.8)
     for k, n in enumerate(names):
         ax, c = axes[k], man[n]
-        p = _planes(HERE / c["dir"], c, "gauss")
+        p = _planes(OUT / c["dir"], c, "gauss")
         if not p:
             ax.set_title(f"{n} -- gauss stage not run")
             ax.axis("off")
@@ -385,7 +387,7 @@ def plot_gauss_moments(man, names):
     fig, axes, slots = _grid_axes(len(names), ncol=3, h=2.8)
     for k, n in enumerate(names):
         ax, c = axes[k], man[n]
-        p = _planes(HERE / c["dir"], c, "gauss")
+        p = _planes(OUT / c["dir"], c, "gauss")
         if not p:
             ax.set_title(f"{n} -- gauss stage not run")
             ax.axis("off")
@@ -418,7 +420,7 @@ def plot_summary(man, names):
     fig, ax = plt.subplots(figsize=(8.0, 4.4))
     rows = {"field": [], "exit position": [], "exit angle": []}
     for n in names:
-        c, d = man[n], HERE / man[n]["dir"]
+        c, d = man[n], OUT / man[n]["dir"]
         m = _field(d, "half", c["boxes"])
         if m is not None:
             _, Bg, Bo = m

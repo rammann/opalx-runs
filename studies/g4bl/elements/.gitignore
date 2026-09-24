@@ -30,7 +30,6 @@ g4bl_field_*.txt
 opalx_field_*.dat
 
 # Analysis output
-results.txt
 plots/
 
 *.png

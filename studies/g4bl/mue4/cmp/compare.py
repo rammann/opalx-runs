@@ -35,8 +35,10 @@ import h5py
 import numpy as np
 
 from opalxruns.g4bl import track_on_plane
+from opalxruns.paths import output_dir
 
 HERE = Path(__file__).resolve().parent
+OUT = output_dir(HERE)                 # the run, in output/
 POSES = json.loads((HERE.parent / "poses.json").read_text())
 
 TOL = {
@@ -57,7 +59,7 @@ MUON_MASS = 105.6583755  # MeV
 
 def opalx(name: str) -> dict[int, np.ndarray]:
     """Monitor records: x, y [mm] and px, py, pz [MeV/c], in the monitor's own frame."""
-    with h5py.File(HERE / f"{name}.h5", "r") as h:
+    with h5py.File(OUT / f"{name}.h5", "r") as h:
         s = h["Step#0"]
         rows = np.stack(
             [
@@ -74,7 +76,7 @@ def opalx(name: str) -> dict[int, np.ndarray]:
 
 def g4bl(name: str, plane_z: float) -> dict[int, np.ndarray]:
     """#BLTrackFile rows in centreline coordinates, drifted onto the plane."""
-    return track_on_plane(HERE / f"{name}.txt", plane_z)
+    return track_on_plane(OUT / f"{name}.txt", plane_z)
 
 
 def main() -> int:

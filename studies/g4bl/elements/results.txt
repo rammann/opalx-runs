@@ -1,0 +1,511 @@
+
+==============================================================================================================
+g4bl_compare -- muE4 field maps, the same file through both codes
+==============================================================================================================
+case             quantity                                measured      expected     |diff|       tol  result
+------------------------------------------------------------------------------------------------------------
+asr61_dipole     field, grid [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.08607 T, 31958 points clear of a face
+asr61_dipole     field, grid, on a box face [T]             1e-07             0      1e-07         -  diag  610 points; the two codes round the edge differently, no particle is affected
+asr61_dipole     field, half [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.08607 T, 32568 points clear of a face
+asr61_dipole     field, yscan [T]                           1e-07             0      1e-07   3.0e-07  PASS  peak 0.08829 T, 207 points clear of a face
+asr61_dipole     field on the top x face                        0             0          0         -  diag  13248 points, g4bl nonzero at 0, OPALX at 0; largest value returned 0 T
+asr61_dipole     particles at z=50 mm                          19            19          0   0.0e+00  PASS
+asr61_dipole     particles at z=2950 mm                        19            19          0   0.0e+00  PASS
+asr61_dipole     entrance, worst |dx|,|dy| [m]        3.46945e-18             0   3.47e-18   1.0e-09  PASS
+asr61_dipole     exit, worst |dx|,|dy| [m]            8.44494e-06             0   8.44e-06   1.0e-04  PASS  orbit reaches |x| = 1.274 m
+asr61_dipole     exit, worst |dx'|,|dy'| [rad]        8.22675e-06             0   8.23e-06   1.0e-05  PASS
+asr61_dipole     exit, worst |d delta|                2.03248e-06             0   2.03e-06   1.0e-05  PASS
+asr61_dipole     |p| change through g4bl              2.03248e-06             0   2.03e-06   5.0e-06  PASS
+asr61_dipole     |p| change through opalx              1.3276e-12             0   1.33e-12   5.0e-06  PASS
+asr61_dipole     time of flight, particle 0 [s]       4.39639e-08   4.39639e-08   4.08e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr61_dipole     matrix floor, worst row                     0.01             0       0.01         -  diag  per row: 1.0e-02 9.4e-03 1.0e-02 9.4e-03 7.7e-03 3.6e-03
+asr61_dipole     matrix, worst difference / floor        0.488874             0      0.489   3.0e+00  PASS  worst |difference| 0.00489 at M[x <- x]
+asr61_dipole     matrix, worst relative, large elements    0.00286145             0    0.00286   2.0e-02  PASS  8 of 36 elements above 100x the floor
+asr61_dipole     symplectic residual, g4bl                3.86126             0       3.86         -  diag  diagnostic: finite differences, not the code
+asr61_dipole     symplectic residual, opalx               3.86145             0       3.86         -  diag
+asr61_dipole     gauss particles at z=50 mm                 20000         20000          0   0.0e+00  PASS
+asr61_dipole     gauss z=50 mm, mean x [m]            -1.3689e-17   -1.1393e-11   1.14e-11   5.0e-06  PASS
+asr61_dipole     gauss z=50 mm, rms x                  0.00999412    0.00999412   1.23e-10  1.0e-03r  PASS
+asr61_dipole     gauss z=50 mm, mean y [m]            2.16771e-17   3.05855e-12   3.06e-12   5.0e-06  PASS
+asr61_dipole     gauss z=50 mm, rms y                  0.00300223    0.00300223   2.09e-11  1.0e-03r  PASS
+asr61_dipole     gauss particles at z=1000 mm               20000         20000          0   0.0e+00  PASS
+asr61_dipole     gauss z=1000 mm, mean x [m]           0.00366034    0.00366017   1.71e-07   5.0e-06  PASS
+asr61_dipole     gauss z=1000 mm, rms x                 0.0102315     0.0102315   3.85e-09  1.0e-03r  PASS
+asr61_dipole     gauss z=1000 mm, mean y [m]         -3.65173e-08  -3.65518e-08   3.45e-11   5.0e-06  PASS
+asr61_dipole     gauss z=1000 mm, rms y                0.00357915    0.00357915   9.01e-10  1.0e-03r  PASS
+asr61_dipole     gauss particles at z=1500 mm               20000         20000          0   0.0e+00  PASS
+asr61_dipole     gauss z=1500 mm, mean x [m]            0.0728665     0.0728662    2.6e-07   5.0e-06  PASS
+asr61_dipole     gauss z=1500 mm, rms x                 0.0113719     0.0113719   5.51e-09  1.0e-03r  PASS
+asr61_dipole     gauss z=1500 mm, mean y [m]         -2.44212e-08  -2.44094e-08   1.18e-11   5.0e-06  PASS
+asr61_dipole     gauss z=1500 mm, rms y                 0.0039902     0.0039902   9.05e-10  1.0e-03r  PASS
+asr61_dipole     gauss particles at z=2000 mm               20000         20000          0   0.0e+00  PASS
+asr61_dipole     gauss z=2000 mm, mean x [m]             0.401058      0.401058    4.8e-07   5.0e-06  PASS
+asr61_dipole     gauss z=2000 mm, rms x                 0.0132777     0.0132777   4.16e-09  1.0e-03r  PASS
+asr61_dipole     gauss z=2000 mm, mean y [m]          6.27005e-07   6.26991e-07   1.43e-11   5.0e-06  PASS
+asr61_dipole     gauss z=2000 mm, rms y                0.00428222    0.00428221   2.18e-09  1.0e-03r  PASS
+asr61_dipole     gauss particles at z=2500 mm               20000         20000          0   0.0e+00  PASS
+asr61_dipole     gauss z=2500 mm, mean x [m]             0.841484      0.841484   6.17e-07   5.0e-06  PASS
+asr61_dipole     gauss z=2500 mm, rms x                 0.0121904     0.0121905    4.5e-08  1.0e-03r  PASS
+asr61_dipole     gauss z=2500 mm, mean y [m]          2.48321e-06   2.48315e-06    5.6e-11   5.0e-06  PASS
+asr61_dipole     gauss z=2500 mm, rms y                0.00430728    0.00430727   9.85e-09  1.0e-03r  PASS
+asr61_dipole     gauss particles at z=2950 mm               20000         20000          0   0.0e+00  PASS
+asr61_dipole     gauss z=2950 mm, mean x [m]              1.23787       1.23787   7.26e-07   5.0e-06  PASS
+asr61_dipole     gauss z=2950 mm, rms x                 0.0115106     0.0115107   5.76e-08  1.0e-03r  PASS
+asr61_dipole     gauss z=2950 mm, mean y [m]          4.15421e-06   4.15404e-06   1.72e-10   5.0e-06  PASS
+asr61_dipole     gauss z=2950 mm, rms y                 0.0045113    0.00451129   1.58e-08  1.0e-03r  PASS
+asr61_dipole     gauss z=50 mm, median |dx|,|dy| [m]   3.98681e-09             0   3.99e-09         -  diag  20000 particles at this plane
+asr61_dipole     gauss z=2950 mm, median |dx|,|dy| [m]   7.82392e-06             0   7.82e-06         -  diag  20000 particles at this plane
+asr61_dipole     gauss free space, worst plane median |dx|,|dy| [m]   7.82392e-06             0   7.82e-06   1.0e-04  PASS  at z=2950 mm
+asr61_dipole     gauss free space, worst plane 99th pct |dx|,|dy| [m]   2.72696e-05             0   2.73e-05   3.0e-04  PASS  at z=2950 mm
+asr61_dipole     gauss free space, worst single particle |dx|,|dy| [m]   3.83988e-05             0   3.84e-05         -  diag  the tail of the same distribution, not a separate effect
+asr61_dipole     gauss z=50 mm, median |dx'|,|dy'|     2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+asr61_dipole     gauss z=2950 mm, median |dx'|,|dy'|   8.02696e-06             0   8.03e-06         -  diag  20000 particles at this plane
+asr61_dipole     gauss free space, worst plane median |dx'|,|dy'|   8.02696e-06             0   8.03e-06   1.0e-05  PASS  at z=2950 mm
+asr61_dipole     gauss free space, worst plane 99th pct |dx'|,|dy'|     2.714e-05             0   2.71e-05   3.0e-05  PASS  at z=2950 mm
+asr61_dipole     gauss free space, worst single particle |dx'|,|dy'|   3.74733e-05             0   3.75e-05         -  diag  the tail of the same distribution, not a separate effect
+asr61_dipole     gauss, |dx'|,|dy'| inside the field   0.000239149             0   0.000239         -  diag  planes [1000, 1500, 2000, 2500]; at 0.08606 T that is 0.260 mm of sampling offset
+asr61_dipole     gauss, |dx|,|dy| inside the field [m]   2.01382e-05             0   2.01e-05   1.0e-04  PASS  position IS interpolated onto the plane
+asr61_300sm      field, grid [T]                            1e-08             0      1e-08   3.0e-08  PASS  peak 0.003342 T, 3480 points clear of a face
+asr61_300sm      field, grid, on a box face [T]             1e-09             0      1e-09         -  diag  170 points; the two codes round the edge differently, no particle is affected
+asr61_300sm      field, half [T]                            1e-08             0      1e-08   3.0e-08  PASS  peak 0.003258 T, 3650 points clear of a face
+asr61_300sm      field, yscan [T]                           1e-09             0      1e-09   3.0e-08  PASS  peak 0.003085 T, 207 points clear of a face
+asr61_300sm      field on the top x face                        0             0          0         -  diag  3504 points, g4bl nonzero at 0, OPALX at 0; largest value returned 0 T
+asr61_300sm      particles at z=400 mm                         19            19          0   0.0e+00  PASS
+asr61_300sm      particles at z=1330 mm                        19            19          0   0.0e+00  PASS
+asr61_300sm      entrance, worst |dx|,|dy| [m]        4.67833e-17             0   4.68e-17   1.0e-09  PASS
+asr61_300sm      exit, worst |dx|,|dy| [m]            2.05059e-07             0   2.05e-07   1.0e-04  PASS  orbit reaches |x| = 0.02289 m
+asr61_300sm      exit, worst |dx'|,|dy'| [rad]        3.98957e-07             0   3.99e-07   1.0e-05  PASS
+asr61_300sm      exit, worst |d delta|                1.49981e-06             0    1.5e-06   1.0e-05  PASS
+asr61_300sm      |p| change through g4bl              1.99981e-06             0      2e-06   5.0e-06  PASS
+asr61_300sm      |p| change through opalx             8.22453e-13             0   8.22e-13   5.0e-06  PASS
+asr61_300sm      time of flight, particle 0 [s]       1.73188e-08   1.73188e-08   1.95e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr61_300sm      matrix floor, worst row               0.00767957             0    0.00768         -  diag  per row: 1.0e-04 3.7e-03 1.0e-04 3.7e-03 7.7e-03 3.6e-03
+asr61_300sm      matrix, worst difference / floor        0.371471             0      0.371   3.0e+00  PASS  worst |difference| 0.00133 at M[delta <- x']
+asr61_300sm      matrix, worst relative, large elements    0.00236077             0    0.00236   2.0e-02  PASS  9 of 36 elements above 100x the floor
+asr61_300sm      symplectic residual, g4bl             0.00821448             0    0.00821         -  diag  diagnostic: finite differences, not the code
+asr61_300sm      symplectic residual, opalx            0.00822129             0    0.00822         -  diag
+asr61_300sm      gauss particles at z=400 mm                20000         20000          0   0.0e+00  PASS
+asr61_300sm      gauss z=400 mm, mean x [m]          -9.09939e-17     -5.76e-11   5.76e-11   5.0e-06  PASS
+asr61_300sm      gauss z=400 mm, rms x                  0.0100221     0.0100221   3.41e-11  1.0e-03r  PASS
+asr61_300sm      gauss z=400 mm, mean y [m]           1.60016e-16    -9.979e-12   9.98e-12   5.0e-06  PASS
+asr61_300sm      gauss z=400 mm, rms y                 0.00310111    0.00310111    1.6e-11  1.0e-03r  PASS
+asr61_300sm      gauss particles at z=700 mm                20000         20000          0   0.0e+00  PASS
+asr61_300sm      gauss z=700 mm, mean x [m]           0.000143149   0.000143037   1.12e-07   5.0e-06  PASS
+asr61_300sm      gauss z=700 mm, rms x                   0.010082      0.010082   1.99e-09  1.0e-03r  PASS
+asr61_300sm      gauss z=700 mm, mean y [m]          -6.18129e-06  -6.17627e-06   5.01e-09   5.0e-06  PASS
+asr61_300sm      gauss z=700 mm, rms y                 0.00330379    0.00330379   6.72e-10  1.0e-03r  PASS
+asr61_300sm      gauss particles at z=900 mm                20000         20000          0   0.0e+00  PASS
+asr61_300sm      gauss z=900 mm, mean x [m]           0.000764833    0.00076461   2.24e-07   5.0e-06  PASS
+asr61_300sm      gauss z=900 mm, rms x                  0.0101276     0.0101276   4.84e-09  1.0e-03r  PASS
+asr61_300sm      gauss z=900 mm, mean y [m]          -3.89259e-05  -3.89158e-05   1.01e-08   5.0e-06  PASS
+asr61_300sm      gauss z=900 mm, rms y                  0.0034943     0.0034943   1.37e-09  1.0e-03r  PASS
+asr61_300sm      gauss particles at z=1100 mm               20000         20000          0   0.0e+00  PASS
+asr61_300sm      gauss z=1100 mm, mean x [m]           0.00174918    0.00174885   3.33e-07   5.0e-06  PASS
+asr61_300sm      gauss z=1100 mm, rms x                 0.0101768     0.0101769   6.73e-09  1.0e-03r  PASS
+asr61_300sm      gauss z=1100 mm, mean y [m]         -9.41386e-05  -9.41237e-05    1.5e-08   5.0e-06  PASS
+asr61_300sm      gauss z=1100 mm, rms y                0.00372243    0.00372243   2.07e-09  1.0e-03r  PASS
+asr61_300sm      gauss particles at z=1330 mm               20000         20000          0   0.0e+00  PASS
+asr61_300sm      gauss z=1330 mm, mean x [m]           0.00305372     0.0030533   4.15e-07   5.0e-06  PASS
+asr61_300sm      gauss z=1330 mm, rms x                 0.0102482     0.0102482   7.84e-09  1.0e-03r  PASS
+asr61_300sm      gauss z=1330 mm, mean y [m]         -0.000161806  -0.000161786   1.95e-08   5.0e-06  PASS
+asr61_300sm      gauss z=1330 mm, rms y                0.00402033    0.00402033   2.19e-09  1.0e-03r  PASS
+asr61_300sm      gauss z=400 mm, median |dx|,|dy| [m]   3.99368e-09             0   3.99e-09         -  diag  20000 particles at this plane
+asr61_300sm      gauss z=1330 mm, median |dx|,|dy| [m]   4.17282e-07             0   4.17e-07         -  diag  20000 particles at this plane
+asr61_300sm      gauss free space, worst plane median |dx|,|dy| [m]   4.17282e-07             0   4.17e-07   1.0e-04  PASS  at z=1330 mm
+asr61_300sm      gauss free space, worst plane 99th pct |dx|,|dy| [m]    4.7193e-07             0   4.72e-07   3.0e-04  PASS  at z=1330 mm
+asr61_300sm      gauss free space, worst single particle |dx|,|dy| [m]   5.44775e-07             0   5.45e-07         -  diag  the tail of the same distribution, not a separate effect
+asr61_300sm      gauss z=400 mm, median |dx'|,|dy'|    2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+asr61_300sm      gauss z=1330 mm, median |dx'|,|dy'|   1.01908e-07             0   1.02e-07         -  diag  20000 particles at this plane
+asr61_300sm      gauss free space, worst plane median |dx'|,|dy'|   1.01908e-07             0   1.02e-07   1.0e-05  PASS  at z=1330 mm
+asr61_300sm      gauss free space, worst plane 99th pct |dx'|,|dy'|    1.3625e-07             0   1.36e-07   3.0e-05  PASS  at z=1330 mm
+asr61_300sm      gauss free space, worst single particle |dx'|,|dy'|   1.02265e-06             0   1.02e-06         -  diag  the tail of the same distribution, not a separate effect
+asr61_300sm      gauss, |dx'|,|dy'| inside the field   1.68196e-06             0   1.68e-06         -  diag  planes [700, 900, 1100]; at 0.001065 T that is 0.147 mm of sampling offset
+asr61_300sm      gauss, |dx|,|dy| inside the field [m]   3.93143e-07             0   3.93e-07   1.0e-04  PASS  position IS interpolated onto the plane
+asr62_dipole     field, grid [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.07752 T, 34740 points clear of a face
+asr62_dipole     field, grid, on a box face [T]             1e-07             0      1e-07         -  diag  640 points; the two codes round the edge differently, no particle is affected
+asr62_dipole     field, half [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.07752 T, 35380 points clear of a face
+asr62_dipole     field, yscan [T]                           1e-09             0      1e-09   3.0e-07  PASS  peak 0.0788 T, 189 points clear of a face
+asr62_dipole     field on the top x face                        0             0          0         -  diag  12760 points, g4bl nonzero at 0, OPALX at 0; largest value returned 0 T
+asr62_dipole     particles at z=50 mm                          19            19          0   0.0e+00  PASS
+asr62_dipole     particles at z=3050 mm                        19            19          0   0.0e+00  PASS
+asr62_dipole     entrance, worst |dx|,|dy| [m]        3.46945e-18             0   3.47e-18   1.0e-09  PASS
+asr62_dipole     exit, worst |dx|,|dy| [m]            3.54795e-06             0   3.55e-06   1.0e-04  PASS  orbit reaches |x| = 1.061 m
+asr62_dipole     exit, worst |dx'|,|dy'| [rad]        1.87634e-06             0   1.88e-06   1.0e-05  PASS
+asr62_dipole     exit, worst |d delta|                2.00102e-06             0      2e-06   1.0e-05  PASS
+asr62_dipole     |p| change through g4bl              2.00102e-06             0      2e-06   5.0e-06  PASS
+asr62_dipole     |p| change through opalx             1.25877e-12             0   1.26e-12   5.0e-06  PASS
+asr62_dipole     time of flight, particle 0 [s]       4.35799e-08   4.35799e-08    2.8e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr62_dipole     matrix floor, worst row                     0.01             0       0.01         -  diag  per row: 1.0e-02 7.7e-03 1.0e-02 7.7e-03 7.7e-03 3.6e-03
+asr62_dipole     matrix, worst difference / floor        0.292373             0      0.292   3.0e+00  PASS  worst |difference| 0.00225 at M[zeta <- x']
+asr62_dipole     matrix, worst relative, large elements     0.0018778             0    0.00188   2.0e-02  PASS  6 of 36 elements above 100x the floor
+asr62_dipole     symplectic residual, g4bl                2.79272             0       2.79         -  diag  diagnostic: finite differences, not the code
+asr62_dipole     symplectic residual, opalx                2.7911             0       2.79         -  diag
+asr62_dipole     gauss particles at z=50 mm                 20000         20000          0   0.0e+00  PASS
+asr62_dipole     gauss z=50 mm, mean x [m]            -1.3689e-17   -1.1393e-11   1.14e-11   5.0e-06  PASS
+asr62_dipole     gauss z=50 mm, rms x                  0.00999412    0.00999412   1.23e-10  1.0e-03r  PASS
+asr62_dipole     gauss z=50 mm, mean y [m]            2.16771e-17   3.05855e-12   3.06e-12   5.0e-06  PASS
+asr62_dipole     gauss z=50 mm, rms y                  0.00300223    0.00300223   2.09e-11  1.0e-03r  PASS
+asr62_dipole     gauss particles at z=1000 mm               20000         20000          0   0.0e+00  PASS
+asr62_dipole     gauss z=1000 mm, mean x [m]           0.00233552    0.00233546   6.11e-08   5.0e-06  PASS
+asr62_dipole     gauss z=1000 mm, rms x                 0.0102157     0.0102157   3.19e-09  1.0e-03r  PASS
+asr62_dipole     gauss z=1000 mm, mean y [m]         -6.83613e-08  -6.83818e-08   2.05e-11   5.0e-06  PASS
+asr62_dipole     gauss z=1000 mm, rms y                0.00358449    0.00358449   7.75e-10  1.0e-03r  PASS
+asr62_dipole     gauss particles at z=1550 mm               20000         20000          0   0.0e+00  PASS
+asr62_dipole     gauss z=1550 mm, mean x [m]            0.0626776     0.0626775   7.46e-08   5.0e-06  PASS
+asr62_dipole     gauss z=1550 mm, rms x                 0.0105914     0.0105914   4.93e-09  1.0e-03r  PASS
+asr62_dipole     gauss z=1550 mm, mean y [m]         -1.39795e-07  -1.39751e-07   4.36e-11   5.0e-06  PASS
+asr62_dipole     gauss z=1550 mm, rms y                0.00431852    0.00431852   9.58e-10  1.0e-03r  PASS
+asr62_dipole     gauss particles at z=2100 mm               20000         20000          0   0.0e+00  PASS
+asr62_dipole     gauss z=2100 mm, mean x [m]             0.367816      0.367816   1.53e-07   5.0e-06  PASS
+asr62_dipole     gauss z=2100 mm, rms x                 0.0111066     0.0111066   6.73e-09  1.0e-03r  PASS
+asr62_dipole     gauss z=2100 mm, mean y [m]          2.36354e-08   2.36105e-08   2.48e-11   5.0e-06  PASS
+asr62_dipole     gauss z=2100 mm, rms y                0.00488808    0.00488808   5.51e-10  1.0e-03r  PASS
+asr62_dipole     gauss particles at z=2600 mm               20000         20000          0   0.0e+00  PASS
+asr62_dipole     gauss z=2600 mm, mean x [m]             0.717436      0.717436   2.04e-07   5.0e-06  PASS
+asr62_dipole     gauss z=2600 mm, rms x                 0.0109259     0.0109258   1.93e-08  1.0e-03r  PASS
+asr62_dipole     gauss z=2600 mm, mean y [m]          5.20117e-07   5.20147e-07   2.93e-11   5.0e-06  PASS
+asr62_dipole     gauss z=2600 mm, rms y                0.00499445    0.00499445   2.41e-10  1.0e-03r  PASS
+asr62_dipole     gauss particles at z=3050 mm               20000         20000          0   0.0e+00  PASS
+asr62_dipole     gauss z=3050 mm, mean x [m]              1.03223       1.03223   2.57e-07   5.0e-06  PASS
+asr62_dipole     gauss z=3050 mm, rms x                 0.0109327     0.0109327   1.04e-09  1.0e-03r  PASS
+asr62_dipole     gauss z=3050 mm, mean y [m]          9.68357e-07   9.68304e-07   5.27e-11   5.0e-06  PASS
+asr62_dipole     gauss z=3050 mm, rms y                0.00518246    0.00518246   1.23e-09  1.0e-03r  PASS
+asr62_dipole     gauss z=50 mm, median |dx|,|dy| [m]   3.98681e-09             0   3.99e-09         -  diag  20000 particles at this plane
+asr62_dipole     gauss z=3050 mm, median |dx|,|dy| [m]   2.56485e-06             0   2.56e-06         -  diag  20000 particles at this plane
+asr62_dipole     gauss free space, worst plane median |dx|,|dy| [m]   2.56485e-06             0   2.56e-06   1.0e-04  PASS  at z=3050 mm
+asr62_dipole     gauss free space, worst plane 99th pct |dx|,|dy| [m]   7.88167e-06             0   7.88e-06   3.0e-04  PASS  at z=3050 mm
+asr62_dipole     gauss free space, worst single particle |dx|,|dy| [m]   1.05144e-05             0   1.05e-05         -  diag  the tail of the same distribution, not a separate effect
+asr62_dipole     gauss z=50 mm, median |dx'|,|dy'|     2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+asr62_dipole     gauss z=3050 mm, median |dx'|,|dy'|   1.84924e-06             0   1.85e-06         -  diag  20000 particles at this plane
+asr62_dipole     gauss free space, worst plane median |dx'|,|dy'|   1.84924e-06             0   1.85e-06   1.0e-05  PASS  at z=3050 mm
+asr62_dipole     gauss free space, worst plane 99th pct |dx'|,|dy'|   6.52042e-06             0   6.52e-06   3.0e-05  PASS  at z=3050 mm
+asr62_dipole     gauss free space, worst single particle |dx'|,|dy'|   8.88402e-06             0   8.88e-06         -  diag  the tail of the same distribution, not a separate effect
+asr62_dipole     gauss, |dx'|,|dy'| inside the field   0.000209616             0    0.00021         -  diag  planes [1000, 1550, 2100, 2600]; at 0.0775 T that is 0.253 mm of sampling offset
+asr62_dipole     gauss, |dx|,|dy| inside the field [m]   3.83477e-06             0   3.83e-06   1.0e-04  PASS  position IS interpolated onto the plane
+qsm600_quad      field, grid [T]                            1e-06             0      1e-06   3.0e-06  PASS  peak 0.2151 T, 9089 points clear of a face
+qsm600_quad      field, grid, on a box face [T]             1e-07             0      1e-07         -  diag  211 points; the two codes round the edge differently, no particle is affected
+qsm600_quad      field, half [T]                            1e-06             0      1e-06   3.0e-06  PASS  peak 0.2124 T, 9300 points clear of a face
+qsm600_quad      field, yscan [T]                     6.42402e-20             0   6.42e-20   3.0e-06  PASS  peak 0.2112 T, 549 points clear of a face
+qsm600_quad      field on the top x face                        0             0          0         -  diag  9300 points, g4bl nonzero at 0, OPALX at 0; largest value returned 0 T
+qsm600_quad      particles at z=50 mm                          19            19          0   0.0e+00  PASS
+qsm600_quad      particles at z=1650 mm                        19            19          0   0.0e+00  PASS
+qsm600_quad      entrance, worst |dx|,|dy| [m]        3.46945e-18             0   3.47e-18   1.0e-09  PASS
+qsm600_quad      exit, worst |dx|,|dy| [m]            3.92168e-08             0   3.92e-08   1.0e-04  PASS  orbit reaches |x| = 0.07731 m
+qsm600_quad      exit, worst |dx'|,|dy'| [rad]        1.16363e-07             0   1.16e-07   1.0e-05  PASS
+qsm600_quad      exit, worst |d delta|                1.47532e-06             0   1.48e-06   1.0e-05  PASS
+qsm600_quad      |p| change through g4bl              1.47532e-06             0   1.48e-06   5.0e-06  PASS
+qsm600_quad      |p| change through opalx             1.67644e-14             0   1.68e-14   5.0e-06  PASS
+qsm600_quad      time of flight, particle 0 [s]       2.14856e-08   2.14856e-08   1.29e-14         -  diag  diagnostic: g4bl prints 6 figures
+qsm600_quad      matrix floor, worst row               0.00767957             0    0.00768         -  diag  per row: 1.0e-04 3.9e-03 1.0e-04 3.9e-03 7.7e-03 3.6e-03
+qsm600_quad      matrix, worst difference / floor        0.256223             0      0.256   3.0e+00  PASS  worst |difference| 0.00197 at M[zeta <- delta]
+qsm600_quad      matrix, worst relative, large elements    0.00165385             0    0.00165   2.0e-02  PASS  10 of 36 elements above 100x the floor
+qsm600_quad      symplectic residual, g4bl             0.00165112             0    0.00165         -  diag  diagnostic: finite differences, not the code
+qsm600_quad      symplectic residual, opalx            1.3272e-05             0   1.33e-05         -  diag
+qsm600_quad      gauss particles at z=50 mm                 20000         20000          0   0.0e+00  PASS
+qsm600_quad      gauss z=50 mm, mean x [m]            -1.3689e-17   -1.1393e-11   1.14e-11   5.0e-06  PASS
+qsm600_quad      gauss z=50 mm, rms x                  0.00999412    0.00999412   1.23e-10  1.0e-03r  PASS
+qsm600_quad      gauss z=50 mm, mean y [m]            2.16771e-17   3.05855e-12   3.06e-12   5.0e-06  PASS
+qsm600_quad      gauss z=50 mm, rms y                  0.00300223    0.00300223   2.09e-11  1.0e-03r  PASS
+qsm600_quad      gauss particles at z=400 mm                20000         20000          0   0.0e+00  PASS
+qsm600_quad      gauss z=400 mm, mean x [m]            1.1552e-10   2.94082e-10   1.79e-10   5.0e-06  PASS
+qsm600_quad      gauss z=400 mm, rms x                  0.0100273     0.0100273   1.55e-09  1.0e-03r  PASS
+qsm600_quad      gauss z=400 mm, mean y [m]          -1.00866e-10  -1.03735e-10   2.87e-12   5.0e-06  PASS
+qsm600_quad      gauss z=400 mm, rms y                 0.00309952    0.00309952   4.78e-10  1.0e-03r  PASS
+qsm600_quad      gauss particles at z=850 mm                20000         20000          0   0.0e+00  PASS
+qsm600_quad      gauss z=850 mm, mean x [m]           1.06566e-08   1.05463e-08    1.1e-10   5.0e-06  PASS
+qsm600_quad      gauss z=850 mm, rms x                  0.0119578     0.0119578   2.17e-09  1.0e-03r  PASS
+qsm600_quad      gauss z=850 mm, mean y [m]          -9.29864e-09  -9.29917e-09   5.33e-13   5.0e-06  PASS
+qsm600_quad      gauss z=850 mm, rms y                 0.00288951    0.00288951   5.31e-10  1.0e-03r  PASS
+qsm600_quad      gauss particles at z=1300 mm               20000         20000          0   0.0e+00  PASS
+qsm600_quad      gauss z=1300 mm, mean x [m]          -8.3018e-09  -8.15462e-09   1.47e-10   5.0e-06  PASS
+qsm600_quad      gauss z=1300 mm, rms x                 0.0261174     0.0261174   1.19e-08  1.0e-03r  PASS
+qsm600_quad      gauss z=1300 mm, mean y [m]          5.23727e-08   5.23811e-08    8.4e-12   5.0e-06  PASS
+qsm600_quad      gauss z=1300 mm, rms y               0.000847463   0.000847463   2.35e-10  1.0e-03r  PASS
+qsm600_quad      gauss particles at z=1650 mm               20000         20000          0   0.0e+00  PASS
+qsm600_quad      gauss z=1650 mm, mean x [m]         -4.61473e-09   -4.5381e-09   7.66e-11   5.0e-06  PASS
+qsm600_quad      gauss z=1650 mm, rms x                 0.0393832     0.0393832   1.77e-08  1.0e-03r  PASS
+qsm600_quad      gauss z=1650 mm, mean y [m]          1.11983e-07   1.11985e-07   1.65e-12   5.0e-06  PASS
+qsm600_quad      gauss z=1650 mm, rms y                 0.0027002     0.0027002   2.35e-10  1.0e-03r  PASS
+qsm600_quad      gauss z=50 mm, median |dx|,|dy| [m]   3.98681e-09             0   3.99e-09         -  diag  20000 particles at this plane
+qsm600_quad      gauss z=1650 mm, median |dx|,|dy| [m]   1.87551e-08             0   1.88e-08         -  diag  20000 particles at this plane
+qsm600_quad      gauss free space, worst plane median |dx|,|dy| [m]   1.87551e-08             0   1.88e-08   1.0e-04  PASS  at z=1650 mm
+qsm600_quad      gauss free space, worst plane 99th pct |dx|,|dy| [m]   1.11489e-07             0   1.11e-07   3.0e-04  PASS  at z=1650 mm
+qsm600_quad      gauss free space, worst single particle |dx|,|dy| [m]   5.42035e-07             0   5.42e-07         -  diag  the tail of the same distribution, not a separate effect
+qsm600_quad      gauss z=50 mm, median |dx'|,|dy'|     2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+qsm600_quad      gauss z=1650 mm, median |dx'|,|dy'|   2.71553e-08             0   2.72e-08         -  diag  20000 particles at this plane
+qsm600_quad      gauss free space, worst plane median |dx'|,|dy'|   2.71553e-08             0   2.72e-08   1.0e-05  PASS  at z=1650 mm
+qsm600_quad      gauss free space, worst plane 99th pct |dx'|,|dy'|   2.62175e-07             0   2.62e-07   3.0e-05  PASS  at z=1650 mm
+qsm600_quad      gauss free space, worst single particle |dx'|,|dy'|   4.60228e-07             0    4.6e-07         -  diag  the tail of the same distribution, not a separate effect
+qsm600_quad      gauss, |dx'|,|dy'| inside the field    6.3782e-05             0   6.38e-05         -  diag  planes [400, 850, 1300]; the reference orbit sees 2.7e-11 T here, so no offset can be quoted
+qsm600_quad      gauss, |dx|,|dy| inside the field [m]   4.32356e-07             0   4.32e-07   1.0e-04  PASS  position IS interpolated onto the plane
+asr61_group      field, grid [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.08607 T, 31666 points clear of a face
+asr61_group      field, grid, on a box face [T]        0.00334155             0    0.00334         -  diag  902 points; the two codes round the edge differently, no particle is affected
+asr61_group      field, half [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.08607 T, 32568 points clear of a face
+asr61_group      field, yscan [T]                           1e-07             0      1e-07   3.0e-07  PASS  peak 0.08829 T, 207 points clear of a face
+asr61_group      field on the top x face               0.00263411             0    0.00263         -  diag  13248 points, g4bl nonzero at 6984, OPALX at 6839; largest value returned 0.003274 T
+asr61_group      particles at z=50 mm                          19            19          0   0.0e+00  PASS
+asr61_group      particles at z=2950 mm                        19            19          0   0.0e+00  PASS
+asr61_group      entrance, worst |dx|,|dy| [m]        3.46945e-18             0   3.47e-18   1.0e-09  PASS
+asr61_group      exit, worst |dx|,|dy| [m]            9.43111e-06             0   9.43e-06   1.0e-04  PASS  orbit reaches |x| = 1.275 m
+asr61_group      exit, worst |dx'|,|dy'| [rad]        8.14375e-06             0   8.14e-06   1.0e-05  PASS
+asr61_group      exit, worst |d delta|                2.18581e-06             0   2.19e-06   1.0e-05  PASS
+asr61_group      |p| change through g4bl              1.96108e-06             0   1.96e-06   5.0e-06  PASS
+asr61_group      |p| change through opalx             1.18828e-11             0   1.19e-11   5.0e-06  PASS
+asr61_group      time of flight, particle 0 [s]       4.39705e-08   4.39705e-08   2.44e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr61_group      matrix floor, worst row                     0.01             0       0.01         -  diag  per row: 1.0e-02 9.4e-03 1.0e-02 9.4e-03 7.7e-03 3.6e-03
+asr61_group      matrix, worst difference / floor        0.671448             0      0.671   3.0e+00  PASS  worst |difference| 0.00516 at M[zeta <- x]
+asr61_group      matrix, worst relative, large elements    0.00307229             0    0.00307   2.0e-02  PASS  7 of 36 elements above 100x the floor
+asr61_group      symplectic residual, g4bl                3.84997             0       3.85         -  diag  diagnostic: finite differences, not the code
+asr61_group      symplectic residual, opalx                3.8497             0       3.85         -  diag
+asr61_group      gauss particles at z=50 mm                 20000         20000          0   0.0e+00  PASS
+asr61_group      gauss z=50 mm, mean x [m]            -1.3689e-17   -1.1393e-11   1.14e-11   5.0e-06  PASS
+asr61_group      gauss z=50 mm, rms x                  0.00999412    0.00999412   1.23e-10  1.0e-03r  PASS
+asr61_group      gauss z=50 mm, mean y [m]            2.16771e-17   3.05855e-12   3.06e-12   5.0e-06  PASS
+asr61_group      gauss z=50 mm, rms y                  0.00300223    0.00300223   2.09e-11  1.0e-03r  PASS
+asr61_group      gauss particles at z=1000 mm               20000         20000          0   0.0e+00  PASS
+asr61_group      gauss z=1000 mm, mean x [m]           0.00366034    0.00366017   1.71e-07   5.0e-06  PASS
+asr61_group      gauss z=1000 mm, rms x                 0.0102315     0.0102315   3.85e-09  1.0e-03r  PASS
+asr61_group      gauss z=1000 mm, mean y [m]         -3.65173e-08  -3.65518e-08   3.45e-11   5.0e-06  PASS
+asr61_group      gauss z=1000 mm, rms y                0.00357915    0.00357915   9.01e-10  1.0e-03r  PASS
+asr61_group      gauss particles at z=1500 mm               20000         20000          0   0.0e+00  PASS
+asr61_group      gauss z=1500 mm, mean x [m]            0.0728665     0.0728662    2.6e-07   5.0e-06  PASS
+asr61_group      gauss z=1500 mm, rms x                 0.0113719     0.0113719   5.51e-09  1.0e-03r  PASS
+asr61_group      gauss z=1500 mm, mean y [m]         -2.44212e-08  -2.44094e-08   1.18e-11   5.0e-06  PASS
+asr61_group      gauss z=1500 mm, rms y                 0.0039902     0.0039902   9.05e-10  1.0e-03r  PASS
+asr61_group      gauss particles at z=2000 mm               20000         20000          0   0.0e+00  PASS
+asr61_group      gauss z=2000 mm, mean x [m]             0.401058      0.401058    4.8e-07   5.0e-06  PASS
+asr61_group      gauss z=2000 mm, rms x                 0.0132777     0.0132777   4.16e-09  1.0e-03r  PASS
+asr61_group      gauss z=2000 mm, mean y [m]          6.27005e-07   6.26991e-07   1.43e-11   5.0e-06  PASS
+asr61_group      gauss z=2000 mm, rms y                0.00428222    0.00428221   2.18e-09  1.0e-03r  PASS
+asr61_group      gauss particles at z=2500 mm               20000         20000          0   0.0e+00  PASS
+asr61_group      gauss z=2500 mm, mean x [m]             0.841795      0.841795   6.12e-07   5.0e-06  PASS
+asr61_group      gauss z=2500 mm, rms x                 0.0121483     0.0121483   4.25e-08  1.0e-03r  PASS
+asr61_group      gauss z=2500 mm, mean y [m]          1.03188e-06   1.03174e-06   1.44e-10   5.0e-06  PASS
+asr61_group      gauss z=2500 mm, rms y                0.00430671     0.0043067   9.91e-09  1.0e-03r  PASS
+asr61_group      gauss particles at z=2950 mm               20000         20000          0   0.0e+00  PASS
+asr61_group      gauss z=2950 mm, mean x [m]              1.23865       1.23865   7.46e-07   5.0e-06  PASS
+asr61_group      gauss z=2950 mm, rms x                 0.0113988     0.0113989   1.23e-07  1.0e-03r  PASS
+asr61_group      gauss z=2950 mm, mean y [m]          6.00384e-07   6.00023e-07   3.61e-10   5.0e-06  PASS
+asr61_group      gauss z=2950 mm, rms y                0.00451013    0.00451011   1.59e-08  1.0e-03r  PASS
+asr61_group      gauss z=50 mm, median |dx|,|dy| [m]   3.98681e-09             0   3.99e-09         -  diag  20000 particles at this plane
+asr61_group      gauss z=2950 mm, median |dx|,|dy| [m]   7.79595e-06             0    7.8e-06         -  diag  20000 particles at this plane
+asr61_group      gauss free space, worst plane median |dx|,|dy| [m]   7.79595e-06             0    7.8e-06   1.0e-04  PASS  at z=2950 mm
+asr61_group      gauss free space, worst plane 99th pct |dx|,|dy| [m]   2.72924e-05             0   2.73e-05   3.0e-04  PASS  at z=2950 mm
+asr61_group      gauss free space, worst single particle |dx|,|dy| [m]   3.87668e-05             0   3.88e-05         -  diag  the tail of the same distribution, not a separate effect
+asr61_group      gauss z=50 mm, median |dx'|,|dy'|     2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+asr61_group      gauss z=2950 mm, median |dx'|,|dy'|   8.02195e-06             0   8.02e-06         -  diag  20000 particles at this plane
+asr61_group      gauss free space, worst plane median |dx'|,|dy'|   8.02195e-06             0   8.02e-06   1.0e-05  PASS  at z=2950 mm
+asr61_group      gauss free space, worst plane 99th pct |dx'|,|dy'|   2.70743e-05             0   2.71e-05   3.0e-05  PASS  at z=2950 mm
+asr61_group      gauss free space, worst single particle |dx'|,|dy'|   3.72135e-05             0   3.72e-05         -  diag  the tail of the same distribution, not a separate effect
+asr61_group      gauss, |dx'|,|dy'| inside the field   0.000239149             0   0.000239         -  diag  planes [1000, 1500, 2000, 2500]; at 0.08606 T that is 0.260 mm of sampling offset
+asr61_group      gauss, |dx|,|dy| inside the field [m]   1.98414e-05             0   1.98e-05   1.0e-04  PASS  position IS interpolated onto the plane
+asr62_d2_group   field, grid [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.07767 T, 34300 points clear of a face
+asr62_d2_group   field, grid, on a box face [T]         0.0162882             0     0.0163         -  diag  1080 points; the two codes round the edge differently, no particle is affected
+asr62_d2_group   field, half [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.07767 T, 35380 points clear of a face
+asr62_d2_group   field, yscan [T]                           1e-07             0      1e-07   3.0e-07  PASS  peak 0.07868 T, 187 points clear of a face
+asr62_d2_group   field, yscan, on a box face [T]                0             0          0         -  diag  2 points; the two codes round the edge differently, no particle is affected
+asr62_d2_group   field on the top x face                  0.10516             0      0.105         -  diag  12760 points, g4bl nonzero at 6886, OPALX at 6090; largest value returned 0.1052 T
+asr62_d2_group   particles at z=50 mm                          19            19          0   0.0e+00  PASS
+asr62_d2_group   particles at z=3050 mm                        19            19          0   0.0e+00  PASS
+asr62_d2_group   entrance, worst |dx|,|dy| [m]        3.46945e-18             0   3.47e-18   1.0e-09  PASS
+asr62_d2_group   exit, worst |dx|,|dy| [m]            4.43286e-06             0   4.43e-06   1.0e-04  PASS  orbit reaches |x| = 1.063 m
+asr62_d2_group   exit, worst |dx'|,|dy'| [rad]        4.06393e-06             0   4.06e-06   1.0e-05  PASS
+asr62_d2_group   exit, worst |d delta|                2.19364e-06             0   2.19e-06   1.0e-05  PASS
+asr62_d2_group   |p| change through g4bl               2.1937e-06             0   2.19e-06   5.0e-06  PASS
+asr62_d2_group   |p| change through opalx             6.12628e-11             0   6.13e-11   5.0e-06  PASS
+asr62_d2_group   time of flight, particle 0 [s]       4.35973e-08   4.35973e-08   3.98e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr62_d2_group   matrix floor, worst row                     0.01             0       0.01         -  diag  per row: 1.0e-02 7.7e-03 1.0e-02 7.7e-03 7.7e-03 3.6e-03
+asr62_d2_group   matrix, worst difference / floor        0.448363             0      0.448   3.0e+00  PASS  worst |difference| 0.00344 at M[zeta <- delta]
+asr62_d2_group   matrix, worst relative, large elements    0.00245727             0    0.00246   2.0e-02  PASS  8 of 36 elements above 100x the floor
+asr62_d2_group   symplectic residual, g4bl                2.78733             0       2.79         -  diag  diagnostic: finite differences, not the code
+asr62_d2_group   symplectic residual, opalx               2.79991             0        2.8         -  diag
+asr62_d2_group   gauss particles at z=50 mm                 20000         20000          0   0.0e+00  PASS
+asr62_d2_group   gauss z=50 mm, mean x [m]            -1.3689e-17   -1.1393e-11   1.14e-11   5.0e-06  PASS
+asr62_d2_group   gauss z=50 mm, rms x                  0.00999412    0.00999412   1.23e-10  1.0e-03r  PASS
+asr62_d2_group   gauss z=50 mm, mean y [m]            2.16771e-17   3.05855e-12   3.06e-12   5.0e-06  PASS
+asr62_d2_group   gauss z=50 mm, rms y                  0.00300223    0.00300223   2.09e-11  1.0e-03r  PASS
+asr62_d2_group   gauss particles at z=1000 mm               20000         20000          0   0.0e+00  PASS
+asr62_d2_group   gauss z=1000 mm, mean x [m]          -0.00233953   -0.00233947   6.09e-08   5.0e-06  PASS
+asr62_d2_group   gauss z=1000 mm, rms x                 0.0102158     0.0102158   2.75e-09  1.0e-03r  PASS
+asr62_d2_group   gauss z=1000 mm, mean y [m]         -4.21449e-08  -4.21361e-08   8.82e-12   5.0e-06  PASS
+asr62_d2_group   gauss z=1000 mm, rms y                0.00358445    0.00358445   7.93e-10  1.0e-03r  PASS
+asr62_d2_group   gauss particles at z=1550 mm               20000         20000          0   0.0e+00  PASS
+asr62_d2_group   gauss z=1550 mm, mean x [m]           -0.0628598    -0.0628597   7.52e-08   5.0e-06  PASS
+asr62_d2_group   gauss z=1550 mm, rms x                  0.010593      0.010593   4.65e-09  1.0e-03r  PASS
+asr62_d2_group   gauss z=1550 mm, mean y [m]         -1.40638e-07  -1.40614e-07   2.36e-11   5.0e-06  PASS
+asr62_d2_group   gauss z=1550 mm, rms y                 0.0043182     0.0043182   1.04e-09  1.0e-03r  PASS
+asr62_d2_group   gauss particles at z=2100 mm               20000         20000          0   0.0e+00  PASS
+asr62_d2_group   gauss z=2100 mm, mean x [m]            -0.368812     -0.368811   1.54e-07   5.0e-06  PASS
+asr62_d2_group   gauss z=2100 mm, rms x                 0.0111055     0.0111055   3.38e-09  1.0e-03r  PASS
+asr62_d2_group   gauss z=2100 mm, mean y [m]         -5.93962e-07  -5.93982e-07   1.99e-11   5.0e-06  PASS
+asr62_d2_group   gauss z=2100 mm, rms y                0.00488895    0.00488895   7.37e-10  1.0e-03r  PASS
+asr62_d2_group   gauss particles at z=2600 mm               20000         20000          0   0.0e+00  PASS
+asr62_d2_group   gauss z=2600 mm, mean x [m]            -0.719261     -0.719261   2.01e-07   5.0e-06  PASS
+asr62_d2_group   gauss z=2600 mm, rms x                 0.0109079     0.0109079   7.36e-09  1.0e-03r  PASS
+asr62_d2_group   gauss z=2600 mm, mean y [m]         -1.43425e-06   -1.4342e-06   4.95e-11   5.0e-06  PASS
+asr62_d2_group   gauss z=2600 mm, rms y                0.00500178    0.00500178   5.27e-10  1.0e-03r  PASS
+asr62_d2_group   gauss particles at z=3050 mm               20000         20000          0   0.0e+00  PASS
+asr62_d2_group   gauss z=3050 mm, mean x [m]             -1.03479      -1.03479    2.2e-07   5.0e-06  PASS
+asr62_d2_group   gauss z=3050 mm, rms x                 0.0109026     0.0109026   5.03e-08  1.0e-03r  PASS
+asr62_d2_group   gauss z=3050 mm, mean y [m]         -2.19142e-06  -2.19142e-06   9.38e-13   5.0e-06  PASS
+asr62_d2_group   gauss z=3050 mm, rms y                0.00519569    0.00519569   1.39e-09  1.0e-03r  PASS
+asr62_d2_group   gauss z=50 mm, median |dx|,|dy| [m]   3.98681e-09             0   3.99e-09         -  diag  20000 particles at this plane
+asr62_d2_group   gauss z=3050 mm, median |dx|,|dy| [m]   2.60679e-06             0   2.61e-06         -  diag  20000 particles at this plane
+asr62_d2_group   gauss free space, worst plane median |dx|,|dy| [m]   2.60679e-06             0   2.61e-06   1.0e-04  PASS  at z=3050 mm
+asr62_d2_group   gauss free space, worst plane 99th pct |dx|,|dy| [m]    8.0096e-06             0   8.01e-06   3.0e-04  PASS  at z=3050 mm
+asr62_d2_group   gauss free space, worst single particle |dx|,|dy| [m]   1.04232e-05             0   1.04e-05         -  diag  the tail of the same distribution, not a separate effect
+asr62_d2_group   gauss z=50 mm, median |dx'|,|dy'|     2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+asr62_d2_group   gauss z=3050 mm, median |dx'|,|dy'|   1.86986e-06             0   1.87e-06         -  diag  20000 particles at this plane
+asr62_d2_group   gauss free space, worst plane median |dx'|,|dy'|   1.86986e-06             0   1.87e-06   1.0e-05  PASS  at z=3050 mm
+asr62_d2_group   gauss free space, worst plane 99th pct |dx'|,|dy'|   6.53967e-06             0   6.54e-06   3.0e-05  PASS  at z=3050 mm
+asr62_d2_group   gauss free space, worst single particle |dx'|,|dy'|   9.44589e-06             0   9.45e-06         -  diag  the tail of the same distribution, not a separate effect
+asr62_d2_group   gauss, |dx'|,|dy'| inside the field   0.000210357             0    0.00021         -  diag  planes [1000, 1550, 2100, 2600]; at 0.07765 T that is 0.253 mm of sampling offset
+asr62_d2_group   gauss, |dx|,|dy| inside the field [m]   3.62564e-06             0   3.63e-06   1.0e-04  PASS  position IS interpolated onto the plane
+asr62_d3_group   field, grid [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.07752 T, 34300 points clear of a face
+asr62_d3_group   field, grid, on a box face [T]             1e-07             0      1e-07         -  diag  1080 points; the two codes round the edge differently, no particle is affected
+asr62_d3_group   field, half [T]                            1e-07             0      1e-07   3.0e-07  PASS  peak 0.07752 T, 35380 points clear of a face
+asr62_d3_group   field, yscan [T]                           1e-09             0      1e-09   3.0e-07  PASS  peak 0.0788 T, 167 points clear of a face
+asr62_d3_group   field, yscan, on a box face [T]            1e-10             0      1e-10         -  diag  22 points; the two codes round the edge differently, no particle is affected
+asr62_d3_group   field on the top x face                        0             0          0         -  diag  12760 points, g4bl nonzero at 0, OPALX at 0; largest value returned 0 T
+asr62_d3_group   particles at z=50 mm                          19            19          0   0.0e+00  PASS
+asr62_d3_group   particles at z=3050 mm                        19            19          0   0.0e+00  PASS
+asr62_d3_group   entrance, worst |dx|,|dy| [m]        3.46945e-18             0   3.47e-18   1.0e-09  PASS
+asr62_d3_group   exit, worst |dx|,|dy| [m]            3.54796e-06             0   3.55e-06   1.0e-04  PASS  orbit reaches |x| = 1.061 m
+asr62_d3_group   exit, worst |dx'|,|dy'| [rad]        1.87635e-06             0   1.88e-06   1.0e-05  PASS
+asr62_d3_group   exit, worst |d delta|                2.00103e-06             0      2e-06   1.0e-05  PASS
+asr62_d3_group   |p| change through g4bl              2.00102e-06             0      2e-06   5.0e-06  PASS
+asr62_d3_group   |p| change through opalx              9.6525e-12             0   9.65e-12   5.0e-06  PASS
+asr62_d3_group   time of flight, particle 0 [s]       4.35799e-08   4.35799e-08    2.8e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr62_d3_group   matrix floor, worst row                     0.01             0       0.01         -  diag  per row: 1.0e-02 7.7e-03 1.0e-02 7.7e-03 7.7e-03 3.6e-03
+asr62_d3_group   matrix, worst difference / floor        0.292373             0      0.292   3.0e+00  PASS  worst |difference| 0.00225 at M[zeta <- x']
+asr62_d3_group   matrix, worst relative, large elements     0.0018778             0    0.00188   2.0e-02  PASS  6 of 36 elements above 100x the floor
+asr62_d3_group   symplectic residual, g4bl                2.79272             0       2.79         -  diag  diagnostic: finite differences, not the code
+asr62_d3_group   symplectic residual, opalx                2.7911             0       2.79         -  diag
+asr62_d3_group   gauss particles at z=50 mm                 20000         20000          0   0.0e+00  PASS
+asr62_d3_group   gauss z=50 mm, mean x [m]            -1.3689e-17   -1.1393e-11   1.14e-11   5.0e-06  PASS
+asr62_d3_group   gauss z=50 mm, rms x                  0.00999412    0.00999412   1.23e-10  1.0e-03r  PASS
+asr62_d3_group   gauss z=50 mm, mean y [m]            2.16771e-17   3.05855e-12   3.06e-12   5.0e-06  PASS
+asr62_d3_group   gauss z=50 mm, rms y                  0.00300223    0.00300223   2.09e-11  1.0e-03r  PASS
+asr62_d3_group   gauss particles at z=1000 mm               20000         20000          0   0.0e+00  PASS
+asr62_d3_group   gauss z=1000 mm, mean x [m]           0.00233552    0.00233546   6.11e-08   5.0e-06  PASS
+asr62_d3_group   gauss z=1000 mm, rms x                 0.0102157     0.0102157   3.19e-09  1.0e-03r  PASS
+asr62_d3_group   gauss z=1000 mm, mean y [m]         -6.83613e-08  -6.83818e-08   2.05e-11   5.0e-06  PASS
+asr62_d3_group   gauss z=1000 mm, rms y                0.00358449    0.00358449   7.75e-10  1.0e-03r  PASS
+asr62_d3_group   gauss particles at z=1550 mm               20000         20000          0   0.0e+00  PASS
+asr62_d3_group   gauss z=1550 mm, mean x [m]            0.0626776     0.0626775   7.46e-08   5.0e-06  PASS
+asr62_d3_group   gauss z=1550 mm, rms x                 0.0105914     0.0105914   4.93e-09  1.0e-03r  PASS
+asr62_d3_group   gauss z=1550 mm, mean y [m]         -1.39795e-07  -1.39751e-07   4.36e-11   5.0e-06  PASS
+asr62_d3_group   gauss z=1550 mm, rms y                0.00431852    0.00431852   9.58e-10  1.0e-03r  PASS
+asr62_d3_group   gauss particles at z=2100 mm               20000         20000          0   0.0e+00  PASS
+asr62_d3_group   gauss z=2100 mm, mean x [m]             0.367816      0.367816   1.53e-07   5.0e-06  PASS
+asr62_d3_group   gauss z=2100 mm, rms x                 0.0111066     0.0111066   6.73e-09  1.0e-03r  PASS
+asr62_d3_group   gauss z=2100 mm, mean y [m]          2.36354e-08   2.36105e-08   2.48e-11   5.0e-06  PASS
+asr62_d3_group   gauss z=2100 mm, rms y                0.00488808    0.00488808   5.51e-10  1.0e-03r  PASS
+asr62_d3_group   gauss particles at z=2600 mm               20000         20000          0   0.0e+00  PASS
+asr62_d3_group   gauss z=2600 mm, mean x [m]             0.717436      0.717436   2.04e-07   5.0e-06  PASS
+asr62_d3_group   gauss z=2600 mm, rms x                 0.0109259     0.0109258   1.93e-08  1.0e-03r  PASS
+asr62_d3_group   gauss z=2600 mm, mean y [m]          5.20117e-07   5.20147e-07   2.93e-11   5.0e-06  PASS
+asr62_d3_group   gauss z=2600 mm, rms y                0.00499445    0.00499445   2.41e-10  1.0e-03r  PASS
+asr62_d3_group   gauss particles at z=3050 mm               20000         20000          0   0.0e+00  PASS
+asr62_d3_group   gauss z=3050 mm, mean x [m]              1.03223       1.03223   2.57e-07   5.0e-06  PASS
+asr62_d3_group   gauss z=3050 mm, rms x                 0.0109327     0.0109327   1.04e-09  1.0e-03r  PASS
+asr62_d3_group   gauss z=3050 mm, mean y [m]          9.68357e-07   9.68304e-07   5.27e-11   5.0e-06  PASS
+asr62_d3_group   gauss z=3050 mm, rms y                0.00518246    0.00518246   1.23e-09  1.0e-03r  PASS
+asr62_d3_group   gauss z=50 mm, median |dx|,|dy| [m]   3.98681e-09             0   3.99e-09         -  diag  20000 particles at this plane
+asr62_d3_group   gauss z=3050 mm, median |dx|,|dy| [m]   2.56485e-06             0   2.56e-06         -  diag  20000 particles at this plane
+asr62_d3_group   gauss free space, worst plane median |dx|,|dy| [m]   2.56485e-06             0   2.56e-06   1.0e-04  PASS  at z=3050 mm
+asr62_d3_group   gauss free space, worst plane 99th pct |dx|,|dy| [m]   7.88167e-06             0   7.88e-06   3.0e-04  PASS  at z=3050 mm
+asr62_d3_group   gauss free space, worst single particle |dx|,|dy| [m]   1.05144e-05             0   1.05e-05         -  diag  the tail of the same distribution, not a separate effect
+asr62_d3_group   gauss z=50 mm, median |dx'|,|dy'|     2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+asr62_d3_group   gauss z=3050 mm, median |dx'|,|dy'|   1.84924e-06             0   1.85e-06         -  diag  20000 particles at this plane
+asr62_d3_group   gauss free space, worst plane median |dx'|,|dy'|   1.84924e-06             0   1.85e-06   1.0e-05  PASS  at z=3050 mm
+asr62_d3_group   gauss free space, worst plane 99th pct |dx'|,|dy'|   6.52042e-06             0   6.52e-06   3.0e-05  PASS  at z=3050 mm
+asr62_d3_group   gauss free space, worst single particle |dx'|,|dy'|   8.88402e-06             0   8.88e-06         -  diag  the tail of the same distribution, not a separate effect
+asr62_d3_group   gauss, |dx'|,|dy'| inside the field   0.000209616             0    0.00021         -  diag  planes [1000, 1550, 2100, 2600]; at 0.0775 T that is 0.253 mm of sampling offset
+asr62_d3_group   gauss, |dx|,|dy| inside the field [m]   3.83476e-06             0   3.83e-06   1.0e-04  PASS  position IS interpolated onto the plane
+asr61_bisector   field, frame [T]                           1e-07             0      1e-07   3.0e-07  PASS  peak 0.08607 T, 10074 points clear of a face
+asr61_bisector   particles at z=1500 mm                        19            19          0   0.0e+00  PASS
+asr61_bisector   particles at z=4600 mm                        19            19          0   0.0e+00  PASS
+asr61_bisector   entrance, worst |dx|,|dy| [m]        1.43611e-13             0   1.44e-13   1.0e-09  PASS
+asr61_bisector   exit, worst |dx|,|dy| [m]            5.20163e-07             0    5.2e-07   1.0e-04  PASS  orbit reaches |x| = 0.03522 m
+asr61_bisector   exit, worst |dx'|,|dy'| [rad]        3.27126e-07             0   3.27e-07   1.0e-05  PASS
+asr61_bisector   exit, worst |d delta|                1.74633e-06             0   1.75e-06   1.0e-05  PASS
+asr61_bisector   |p| change through g4bl              1.74632e-06             0   1.75e-06   5.0e-06  PASS
+asr61_bisector   |p| change through opalx             3.15536e-12             0   3.16e-12   5.0e-06  PASS
+asr61_bisector   time of flight, particle 0 [s]       5.98141e-08   5.98141e-08   1.59e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr61_bisector   matrix floor, worst row               0.00767957             0    0.00768         -  diag  per row: 1.0e-04 3.7e-03 1.0e-04 3.7e-03 7.7e-03 3.6e-03
+asr61_bisector   matrix, worst difference / floor         5.46896             0       5.47         -  diag  worst |difference| 0.000547 at M[x <- x']; step limited, see the extrapolated row
+asr61_bisector   matrix, worst relative, large elements    0.00384117             0    0.00384   2.0e-02  PASS  12 of 36 elements above 100x the floor
+asr61_bisector   symplectic residual, g4bl             0.00472783             0    0.00473         -  diag  diagnostic: finite differences, not the code
+asr61_bisector   symplectic residual, opalx           0.000398091             0   0.000398         -  diag
+asr61_bisector   matrix step halving ratio                5.84925             2       3.85         -  diag  5.47 floors at the step, 0.935 at half it
+asr61_bisector   matrix, step error at the finest step      0.934985             0      0.935   3.0e+00  PASS  in units of the printing floor
+asr61_bisector   step halving ratio, |dx|,|dy| [m]        2.11586             2      0.116         -  diag  5.2e-07 at the step, 2.46e-07 at half it; 2 means the error shrinks in proportion to the step
+asr61_bisector   step error removed, |dx|,|dy| [m]    2.84826e-08             0   2.85e-08   3.0e-07  PASS  printing floor 1.0e-07 m
+asr61_bisector   step halving ratio, |dx'|,|dy'| [rad]       1.64977             2       0.35         -  diag  3.27e-07 at the step, 1.98e-07 at half it; 2 means the error shrinks in proportion to the step
+asr61_bisector   step error removed, |dx'|,|dy'| [rad]   6.94466e-08             0   6.94e-08   1.0e-05  PASS
+asr61_bisector   gauss particles at z=1500 mm               20000         20000          0   0.0e+00  PASS
+asr61_bisector   gauss z=1500 mm, mean x [m]           3.7773e-15  -1.13024e-10   1.13e-10   5.0e-06  PASS
+asr61_bisector   gauss z=1500 mm, rms x                 0.0104223     0.0104223   1.51e-10  1.0e-03r  PASS
+asr61_bisector   gauss z=1500 mm, mean y [m]          8.27535e-16    1.6181e-11   1.62e-11   5.0e-06  PASS
+asr61_bisector   gauss z=1500 mm, rms y                0.00422501    0.00422501   8.85e-11  1.0e-03r  PASS
+asr61_bisector   gauss particles at z=4600 mm               20000         20000          0   0.0e+00  PASS
+asr61_bisector   gauss z=4600 mm, mean x [m]          0.000803154   0.000803131   2.31e-08   5.0e-06  PASS
+asr61_bisector   gauss z=4600 mm, rms x                  0.022041      0.022041    2.5e-10  1.0e-03r  PASS
+asr61_bisector   gauss z=4600 mm, mean y [m]          1.13529e-06   1.13527e-06   1.57e-11   5.0e-06  PASS
+asr61_bisector   gauss z=4600 mm, rms y                0.00176518    0.00176518   5.34e-11  1.0e-03r  PASS
+asr61_bisector   gauss z=1500 mm, median |dx|,|dy| [m]   4.12829e-09             0   4.13e-09         -  diag  20000 particles at this plane
+asr61_bisector   gauss z=4600 mm, median |dx|,|dy| [m]    2.2257e-07             0   2.23e-07         -  diag  20000 particles at this plane
+asr61_bisector   gauss free space, worst plane median |dx|,|dy| [m]    2.2257e-07             0   2.23e-07   1.0e-04  PASS  at z=4600 mm
+asr61_bisector   gauss free space, worst plane 99th pct |dx|,|dy| [m]   5.99699e-07             0      6e-07   3.0e-04  PASS  at z=4600 mm
+asr61_bisector   gauss free space, worst single particle |dx|,|dy| [m]   7.71647e-07             0   7.72e-07         -  diag  the tail of the same distribution, not a separate effect
+asr61_bisector   gauss z=1500 mm, median |dx'|,|dy'|    2.1708e-09             0   2.17e-09         -  diag  20000 particles at this plane
+asr61_bisector   gauss z=4600 mm, median |dx'|,|dy'|   1.03156e-07             0   1.03e-07         -  diag  20000 particles at this plane
+asr61_bisector   gauss free space, worst plane median |dx'|,|dy'|   1.03156e-07             0   1.03e-07   1.0e-05  PASS  at z=4600 mm
+asr61_bisector   gauss free space, worst plane 99th pct |dx'|,|dy'|   3.41033e-07             0   3.41e-07   3.0e-05  PASS  at z=4600 mm
+asr61_bisector   gauss free space, worst single particle |dx'|,|dy'|   5.12515e-07             0   5.13e-07         -  diag  the tail of the same distribution, not a separate effect
+asr61_group_bisector field, frame [T]                           1e-07             0      1e-07   3.0e-07  PASS  peak 0.08607 T, 12070 points clear of a face
+asr61_group_bisector particles at z=1500 mm                        19            19          0   0.0e+00  PASS
+asr61_group_bisector particles at z=4600 mm                        19            19          0   0.0e+00  PASS
+asr61_group_bisector entrance, worst |dx|,|dy| [m]        2.95539e-13             0   2.96e-13   1.0e-09  PASS
+asr61_group_bisector exit, worst |dx|,|dy| [m]            2.28155e-06             0   2.28e-06   1.0e-04  PASS  orbit reaches |x| = 0.04295 m
+asr61_group_bisector exit, worst |dx'|,|dy'| [rad]        9.70118e-07             0    9.7e-07   1.0e-05  PASS
+asr61_group_bisector exit, worst |d delta|                1.74359e-06             0   1.74e-06   1.0e-05  PASS
+asr61_group_bisector |p| change through g4bl              1.74361e-06             0   1.74e-06   5.0e-06  PASS
+asr61_group_bisector |p| change through opalx             1.84734e-11             0   1.85e-11   5.0e-06  PASS
+asr61_group_bisector time of flight, particle 0 [s]       5.97988e-08   5.97988e-08   1.84e-14         -  diag  diagnostic: g4bl prints 6 figures
+asr61_group_bisector matrix floor, worst row               0.00767957             0    0.00768         -  diag  per row: 1.0e-04 3.7e-03 1.0e-04 3.7e-03 7.7e-03 3.6e-03
+asr61_group_bisector matrix, worst difference / floor         26.1918             0       26.2         -  diag  worst |difference| 0.00262 at M[x <- x']; step limited, see the extrapolated row
+asr61_group_bisector matrix, worst relative, large elements    0.00392936             0    0.00393   2.0e-02  PASS  12 of 36 elements above 100x the floor
+asr61_group_bisector symplectic residual, g4bl              0.0168129             0     0.0168         -  diag  diagnostic: finite differences, not the code
+asr61_group_bisector symplectic residual, opalx             0.0132013             0     0.0132         -  diag
+asr61_group_bisector matrix step halving ratio                3.54317             2       1.54         -  diag  26.2 floors at the step, 7.39 at half it
+asr61_group_bisector matrix, step error at the finest step       7.39221             0       7.39   3.0e+00  **FAIL**  in units of the printing floor
+asr61_group_bisector step halving ratio, |dx|,|dy| [m]        1.89919             2      0.101         -  diag  2.28e-06 at the step, 1.2e-06 at half it; 2 means the error shrinks in proportion to the step
+asr61_group_bisector step error removed, |dx|,|dy| [m]    1.21108e-07             0   1.21e-07   3.0e-07  PASS  printing floor 1.0e-07 m
+asr61_group_bisector step halving ratio, |dx'|,|dy'| [rad]       1.67967             2       0.32         -  diag  9.7e-07 at the step, 5.78e-07 at half it; 2 means the error shrinks in proportion to the step
+asr61_group_bisector step error removed, |dx'|,|dy'| [rad]   1.85009e-07             0   1.85e-07   1.0e-05  PASS
+asr61_group_bisector gauss particles at z=1500 mm               20000         20000          0   0.0e+00  PASS
+asr61_group_bisector gauss z=1500 mm, mean x [m]           3.7773e-15  -1.13024e-10   1.13e-10   5.0e-06  PASS
+asr61_group_bisector gauss z=1500 mm, rms x                 0.0104223     0.0104223   1.51e-10  1.0e-03r  PASS
+asr61_group_bisector gauss z=1500 mm, mean y [m]          8.27535e-16    1.6181e-11   1.62e-11   5.0e-06  PASS
+asr61_group_bisector gauss z=1500 mm, rms y                0.00422501    0.00422501   8.85e-11  1.0e-03r  PASS
+asr61_group_bisector gauss particles at z=4600 mm               20000         20000          0   0.0e+00  PASS
+asr61_group_bisector gauss z=4600 mm, mean x [m]           0.00565371    0.00568943   3.57e-05   5.0e-06  **FAIL**
+asr61_group_bisector gauss z=4600 mm, rms x                 0.0233596     0.0234016    4.2e-05  1.0e-03r  **FAIL**
+asr61_group_bisector gauss z=4600 mm, mean y [m]          3.22313e-06   3.01617e-06   2.07e-07   5.0e-06  PASS
+asr61_group_bisector gauss z=4600 mm, rms y                0.00177494    0.00177505   1.09e-07  1.0e-03r  PASS
+asr61_group_bisector gauss z=4600 mm, median |dx|,|dy| [m]   2.24394e-06             0   2.24e-06         -  diag  20000 particles at this plane
+asr61_group_bisector gauss free space, worst plane median |dx|,|dy| [m]   2.24394e-06             0   2.24e-06   1.0e-04  PASS  at z=4600 mm
+asr61_group_bisector gauss free space, worst plane 99th pct |dx|,|dy| [m]   0.000205379             0   0.000205   3.0e-04  PASS  at z=4600 mm
+asr61_group_bisector gauss free space, worst single particle |dx|,|dy| [m]   0.000346509             0   0.000347         -  diag  the tail of the same distribution, not a separate effect
+asr61_group_bisector gauss z=4600 mm, median |dx'|,|dy'|   1.15044e-06             0   1.15e-06         -  diag  20000 particles at this plane
+asr61_group_bisector gauss free space, worst plane median |dx'|,|dy'|   1.15044e-06             0   1.15e-06   1.0e-05  PASS  at z=4600 mm
+asr61_group_bisector gauss free space, worst plane 99th pct |dx'|,|dy'|   9.10673e-05             0   9.11e-05   3.0e-05  **FAIL**  at z=4600 mm
+asr61_group_bisector gauss free space, worst single particle |dx'|,|dy'|   0.000156297             0   0.000156         -  diag  the tail of the same distribution, not a separate effect
+asr61_group_bisector gauss, |dx'|,|dy'| inside the field   2.56686e-08             0   2.57e-08         -  diag  planes [1500]; the reference orbit sees 0 T here, so no offset can be quoted
+asr61_group_bisector gauss, |dx|,|dy| inside the field [m]   4.99841e-08             0      5e-08   1.0e-04  PASS  position IS interpolated onto the plane
+asr62_d3_group   adding a map of zeros, g4bl [m]                0             0          0   1.0e-09  PASS  same exit as asr62_dipole, in this code alone
+asr62_d3_group   adding a map of zeros, opalx [m]     1.54048e-11             0   1.54e-11   1.0e-09  PASS  same exit as asr62_dipole, in this code alone
+
+SUMMARY: 379/383 checks passed, 4 failed.

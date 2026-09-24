@@ -8,23 +8,28 @@ import h5py
 import numpy as np
 
 from opalxruns.opalx_diagnostics import list_h5_steps, parse_opal_stat
+from opalxruns.paths import output_dir
 
 
 class Case:
-    """One case folder: its cases.json entry and the OPALX output in it.
+    """One case folder: its cases.json entry and the OPALX output of its run.
 
     Holds what the scripted studies share: the .stat table, the reference orbit,
     the bunch dumps in the .h5 file with their path lengths, one dump as the six
     coordinates, and the path of one particle. Each study subclasses it for its
     own checks.
+
+    ``dir`` is the case folder under studies/ (the inputs); the output is read from
+    ``out``, by default the case's folder under output/.
     """
 
-    def __init__(self, folder: Path, entry: dict, bg0: float):
+    def __init__(self, folder: Path, entry: dict, bg0: float, out: Path | None = None):
         self.dir = Path(folder)
         self.name = self.dir.name
         self.m = entry
-        self.h5 = self.dir / entry["h5"]
-        self.stat = self.dir / entry["stat"]
+        self.out = Path(out) if out is not None else output_dir(self.dir)
+        self.h5 = self.out / entry["h5"]
+        self.stat = self.out / entry["stat"]
         self.bg0 = bg0                  # reference beta*gamma, for delta
         self._stat = None
         self._steps = None

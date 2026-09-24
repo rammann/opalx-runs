@@ -29,6 +29,9 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import cmplib                                          # noqa: E402
 from cmplib import TOL, Results                        # noqa: E402
+from opalxruns.paths import output_dir                  # noqa: E402
+
+OUT = output_dir(HERE)                                 # the runs, in output/
 
 
 def _plane_files(d: Path, sub: str, z: int):
@@ -405,8 +408,8 @@ def test_zero_map_changes_nothing(R: Results, man: dict, names) -> None:
     for code, reader, fname in (("g4bl", cmplib.read_bltrack, f"Z{z}.txt"),
                                 ("opalx", cmplib.read_monitor, f"MON_{z}.h5")):
         try:
-            da = reader(HERE / man[a]["dir"] / "pair" / fname)
-            db = reader(HERE / man[b]["dir"] / "pair" / fname)
+            da = reader(OUT / man[a]["dir"] / "pair" / fname)
+            db = reader(OUT / man[b]["dir"] / "pair" / fname)
         except Exception as e:
             R.note(b, f"zero map, {code}", f"not run ({e})")
             continue
@@ -424,7 +427,7 @@ def main(argv) -> int:
     R = Results()
     for n in names:
         c = man[n]
-        d = HERE / c["dir"]
+        d = OUT / c["dir"]
         for stage in (test_field, test_pair, test_convergence, test_gauss):
             try:
                 stage(R, c, d)

@@ -222,16 +222,19 @@ the measured fields' own deviation, now corroborated by both codes agreeing on i
 
 ```bash
 export OPALX=/Users/rammann/Code/OPALX/opalx/build_serial/src/opalx   # NOT build/src/opalx
-python3 tools/test_geometry.py          # gate 0, no tracking
-python3 tools/make_lattice.py           # regenerate lattice.in and poses.json
-cd probe && mpirun -n 1 $OPALX probe.in --info 3 > run.log 2>&1
+PY=/opt/homebrew/Caskroom/miniconda/base/bin/python
+$PY tools/test_geometry.py              # gate 0, no tracking
+$PY tools/make_lattice.py               # regenerate lattice.in and poses.json
+$PY -m opalxruns.run probe/probe.in     # output in output/g4bl/mue4/probe/
 
-# the comparison
-cd ../cmp && python3 make_case.py
-export PATH="/Users/rammann/Code/G4BL/G4beamline-3.08.app/Contents/MacOS:$PATH"
-g4bl mue4_cmp.g4bl > g4bl.log 2>&1
-mpirun -n 1 $OPALX cmp.in --info 3 > run.log 2>&1
-/opt/homebrew/Caskroom/miniconda/base/bin/python compare.py
+# the comparison: both codes in output/g4bl/mue4/cmp/ (gauss/ works the same way)
+$PY cmp/make_case.py
+$PY -m opalxruns.run cmp/mue4_cmp.g4bl cmp/cmp.in
+$PY cmp/compare.py
+
+# the whole line, about an hour; the G4beamline planes it compares against are
+# tracked in full/g4bl_reference/ (./run_full.sh --update-reference refreshes them)
+full/run_full.sh && $PY full/compare_full.py
 ```
 
 `mue4_cmp.g4bl` keeps every `place` and `cornerarc` line byte-identical to `mue4_WsxOn.g4bl` --
@@ -241,6 +244,6 @@ deck's own `param maxstep=10` is a lower-case typo that never took effect, so th
 used 100 mm).
 
 Only `build_serial/src/opalx` has the `FIELDMAP` element; the older binary rejects `SCALE` at
-parse time. Both codes resolve relative paths from the working directory, so `cd` into the case
-first. One rank — particle-to-row identity across ranks is not guaranteed, and comparisons match
+parse time. Both codes resolve relative paths from the working directory; `opalxruns.run` runs
+them in the case's folder under `output/`, with links to every file the inputs name. One rank — particle-to-row identity across ranks is not guaranteed, and comparisons match
 on the `id` dataset, never on row order.

@@ -1,0 +1,4 @@
+# Written by make_scan.py and regenerated in a second, so not tracked.
+by_p*/by.g4blmap
+# G4beamline planes, in case G4beamline is run by hand inside a case folder.
+Z[0-9]*.txt

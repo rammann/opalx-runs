@@ -20,9 +20,10 @@ import numpy as np  # noqa: E402
 
 import fmlib as F  # noqa: E402
 from opalxruns import plotstyle  # noqa: E402
+from opalxruns.paths import output_dir  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-PLOTS = HERE / "plots"
+PLOTS = output_dir(HERE) / "plots"
 
 COL = {"grid": "#1f77b4", "cylinder": "#d62728", "analytic": "#333333"}
 

@@ -21,9 +21,11 @@ import matplotlib.pyplot as plt
 
 from opalxruns import plotstyle
 from opalxruns.g4bl import read_track_file
+from opalxruns.paths import output_dir
 from opalxruns.plotstyle import G4BL as G4_C, INK, MUTED, OPALX as OPALX_C
 
 HERE = Path(__file__).resolve().parent
+OUT = output_dir(HERE)                 # the runs, in output/
 G_OPALX, G_G4 = 1.16592061e-03, 0.0011659208
 plotstyle.use()
 
@@ -62,7 +64,7 @@ def main():
          "-" * 78]
     out = []
     for r in rows:
-        d = HERE / r["name"]
+        d = OUT / r["name"]
         go, oo = read_g4(d / "Z1200.txt"), read_opalx(d / "MON_OUT.h5")
         pg, sg = np.array(go[3:6]), np.array(go[20:23])
         po = np.array([oo["px"], oo["py"], oo["pz"]])
@@ -101,7 +103,7 @@ def main():
                 for g_, tg, to, dg, do, e, p_ in out]), indent=1))
     print(txt)
 
-    (HERE / "plots").mkdir(exist_ok=True)
+    (OUT / "plots").mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(1, 2, figsize=(9.2, 3.4))
     ax[0].plot(gam, np.abs(a[:, 3]) * 1e3, "o", ms=7, color=G4_C, label="G4beamline")
     ax[0].plot(gam, np.abs(a[:, 4]) * 1e3, "x", ms=8, color=OPALX_C, label="OPALX")
@@ -122,7 +124,7 @@ def main():
               title="both sit at the floor of what can be printed")
     ax[1].legend(fontsize=7)
     fig.tight_layout()
-    fig.savefig(HERE / "plots" / "g2_scan.png", dpi=140)
+    fig.savefig(OUT / "plots" / "g2_scan.png", dpi=140)
     print(f"\nwrote results.txt and plots/g2_scan.png")
 
 

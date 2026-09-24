@@ -35,7 +35,9 @@ from __future__ import annotations
 
 import argparse
 import traceback
+from pathlib import Path
 
+from opalxruns import paths
 from opalxruns.opalx_run import Run
 
 STEPS = ("stat", "timing", "monitors", "elements", "particles")
@@ -128,11 +130,21 @@ def _parse_step_list(value, flag):
     return names
 
 
+def run_folder(folder) -> Path:
+    """A case folder under studies/ stands for its run folder under output/;
+    any other folder is taken as it is."""
+    folder = Path(folder)
+    if folder.resolve().is_relative_to(paths.STUDIES):
+        return paths.output_dir(folder)
+    return folder
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("run_dir", nargs="?", default=".",
-                    help="OPALX run directory (default: cwd)")
+                    help="OPALX run directory, or a case folder under studies/ for its run "
+                         "folder in output/ (default: cwd)")
     ap.add_argument("--base", default=None,
                     help="run basename, if the directory holds more than one deck")
     ap.add_argument("--only", default=None,
@@ -161,7 +173,7 @@ def main(argv=None):
                         "(default: muon)")
     args = ap.parse_args(argv)
 
-    run = Run(args.run_dir, base=args.base)
+    run = Run(run_folder(args.run_dir), base=args.base)
 
     wanted = _parse_step_list(args.only, "--only") if args.only else list(STEPS)
     if args.skip:

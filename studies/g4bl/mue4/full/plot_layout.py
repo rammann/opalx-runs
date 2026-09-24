@@ -16,9 +16,11 @@ import numpy as np
 
 from opalxruns import plotstyle
 from opalxruns.opalx_diagnostics import parse_opal_stat
+from opalxruns.paths import output_dir
 from opalxruns.plotstyle import INK, MUTED
 
 HERE = Path(__file__).resolve().parent
+OUT = output_dir(HERE)                 # the OPALX run, in output/
 
 # One fixed colour per kind of magnet, from the palette checked earlier in this work.
 KIND = {"solenoid": "#2a78d6", "dipole": "#eb6834", "quadrupole": "#1baf7a"}
@@ -57,7 +59,7 @@ def elements():
 
 def main():
     maps, planes = elements()
-    _meta, df = parse_opal_stat(str(HERE / "full.stat"))
+    _meta, df = parse_opal_stat(str(OUT / "full.stat"))
     rz, rx = np.asarray(df["ref_z"]), np.asarray(df["ref_x"])
 
     fig, ax = plt.subplots(figsize=(10.6, 6.4))
@@ -101,8 +103,8 @@ def main():
     ax.set_ylim(float(rx.min()) - 1.4, float(rx.max()) + 1.4)
     ax.legend(loc="upper left", fontsize=7.5, ncol=2)
     fig.tight_layout()
-    (HERE / "plots").mkdir(exist_ok=True)
-    fig.savefig(HERE / "plots" / "layout.png", dpi=140)
+    (OUT / "plots").mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT / "plots" / "layout.png", dpi=140)
     print(f"wrote plots/layout.png  "
           f"({len(maps)} field maps, {len(planes)} recording planes)")
     kinds = {}

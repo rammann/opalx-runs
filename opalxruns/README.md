@@ -19,8 +19,8 @@ are drawn as hollow pipes with the element's real OPALX aperture as the bore
 (see below).
 
 ```bash
-$PY -m opalxruns.process_run studies/ring/square_ring             # everything
-$PY -m opalxruns.process_run studies/ring/square_ring --dry-run   # what would run
+$PY -m opalxruns.process_run studies/features/ring/square_ring             # everything, in output/features/ring/square_ring
+$PY -m opalxruns.process_run studies/features/ring/square_ring --dry-run   # what would run
 ```
 
 ## What a run directory needs
@@ -57,7 +57,9 @@ OPALX wrote last. The others are named in the inventory and reachable with
 | `elements_to_vtk.py` | element bodies and the reference orbit as `.vtp`, in lab coordinates. An element with an aperture becomes a hollow pipe (bore = the real aperture per OPALX rules: `APERTURE` string, or `HGAP`/`HAPERT` rectangle for bends, `--wall` thick); one without (hard-edge bend, bare element) a solid tube of `--default-aperture` radius. Cell arrays `element_type` and `element_id` (per-element index, names printed at run time) |
 | `opalx_run.py` | shared: the `Run` file-discovery class, `timing.dat` / `DesignPath` / `ElementPositions` readers, co-moving→lab frame math |
 | `opalx_diagnostics.py` | `.stat` and `.h5` readers, plus the notebook dropdown widgets. Imported by `fmlib.py`, `bendlib.py`, `cmplib.py` and `plot_layout.py` — keep its names stable |
-| `paths.py` | where things are: the repo, `G4BL_FILES`, `G4BL_APP`, and `opalx()` from `$OPALX` |
+| `paths.py` | where things are: the repo, `studies/`, `output/`, `output_dir()`, `G4BL_FILES`, `G4BL_APP`, and `opalx()` from `$OPALX`. `python -m opalxruns.paths <folder>` prints a folder's place in `output/` |
+| `run.py` | runs OPALX or G4beamline with a run folder in `output/` as the working directory, after linking in the input and every file it names: `python -m opalxruns.run <input> [<input> ...] [--np N] [--keep] [-- <opalx args>]` |
+| `refs.py` | which files an input names (`FMAPFN`, `FNAME`, `CALL`; G4beamline `file=`, `filename=`) and which are missing: `python -m opalxruns.refs` checks every input under `studies/` |
 | `h5.py` | `read_monitor`: every `Step#` group of an OPALX monitor file, sorted by id |
 | `g4bl.py` | G4beamline files: writers for the `grid` and `cylinder` field map formats, `read_map_header`, `read_track_file` and `track_on_plane` for #BLTrackFile output |
 | `case.py` | `Case`: one case folder of a scripted study — `.stat` table, reference orbit, dumps with their path lengths, `read_plane`, `trajectory`. `fmlib.py` and `bendlib.py` subclass it |
@@ -71,10 +73,10 @@ OPALX wrote last. The others are named in the inventory and reachable with
 Every script also runs on its own, taking a run directory:
 
 ```bash
-$PY -m opalxruns.plot_stat        studies/mue4/mue4_analytical --columns rms_x,rms_y,Dx
-$PY -m opalxruns.plot_monitors    studies/mue4/mue4_analytical
-$PY -m opalxruns.particles_to_vtk studies/mue4/mue4_analytical --frame lab --stride 5
-$PY -m opalxruns.elements_to_vtk  studies/mue4/mue4_analytical --default-aperture 0.05
+$PY -m opalxruns.plot_stat        output/beamlines/mue4/mue4_analytical --columns rms_x,rms_y,Dx
+$PY -m opalxruns.plot_monitors    output/beamlines/mue4/mue4_analytical
+$PY -m opalxruns.particles_to_vtk output/beamlines/mue4/mue4_analytical --frame lab --stride 5
+$PY -m opalxruns.elements_to_vtk  output/beamlines/mue4/mue4_analytical --default-aperture 0.05
 ```
 
 ## Two things worth knowing
