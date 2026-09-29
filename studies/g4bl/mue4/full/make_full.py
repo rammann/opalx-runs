@@ -88,7 +88,7 @@ def write_lattice(placed):
         if p.solid.kind == "fieldmap":
             f = Path(p.solid.attrs["file"]).name
             out += [f"{nm}: FIELDMAP, {pose},{note}",
-                    f'    FMAPFN = "{MAPS / f}", SCALE = {p.current if p.current is not None else 1.0:.6e};', ""]
+                    f'    FMAPFN = "{MAPS / f}", BSCALE = {p.current if p.current is not None else 1.0:.6e};', ""]
         else:
             out += [f"{nm}: MONITOR, {pose},{note}",
                     f'    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "{nm}";', ""]

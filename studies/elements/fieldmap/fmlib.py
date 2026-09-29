@@ -20,7 +20,7 @@ problem rather than a sampling problem. This is the same argument the unit
 test unit_tests/AbsBeamline/TestFieldmapVsAnalytic.cpp makes.
 
 Units in the files are millimetres and Tesla, and the values are absolute:
-the G4beamline readers do not normalise, so SCALE on FIELDMAP (and KS on
+the G4beamline readers do not normalise, so BSCALE on FIELDMAP (and KS on
 SOLENOID) is a plain multiplier.
 
 Phase space convention, same as the other studies here: OPALX dumps x, y, z in

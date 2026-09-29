@@ -283,7 +283,7 @@ elements at least a hundred times the floor.
   position, which is why the names carry a number in front.
 - **Monitors inside the field do record.** Four of the six planes in the bend cases sit
   inside the map and all of them fill.
-- **`SCALE` on `FIELDMAP` is G4beamline's deck-side `current=`, verbatim.** The G4beamline
+- **`BSCALE` on `FIELDMAP` is G4beamline's deck-side `current=`, verbatim.** The G4beamline
   readers store absolute Tesla and do not normalise.
 - **`CHARGE = 1` on the OPALX `BEAM` is mandatory.** `ParticleProperties` maps `MUON` to
   −1 and `Beam::execute` only consults that table when the attribute is absent. A charge

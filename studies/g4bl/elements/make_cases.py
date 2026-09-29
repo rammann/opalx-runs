@@ -522,7 +522,7 @@ def write_opalx_bisector(case, d: Path, gauss: bool, finer: bool = False):
                       + f" current={item['scale']:.5E}   (frame {pl.frame_deg:.2f} deg)",
                       f"{nm}: FIELDMAP, {pose}",
                       f'    FMAPFN = "{MAPS / item["file"]}",',
-                      f"    SCALE = {item['scale']:.6E};", ""]
+                      f"    BSCALE = {item['scale']:.6E};", ""]
         names.append(nm)
 
     lines += [f"CaseLine : LINE = ({', '.join(names)});", ""]
@@ -667,7 +667,7 @@ def write_opalx(case, d: Path, gauss: bool, finer: bool = False):
                       f"Z = {zz / 1000:.9f},",
                       f"    THETA = {th:.9f}, PHI = {ph:.9f}, PSI = {ps:.9f},",
                       f'    FMAPFN = "{MAPS / m["file"]}",',
-                      f"    SCALE = {m['scale']:.6E};", ""]
+                      f"    BSCALE = {m['scale']:.6E};", ""]
         names.append(nm)
 
     lines += [f"CaseLine : LINE = ({', '.join(names)});", ""]
@@ -754,7 +754,7 @@ def write_g4bl(case, d: Path, gauss: bool, finer: bool = False):
             lines.append(f"fieldmap {seen[m['file']]} file={MAPS / m['file']}")
     lines.append("")
     lines.append("# current= on the place line is the deck-side multiplier on the tabulated")
-    lines.append("# Tesla, the same quantity OPALX spells SCALE. The readers do not normalise.")
+    lines.append("# Tesla, the same quantity OPALX spells BSCALE. The readers do not normalise.")
     for m in case["maps"]:
         x, y, z = m["xyz"]
         rot = f" rotation={m['rot']}" if m["rot"] else ""

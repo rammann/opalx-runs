@@ -31,10 +31,10 @@ E01_MON_IN : MONITOR, X = 0.0, Y = 0.0, Z = 0.050,
              DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "MON_IN";
 
 // The map's own z runs -550..550 mm, so placing its centre at 0.600 m puts the
-// field at 0.050..1.150 m. SCALE = 1 reproduces the map as written.
+// field at 0.050..1.150 m. BSCALE = 1 reproduces the map as written.
 E02_BZ     : FIELDMAP, X = 0.0, Y = 0.0, Z = 1.100,
              THETA = 0.0, PHI = 0.0, PSI = 0.0,
-             FMAPFN = "uniform_bz_2m.g4blmap", SCALE = 1.0;
+             FMAPFN = "uniform_bz_2m.g4blmap", BSCALE = 1.0;
 
 E03_MON_OUT: MONITOR, X = 0.0, Y = 0.0, Z = 2.300,
              THETA = 0.0, PHI = 0.0, PSI = 0.0,

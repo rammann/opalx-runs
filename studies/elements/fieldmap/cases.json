@@ -241,9 +241,9 @@
   },
   {
     "name": "grid_quad_scale2",
-    "desc": "The plain quadrupole map with SCALE = 2 on the element.",
-    "physics": "Quadrupole, By = g x and Bx = g y with g = 0.083816 T/m, so k1 = -0.2500 m^-2 (negative: the electron's charge makes a positive gradient defocus in x). Linear in one coordinate each, so trilinear interpolation is exact. This field is both divergence free and curl free, so its transfer matrix is symplectic. SCALE = 2 is applied on top.",
-    "checked": "Must reproduce grid_quad_2x to round-off. That is what says SCALE is a plain multiplier on absolute Tesla rather than a normalised strength.",
+    "desc": "The plain quadrupole map with BSCALE = 2 on the element.",
+    "physics": "Quadrupole, By = g x and Bx = g y with g = 0.083816 T/m, so k1 = -0.2500 m^-2 (negative: the electron's charge makes a positive gradient defocus in x). Linear in one coordinate each, so trilinear interpolation is exact. This field is both divergence free and curl free, so its transfer matrix is symplectic. BSCALE = 2 is applied on top.",
+    "checked": "Must reproduce grid_quad_2x to round-off. That is what says BSCALE is a plain multiplier on absolute Tesla rather than a normalised strength.",
     "group": "scaling",
     "fmt": "grid",
     "element": "FIELDMAP",

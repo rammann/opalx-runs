@@ -38,14 +38,15 @@ if [[ "$TEST_ONLY" -eq 0 ]]; then
     # uses a binary from weeks ago.
     OPALX_BIN="$("$PY" -m opalxruns.paths --opalx)" || exit 2
 
-    # Every deck here places elements with a FIELDMAP, which an older binary rejects
-    # at parse time with a message about SCALE. Refuse to run rather than produce a
-    # log full of parse errors.
+    # Every input here places elements with a FIELDMAP and sets BSCALE (called SCALE
+    # before 2026-09-29). An older binary rejects either at parse time, so refuse to
+    # run rather than produce a log full of parse errors.
     # grep -c, not grep -q: with `set -o pipefail`, grep -q exits on the first match,
     # strings then dies of SIGPIPE, and the pipeline reports failure on a binary that
     # is perfectly fine. grep -c reads to the end.
-    if [[ "$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L")" -eq 0 ]]; then
-        echo "ERROR: $OPALX_BIN has no FIELDMAP element." >&2
+    if [[ "$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L")" -eq 0 \
+          || "$(strings "$OPALX_BIN" | grep -cx "BSCALE")" -eq 0 ]]; then
+        echo "ERROR: $OPALX_BIN has no FIELDMAP element with BSCALE." >&2
         echo "       Rebuild with: cd $(dirname "$(dirname "$OPALX_BIN")") && make -j8 opalx_exe" >&2
         exit 1
     fi

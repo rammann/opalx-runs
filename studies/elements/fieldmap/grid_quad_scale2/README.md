@@ -1,10 +1,10 @@
 # grid_quad_scale2
 
-The plain quadrupole map with SCALE = 2 on the element.
+The plain quadrupole map with BSCALE = 2 on the element.
 
 ## Field
 
-Quadrupole, By = g x and Bx = g y with g = 0.083816 T/m, so k1 = -0.2500 m^-2 (negative: the electron's charge makes a positive gradient defocus in x). Linear in one coordinate each, so trilinear interpolation is exact. This field is both divergence free and curl free, so its transfer matrix is symplectic. SCALE = 2 is applied on top.
+Quadrupole, By = g x and Bx = g y with g = 0.083816 T/m, so k1 = -0.2500 m^-2 (negative: the electron's charge makes a positive gradient defocus in x). Linear in one coordinate each, so trilinear interpolation is exact. This field is both divergence free and curl free, so its transfer matrix is symplectic. BSCALE = 2 is applied on top.
 
 ## Setup (`grid_quad_scale2.in`)
 
@@ -19,4 +19,4 @@ Quadrupole, By = g x and Bx = g y with g = 0.083816 T/m, so k1 = -0.2500 m^-2 (n
 
 ## How the output is checked (`fmlib.py` -> `run_tests.py`)
 
-Must reproduce grid_quad_2x to round-off. That is what says SCALE is a plain multiplier on absolute Tesla rather than a normalised strength.
+Must reproduce grid_quad_2x to round-off. That is what says BSCALE is a plain multiplier on absolute Tesla rather than a normalised strength.

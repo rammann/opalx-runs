@@ -197,7 +197,7 @@ def test8_formats_agree(R, cases):
 def test9_placement_conventions(R, cases):
     """The same cylinder map on a posed FIELDMAP and on a SOLENOID placed by
     ELEMEDGE. Both put the map's own z = 0 at the same lab position, and KS on
-    the solenoid is the same plain multiplier as SCALE."""
+    the solenoid is the same plain multiplier as BSCALE."""
     a, b = cases["cyl_sol"], cases["cyl_sol_solenoid"]
     R.check("9", "FIELDMAP vs SOLENOID, 4x4",
             float(np.abs(a.transfer_map4() - b.transfer_map4()).max()), 0.0,
@@ -208,9 +208,9 @@ def test9_placement_conventions(R, cases):
 
 def test10_scaling(R, cases):
     """Three ways of asking for twice the field: doubling every value in the
-    file, SCALE = 2 on the element, and normB/current = 2 on the param line."""
+    file, BSCALE = 2 on the element, and normB/current = 2 on the param line."""
     ref = cases["grid_quad_2x"]
-    for name, how in (("grid_quad_scale2", "SCALE = 2 on the element"),
+    for name, how in (("grid_quad_scale2", "BSCALE = 2 on the element"),
                       ("grid_quad_param", "normB = 4, current = 2 in the file")):
         c = cases[name]
         R.check("10", f"{name} vs grid_quad_2x, 4x4",

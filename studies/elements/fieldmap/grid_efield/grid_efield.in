@@ -13,7 +13,7 @@ Title, string="grid_efield";
 
 E01_MAP: FIELDMAP, X = 0.0, Y = 0.0, Z = 1.000000000,
          THETA = 0.0, PHI = 0.0, PSI = 0.0,
-         FMAPFN = "../maps/efield.g4blmap", SCALE = 1, ESCALE = 1;
+         FMAPFN = "../maps/efield.g4blmap", BSCALE = 1, ESCALE = 1;
 
 MapLine: LINE = (E01_MAP);
 

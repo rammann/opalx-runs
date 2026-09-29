@@ -127,7 +127,7 @@ Quit;
 _POSED = """
 E01_MAP: FIELDMAP, X = 0.0, Y = 0.0, Z = {zmap:.9f},
          THETA = 0.0, PHI = 0.0, PSI = 0.0,
-         FMAPFN = "../maps/{mapfile}", SCALE = {scale:.9g}{escale}{zrev};
+         FMAPFN = "../maps/{mapfile}", BSCALE = {scale:.9g}{escale}{zrev};
 
 MapLine: LINE = (E01_MAP);
 """
@@ -290,9 +290,9 @@ def case_list() -> list[dict]:
              checked="The 4x4 matrix against the closed form at twice the gradient."),
         dict(name="grid_quad_scale2", group="scaling", fmt="grid", mapfile="quad.g4blmap",
              scale=2.0, same_as="grid_quad_2x",
-             desc="The plain quadrupole map with SCALE = 2 on the element.",
-             physics=quad + " SCALE = 2 is applied on top.",
-             checked=same_quad_2x + " That is what says SCALE is a plain multiplier on "
+             desc="The plain quadrupole map with BSCALE = 2 on the element.",
+             physics=quad + " BSCALE = 2 is applied on top.",
+             checked=same_quad_2x + " That is what says BSCALE is a plain multiplier on "
                      "absolute Tesla rather than a normalised strength."),
         dict(name="grid_quad_param", group="scaling", fmt="grid",
              mapfile="quad_param.g4blmap", same_as="grid_quad_2x",

@@ -67,8 +67,8 @@ vertex is off the arc, and nothing in muE4 is placed there.
 - **Names carry a zero-padded ordinal.** An all-posed lattice is sorted by *name*, not position —
   `fieldStart()` returns 0.0 for every posed element — so `E01_…`, `E02_…` keeps every dump in
   beam order.
-- **`SCALE` is the placement's `current=`, verbatim.** The G4beamline readers store absolute
-  Tesla and do not normalise, so `SCALE = 1` reproduces a bare `fieldmap` placement.
+- **`BSCALE` is the placement's `current=`, verbatim.** The G4beamline readers store absolute
+  Tesla and do not normalise, so `BSCALE = 1` reproduces a bare `fieldmap` placement.
 - **Rotations become the pose.** `rotation=Y180` folds into `THETA`; `Y180,Z180` is a 180° flip
   about x; `Z180` is one about z. `make_lattice.py` composes `R_frame · R_element` as a matrix and
   decomposes it into OPALX's `Ry(THETA)·Rx(PHI)·Rz(PSI)`, then **reconstructs the matrix and
@@ -85,7 +85,7 @@ vertex is off the arc, and nothing in muE4 is placed there.
 
 | G4beamline | OPALX | note |
 |---|---|---|
-| `fieldmap` | `FIELDMAP` | `SCALE` = the placement's `current=` |
+| `fieldmap` | `FIELDMAP` | `BSCALE` = the placement's `current=` |
 | `virtualdetector` | `MONITOR` | `DELETEONTRANSVERSEEXIT = FALSE`, no `L` |
 | jaw pair (`box` ×2) | one `COLLIMATOR` | slit as a `rectangle` aperture, centred |
 | beam pipe (`tubs`) | `COLLIMATOR` | circular aperture at the inner radius |
@@ -249,6 +249,6 @@ deck's own `param maxstep=10` is a lower-case typo that never took effect, so th
 used 100 mm).
 
 The binary (`$OPALX`, or the workspace build `/Users/rammann/Code/OPALX/build/src/opalx`) needs the `FIELDMAP` element; an
-older one rejects `SCALE` at parse time. Both codes resolve relative paths from the working directory; `opalxruns.run` runs
+older one rejects `BSCALE` at parse time. Both codes resolve relative paths from the working directory; `opalxruns.run` runs
 them in the case's folder under `output/`, with links to every file the inputs name. One rank — particle-to-row identity across ranks is not guaranteed, and comparisons match
 on the `id` dataset, never on row order.

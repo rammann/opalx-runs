@@ -17,7 +17,7 @@ The sharp results:
 |------|--------|
 | the same field in both formats | every element of the 4x4 identical, and the final phase space identical |
 | a posed `FIELDMAP` against a `SOLENOID` placed by `ELEMEDGE` | agree to 9e-14 |
-| `SCALE = 2`, `normB/current = 2`, and doubling every value in the file | agree to 7e-11 |
+| `BSCALE = 2`, `normB/current = 2`, and doubling every value in the file | agree to 7e-11 |
 | a comment block, shuffled rows and nine columns against the tidy file | identical |
 | `ZREVERSE = TRUE` against a map written out already reversed | identical |
 | uniform dipole against the arc | bend angle to 1.1e-6 rad, offset to 2.2 um |
@@ -58,7 +58,7 @@ how this study first ran against a binary three days older than its sources.
 
 Both are read from a plain text file named by `FMAPFN`, in millimetres and
 Tesla, and neither is normalised: the values are absolute, so the multiplier on
-the element (`SCALE` on `FIELDMAP`, `KS` on `SOLENOID`) is a plain factor and 1
+the element (`BSCALE` on `FIELDMAP`, `KS` on `SOLENOID`) is a plain factor and 1
 reproduces the map as written.
 
 **3D cartesian, `grid`** — read by `src/Fields/G4BL3DGrid.cpp`. A
@@ -70,7 +70,7 @@ matter. Six columns, or nine with `Ex Ey Ez` as well.
 The electric columns are read: they are MV/m in the file and V/m once loaded. The two
 fields are scaled by separate pairs of header keys, exactly as G4beamline does it --
 `normB` and `current` for the magnetic field, `normE` and `gradient` for the electric one
--- and by separate attributes on the element, `SCALE` and `ESCALE`. Storage for the
+-- and by separate attributes on the element, `BSCALE` and `ESCALE`. Storage for the
 electric field is only allocated once a non-zero value turns up, so the many nine-column
 maps whose `Ex Ey Ez` are all zero cost nothing.
 
@@ -134,7 +134,7 @@ coordinate, which gives the transfer matrix by centred differences.
 | `grid_dipole_shift` | grid | FIELDMAP | the same map posed 0.25 m downstream |
 | `grid_quad` | grid | FIELDMAP | quadrupole against the closed form |
 | `grid_quad_2x` | grid | FIELDMAP | every value in the file doubled; the scaling reference |
-| `grid_quad_scale2` | grid | FIELDMAP | `SCALE = 2` on the element |
+| `grid_quad_scale2` | grid | FIELDMAP | `BSCALE = 2` on the element |
 | `grid_quad_param` | grid | FIELDMAP | `normB = 4`, `current = 2` in the file |
 | `grid_quad_messy` | grid | FIELDMAP | comments, shuffled rows, nine columns |
 | `grid_sol` | grid | FIELDMAP | uniform Bz against the closed form |
@@ -234,7 +234,8 @@ arithmetic and in most cases do it bit for bit.
   1.0051 m long over a 1 m field, so reading the orbit at path length 1.5 m
   gives an answer 0.9 mm out. Read it against `ref_z`. Along path length the
   straight section after a bend rises as sin(theta), not tan(theta).
-- **`FMAPSCALE` does not exist.** The attribute is `SCALE` on `FIELDMAP` and
+- **`FMAPSCALE` does not exist.** The attribute is `BSCALE` on `FIELDMAP` (called
+  `SCALE` before 2026-09-29; an input with `SCALE` now stops with "unknown attribute") and
   `KS` on `SOLENOID`. `studies/g4bl/elements/asr61_dipole/asr61_dipole.in` still
   uses `FMAPSCALE` on an `SBEND`, and `SBEND` never reads `FMAPFN` on this
   branch either, so that input no longer works. Not touched here.
@@ -244,7 +245,7 @@ arithmetic and in most cases do it bit for bit.
   profile, which has tapered to 2e-4 of its peak by the map ends.
 - **The upper faces are excluded** by both readers (`r < end`, never `<=`),
   because interpolation needs a whole cell.
-- **A map can carry an electric field, and it is scaled separately.** `SCALE` is the
+- **A map can carry an electric field, and it is scaled separately.** `BSCALE` is the
   magnetic multiplier (G4beamline's `current=`) and `ESCALE` the electric one (its
   `gradient=`). One attribute will not do for both: G4beamline scales them
   independently, and the MUH2 separator is a map that needs that.

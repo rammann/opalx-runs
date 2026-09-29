@@ -42,19 +42,19 @@ E01_MON_1500: MONITOR, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
 E02_ASR61_300D: FIELDMAP, X = 0.069900004, Y = 0.000000000, Z = 2.974500020,
     THETA = 0.349065850, PHI = -0.000000000, PSI = 0.000000000,
     FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap",
-    SCALE = -9.952800E-01;
+    BSCALE = -9.952800E-01;
 
 // g4bl: place ASR61_300sm z=2982.6664 current=-9.95280E-01   (frame 20.00 deg)
 E03_ASR61_300SM: FIELDMAP, X = 0.069900004, Y = 0.000000000, Z = 2.974500020,
     THETA = 0.349065850, PHI = -0.000000000, PSI = 0.000000000,
     FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap",
-    SCALE = -9.952800E-01;
+    BSCALE = -9.952800E-01;
 
 // g4bl: place ASR61_300sm_m z=2982.6664 rotation=Y180,Z180 current=9.95280E-01   (frame 20.00 deg)
 E04_ASR61_300SM_M: FIELDMAP, X = 0.069900004, Y = 0.000000000, Z = 2.974500020,
     THETA = -2.792526803, PHI = -0.000000000, PSI = -3.141592654,
     FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap",
-    SCALE = 9.952800E-01;
+    BSCALE = 9.952800E-01;
 
 // g4bl: cornerarc z=2982.6664 angle=20.0 centerRadius=1159.0621  (no OPALX element; the frame it creates is folded into the poses below)
 // centreline z = 4600.0000 mm, frame 40.00 deg

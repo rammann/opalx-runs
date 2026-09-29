@@ -105,7 +105,7 @@ E01_MON_IN : MONITOR, X = 0.0, Y = 0.0, Z = 0.050,
 
 E02_BY     : FIELDMAP, X = 0.0, Y = 0.0, Z = 0.600,
              THETA = 0.0, PHI = 0.0, PSI = 0.0,
-             FMAPFN = "by.g4blmap", SCALE = 1.0;
+             FMAPFN = "by.g4blmap", BSCALE = 1.0;
 
 E03_MON_OUT: MONITOR, X = 0.0, Y = 0.0, Z = 1.200,
              THETA = 0.0, PHI = 0.0, PSI = 0.0,

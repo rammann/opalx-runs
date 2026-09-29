@@ -29,12 +29,15 @@ if [[ $TEST_ONLY -eq 0 ]]; then
     # error in 14 run.log files into one message. Note the executable target is
     # opalx_exe -- `make opalx` builds only the static library and silently leaves
     # a stale executable in place.
+    # The attribute name BSCALE (called SCALE before 2026-09-29) must be in the
+    # binary too; a binary that only has SCALE rejects every input here.
     # grep -c rather than grep -q: with `set -o pipefail`, grep -q exits as soon as
     # it matches, strings takes SIGPIPE, and the pipeline reports failure on the
     # success path.
     have_fieldmap="$(strings "$OPALX_BIN" | grep -c "a FIELDMAP element takes no L" || true)"
-    if [[ "$have_fieldmap" -eq 0 ]]; then
-        echo "ERROR: $OPALX_BIN has no FIELDMAP element." >&2
+    have_bscale="$(strings "$OPALX_BIN" | grep -cx "BSCALE" || true)"
+    if [[ "$have_fieldmap" -eq 0 || "$have_bscale" -eq 0 ]]; then
+        echo "ERROR: $OPALX_BIN has no FIELDMAP element with BSCALE." >&2
         echo "       Rebuild with: cd $(dirname "$(dirname "$OPALX_BIN")") && make -j8 opalx_exe" >&2
         exit 2
     fi

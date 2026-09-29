@@ -47,19 +47,19 @@ E03_MON_1500: MONITOR, X = 0.0, Y = 0.0, Z = 1.500000,
 E04_ASR61_300D_T: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
     THETA = 0.000000000, PHI = 0.000000000, PSI = 0.000000000,
     FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300d_track.g4blmap",
-    SCALE = -9.952800E-01;
+    BSCALE = -9.952800E-01;
 
 // g4bl: place ... z=1500.0000 current=-9.95280E-01
 E05_ASR61_300SM_: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
     THETA = 0.000000000, PHI = 0.000000000, PSI = 0.000000000,
     FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap",
-    SCALE = -9.952800E-01;
+    BSCALE = -9.952800E-01;
 
 // g4bl: place ... z=1500.0000 rotation=Y180,Z180 current=9.95280E-01
 E06_ASR61_300SM_: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.500000000,
     THETA = -3.141592654, PHI = -0.000000000, PSI = -3.141592654,
     FMAPFN = "/Users/rammann/Code/OPALX/g4bl-files/muE4/maps/asr61_300sm_track.g4blmap",
-    SCALE = 9.952800E-01;
+    BSCALE = 9.952800E-01;
 
 E07_MON_2000: MONITOR, X = 0.0, Y = 0.0, Z = 2.000000,
     THETA = 0.0, PHI = 0.0, PSI = 0.0,

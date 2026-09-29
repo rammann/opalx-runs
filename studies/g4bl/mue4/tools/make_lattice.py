@@ -11,7 +11,7 @@ part and hand-copying 47 placements is how a wrong pose gets in unnoticed.
 
 How G4beamline objects map onto OPALX ones:
 
-  fieldmap          -> FIELDMAP, SCALE = the placement's own current=
+  fieldmap          -> FIELDMAP, BSCALE = the placement's own current=
   virtualdetector   -> MONITOR
   box pair (jaws)   -> one COLLIMATOR carrying the slit as a rectangle aperture
   tubs (beam pipe)  -> COLLIMATOR with a circular aperture at the inner radius
@@ -188,7 +188,7 @@ def emit_deck(records) -> str:
         note = f"  // g4bl {r['g4bl_name']} line {r['g4bl_line']}, centreline z = {r['cl_z_mm']:.4f} mm"
         if r["type"] == "FIELDMAP":
             out.append(f"{r['name']}: FIELDMAP, {pose},{note}")
-            out.append(f'    FMAPFN = "{r["fmapfn"]}", SCALE = {r["scale"]:.6e};')
+            out.append(f'    FMAPFN = "{r["fmapfn"]}", BSCALE = {r["scale"]:.6e};')
         elif r["type"] == "MONITOR":
             out.append(f"{r['name']}: MONITOR, {pose},{note}")
             out.append(f'    DELETEONTRANSVERSEEXIT = FALSE, OUTFN = "{r["name"]}";')
