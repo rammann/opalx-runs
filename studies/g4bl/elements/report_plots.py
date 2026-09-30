@@ -191,7 +191,7 @@ def fig_field(name, c, d):
     img = np.full((len(xs), len(zs)), np.nan)
     img[np.searchsorted(xs, pos[0]), np.searchsorted(zs, pos[2])] = np.where(keep, diff, np.nan)
     fl = max(np.nanmin(img[img > 0]) if np.any(img > 0) else 1e-9, 1e-10)
-    im = ax[2].imshow(np.maximum(img, fl), origin="lower", aspect="auto", cmap="Blues",
+    im = ax[2].imshow(np.maximum(img, fl), origin="lower", aspect="auto", cmap="inferno",
                       norm=LogNorm(vmin=fl, vmax=max(np.nanmax(img), fl * 10)),
                       extent=[zs[0] * 1000, zs[-1] * 1000, xs[0] * 1000, xs[-1] * 1000])
     ax[2].set(xlabel="lab z [mm]", ylabel="lab x [mm]",
@@ -229,7 +229,7 @@ def fig_pair(name, c, d):
     Mo = cmplib.transfer_matrix(Xo_i, Xo_o)
     fl = cmplib.row_floors(dg_o, cmplib.STEP_SMALL)
     r = np.abs(Mo - Mg) / fl[:, None]
-    im = ax[2].imshow(r, cmap="Blues", vmin=0, vmax=max(r.max(), 1e-9))
+    im = ax[2].imshow(r, cmap="inferno", vmin=0, vmax=max(r.max(), 1e-9))
     ax[2].set_xticks(range(6), cmplib.COORD_NAMES, fontsize=6)
     ax[2].set_yticks(range(6), cmplib.COORD_NAMES, fontsize=6)
     ax[2].set_title(f"transfer matrix difference\nin printing steps, worst {r.max():.1f}")

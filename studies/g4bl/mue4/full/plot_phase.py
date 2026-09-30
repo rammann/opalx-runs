@@ -36,7 +36,7 @@ OUT = output_dir(HERE)                 # the OPALX run, in output/
 REFERENCE = HERE / "g4bl_reference"    # the G4beamline planes, tracked
 PLOTS = OUT / "plots"
 PLOTS.mkdir(parents=True, exist_ok=True)
-NBIN = 48
+NBIN = 96
 plt.rcParams.update({"font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
                      "axes.edgecolor": MUTED, "text.color": INK, "xtick.color": MUTED,
                      "ytick.color": MUTED, "axes.grid": False,
@@ -86,16 +86,18 @@ def heat(z, Xg, Xo, n):
         vmax = max(Hg.max(), Ho.max())
         norm = LogNorm(vmin=1, vmax=max(vmax, 2))
         for r, (H, lab) in enumerate(((Hg, "G4beamline"), (Ho, "OPALX"))):
+            # "nearest": each bin a solid block, no smoothing into its empty neighbours
             im = ax[r, c].imshow(np.ma.masked_equal(H.T, 0), origin="lower",
-                                 aspect="auto", extent=ext, cmap="Blues", norm=norm)
+                                 interpolation="nearest", aspect="auto", extent=ext,
+                                 cmap="inferno", norm=norm)
             ax[r, c].set(xlabel=xl, ylabel=(f"{lab}\n{yl}" if c == 0 else yl))
             if r == 0:
                 ax[r, c].set_title(f"{xl.split(' ')[0]} against {yl.split(' ')[0]}")
             fig.colorbar(im, ax=ax[r, c], label="particles per bin" if c == 2 else None)
         D = Ho - Hg
         lim = max(abs(D).max(), 1.0)
-        im = ax[2, c].imshow(np.ma.masked_equal(D.T, 0), origin="lower", aspect="auto",
-                             extent=ext, cmap="RdBu_r",
+        im = ax[2, c].imshow(np.ma.masked_equal(D.T, 0), origin="lower",
+                             interpolation="nearest", aspect="auto", extent=ext, cmap="RdBu_r",
                              norm=TwoSlopeNorm(vmin=-lim, vcenter=0.0, vmax=lim))
         ax[2, c].set(xlabel=xl, ylabel=("OPALX - G4beamline\n" + yl) if c == 0 else yl,
                      title=f"difference, worst {int(abs(D).max())} particles per bin")

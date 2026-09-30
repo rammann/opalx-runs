@@ -34,7 +34,7 @@ PLOTS = OUT / "plots"
 
 # Magnitude of a difference is a one-directional quantity, so one hue, light to
 # dark. Signed differences use a two-hue scale with a neutral middle.
-SEQ, DIV = "Blues", "RdBu_r"
+SEQ, DIV = "inferno", "RdBu_r"
 # One fixed hue per case, assigned in order and never cycled. Checked with the
 # palette validator: worst adjacent separation dE 9.1 under protanopia and 19.6
 # in normal vision, both above the floor. Three of the seven sit below 3:1
