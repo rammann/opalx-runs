@@ -8,7 +8,7 @@ only what matters for timing:
     every particle to an .h5 file, which is gigabytes per run and mostly measures the
     file system.
   * FMAPFN points to maps/<file>, relative to the run folder. submit.sh links maps/
-    into every run folder, so the input does not depend on where the maps sit.
+    in every run folder to opalx-runs/maps/, which holds the six maps in git.
   * N_PART particles: parts.txt from full/ repeated N_PART / 10000 times (make_beam.sh
     writes the file on daint). Without space charge the copies do not interact, so
     every particle costs the same work as in full/.
@@ -42,7 +42,7 @@ def write_lattice():
            "// do not edit.\n"
            "//\n"
            "// The field maps of the whole muE4 line, without the 22 MONITOR planes.\n"
-           "// FMAPFN is relative to the run folder, which holds a link maps/."]
+           "// FMAPFN is relative to the run folder, where maps/ links to opalx-runs/maps/."]
     names = []
     for b in blocks:
         m = re.match(r"(\w+):\s*(\w+)", b)

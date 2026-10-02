@@ -13,6 +13,7 @@ opalx-runs/
     g4bl/        OPALX against G4beamline
     beamlines/   whole machines
   shared/        input files used by several topics (beams, field maps)
+  maps/          the six muE4 G4beamline field maps, for runs without g4bl-files (see its README)
   output/        run output, not tracked; the same folder tree as studies/
   opalxruns/     shared Python: running cases, reading output, plots (see its README)
   tests/         unit tests for opalxruns

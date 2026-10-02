@@ -35,7 +35,7 @@ beam="$(sed -n 's/.*FNAME = "\([^"]*\)".*/\1/p' "$HERE/scaling.in")"
 # Check everything before submitting anything.
 [[ -x "$OPALX" ]] || { echo "ERROR: OPALX=$OPALX is not an executable" >&2; exit 1; }
 [[ -f "$HERE/$beam" ]] || { echo "ERROR: $beam missing; run ./make_beam.sh first" >&2; exit 1; }
-[[ -d "$HERE/maps" ]] || { echo "ERROR: maps/ missing; run copy_maps_to_daint.sh on the laptop" >&2; exit 1; }
+[[ -d "$REPO/maps" ]] || { echo "ERROR: $REPO/maps missing" >&2; exit 1; }
 # grep -c, not grep -q: with pipefail, grep -q can make strings exit with SIGPIPE.
 if command -v strings > /dev/null \
         && [[ "$(strings "$OPALX" | grep -cx BSCALE || true)" -eq 0 ]]; then
@@ -59,7 +59,7 @@ for g in $GPUS; do
     run_dir="$RUN_BASE/gpus_$g"
     mkdir -p "$run_dir"
     cp "$HERE/scaling.in" "$HERE/lattice_scaling.in" "$run_dir/"
-    ln -s "$HERE/maps" "$run_dir/maps"
+    ln -s "$REPO/maps" "$run_dir/maps"
     ln -s "$HERE/$beam" "$run_dir/$beam"
     if [[ -n "$ZSTOP" ]]; then
         # -i.bak works with both GNU and BSD sed.

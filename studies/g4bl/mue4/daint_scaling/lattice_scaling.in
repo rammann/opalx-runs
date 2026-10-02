@@ -2,7 +2,7 @@
 // do not edit.
 //
 // The field maps of the whole muE4 line, without the 22 MONITOR planes.
-// FMAPFN is relative to the run folder, which holds a link maps/.
+// FMAPFN is relative to the run folder, where maps/ links to opalx-runs/maps/.
 
 E05_WSX: FIELDMAP, X = 0.000000000, Y = 0.000000000, Z = 1.285000000, THETA = 3.141592654, PHI = -0.000000000, PSI = 0.000000000,  // centreline z = 1285.0000 mm, frame 0.00 deg
     FMAPFN = "maps/wsx_total.g4blmap", BSCALE = 1.000000e+00;

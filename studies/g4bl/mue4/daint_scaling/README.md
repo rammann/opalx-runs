@@ -13,7 +13,7 @@ the run times show how well one problem gets faster with more GPUs.
 | MONITOR planes | 22 | none (each would write 16e6 particles to an `.h5` file) |
 | phase space dumps | at the end | none (`PSDUMPFREQ = 0`) |
 | statistics | every 10 steps | every 1000 steps |
-| map paths | absolute, on the laptop | `maps/<file>`, relative to the run folder |
+| map paths | absolute, on the laptop | `maps/<file>`, relative to the run folder, which links `maps/` to `opalx-runs/maps/` |
 
 The particles repeat, but there is no space charge, so the copies do not interact and
 each one costs the same work as in `full/`. Repeating keeps the bunch mean, which sets
@@ -27,7 +27,6 @@ adding GPUs stops helping. To change the count, set `N_PART` in `make_scaling.py
 |---|---|---|
 | `make_scaling.py` | writes `scaling.in` and `lattice_scaling.in` from `../full/lattice_full.in` | laptop |
 | `scaling.in`, `lattice_scaling.in` | generated, the OPALX input | |
-| `copy_maps_to_daint.sh` | copies the 6 field maps (about 165 MB, not in git) into `maps/` of the clone on daint | laptop |
 | `make_beam.sh` | writes `parts_16M.txt` (1.5 GB) from `../full/parts.txt` | daint |
 | `submit.sh` | one Slurm job per GPU count, each in its own run folder | daint |
 | `job.sh` | the job itself: `srun opalx scaling.in --info 2` | daint (compute node) |
@@ -51,8 +50,9 @@ exit                         # leave the uenv
 `submit.sh` expects the executable at `$SCRATCH/build-cuda/src/opalx`; set `OPALX` for
 another one.
 
-**2. daint, once: clone this repo.** Commit and push this folder first. Cloning from
-daint needs a GitHub SSH key on daint.
+**2. daint, once: clone this repo.** It holds the inputs and the six field maps in
+`opalx-runs/maps/` (about 165 MB). Commit and push this folder and `maps/` first.
+Cloning from daint needs a GitHub SSH key on daint.
 
 ```bash
 cd $SCRATCH
@@ -61,14 +61,7 @@ git clone git@github.com:rammann/opalx-runs.git
 
 Later changes come with `git pull` in `$SCRATCH/opalx-runs`.
 
-**3. Laptop, once: copy the field maps.** They are not in git.
-
-```bash
-cd studies/g4bl/mue4/daint_scaling
-./copy_maps_to_daint.sh      # DAINT=<ssh host>, default daint
-```
-
-**4. daint, once: write the particle file.**
+**3. daint, once: write the particle file.**
 
 ```bash
 cd $SCRATCH/opalx-runs/studies/g4bl/mue4/daint_scaling
@@ -78,7 +71,7 @@ cd $SCRATCH/opalx-runs/studies/g4bl/mue4/daint_scaling
 To change the particle count: set `N_PART` in `make_scaling.py`, run `$PY make_scaling.py`
 on the laptop, commit, push, then `git pull` and `./make_beam.sh` on daint.
 
-**5. daint: a short test on 1 GPU** (the first metre of the line, a few minutes):
+**4. daint: a short test on 1 GPU** (the first metre of the line, a few minutes):
 
 ```bash
 GPUS=1 ZSTOP=1.0 ./submit.sh
@@ -87,9 +80,9 @@ GPUS=1 ZSTOP=1.0 ./submit.sh
 Check in `slurm_<id>.out` that the run ends without an error and prints
 `Rank 0: 16000000 local particles`, and that `timing.dat` was written. Multiply the
 `steps` time from `./collect.sh` by 19.4 to estimate the 1-GPU run of the whole line;
-if that is near the 30 min limit, set `TIME=01:00:00` for step 6.
+if that is near the 30 min limit, set `TIME=01:00:00` for step 5.
 
-**6. daint: the scaling runs.**
+**5. daint: the scaling runs.**
 
 ```bash
 ./submit.sh                  # 1, 2, 4, 8 GPUs; ACCOUNT=c41, TIME=00:30:00 by default
