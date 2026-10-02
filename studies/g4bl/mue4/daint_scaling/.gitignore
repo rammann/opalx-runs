@@ -1,0 +1,4 @@
+# Only on daint: the field maps copy_maps_to_daint.sh copies there, and the particle
+# file make_beam.sh writes (1.5 GB for 16e6 particles).
+maps/
+parts_*M.txt

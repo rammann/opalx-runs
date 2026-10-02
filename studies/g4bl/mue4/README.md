@@ -42,6 +42,7 @@ comparison becomes one to one.
 | `full/compare_full.py`, `plot_phase.py`, `plot_layout.py` | plane-by-plane comparison: `full_results.txt`, `full_data.json`, figures in `output/g4bl/mue4/full/plots/` |
 | `full/g4bl_reference/` | the G4beamline planes of the last full run, tracked because they take an hour to redo; `run_full.sh --update-reference` refreshes them |
 | `full_spin/` | the same line with spin: `make_full_spin.py`, `run.sh`, `compare_spin.py` → `spin_results.txt`, `spin_data.json`; its own `g4bl_reference/` |
+| `daint_scaling/` | the `full/` line with 16e6 muons on 1, 2, 4, 8 GPUs on daint, for strong scaling; OPALX only, see its README |
 
 Regenerate with `$PY tools/make_lattice.py`; check with `$PY tools/test_geometry.py`. The run
 output of every setup here goes to `output/g4bl/mue4/<setup>/`.
